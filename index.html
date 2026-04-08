@@ -100,10 +100,12 @@
 
     <span id="speed-label">SPEED:</span>
     <select id="speed-select">
-      <option value="400">SLOW (1 LAP / 0.4s)</option>
-      <option value="150" selected>NORMAL (1 LAP / 0.15s)</option>
-      <option value="50">FAST (1 LAP / 0.05s)</option>
-      <option value="0">MAX (no delay)</option>
+      <option value="8571">LEISURELY (~10 MINS)</option>
+      <option value="4286">SLOW      (~5 MINS)</option>
+      <option value="1714" selected>NORMAL    (~2 MINS)</option>
+      <option value="857">FAST      (~1 MIN)</option>
+      <option value="400">VERY FAST (0.4s/LAP)</option>
+      <option value="0">INSTANT</option>
     </select>
   </div>
 
@@ -116,9 +118,8 @@
     const canvas  = document.getElementById('canvas');
     canvas.width  = CANVAS_W;
     canvas.height = CANVAS_H;
-    // 2× CSS scaling for chunky pixel look
-    canvas.style.width  = `${CANVAS_W * 2}px`;
-    canvas.style.height = `${CANVAS_H * 2}px`;
+    canvas.style.width  = `${CANVAS_W}px`;
+    canvas.style.height = `${CANVAS_H}px`;
 
     const renderer = new Renderer(canvas);
 
@@ -155,36 +156,31 @@
       seedInput.disabled = true;
 
       renderer.render();  // show grid / pre-race state
-      scheduleNextLap();
+      scheduleNextSector();
     }
 
     // ── Game loop ──────────────────────────────────────────────────────────
     // Advances one full lap (3 sector ticks) per iteration, then re-renders.
     // The delay between laps is controlled by the speed selector.
-    function advanceLap() {
+    function advanceSector() {
       if (paused || isRaceOver()) return;
 
-      // Run 3 sector ticks (one complete lap)
-      for (let s = 0; s < 3; s++) {
-        tick(rng);
-      }
-
+      tick(rng);
       renderer.render();
 
       if (isRaceOver()) {
         onRaceFinished();
       } else {
-        scheduleNextLap();
+        scheduleNextSector();
       }
     }
 
-    function scheduleNextLap() {
-      const delay = parseInt(speedSel.value, 10);
+    function scheduleNextSector() {
+      const delay = Math.round(parseInt(speedSel.value, 10) / 3);
       if (delay === 0) {
-        // Max speed: use setTimeout(0) to stay non-blocking but yield to the browser
-        loopId = setTimeout(advanceLap, 0);
+        loopId = setTimeout(advanceSector, 0);
       } else {
-        loopId = setTimeout(advanceLap, delay);
+        loopId = setTimeout(advanceSector, delay);
       }
     }
 
@@ -193,7 +189,7 @@
       paused = !paused;
       btnPause.textContent = paused ? 'RESUME' : 'PAUSE';
       if (!paused && !isRaceOver()) {
-        scheduleNextLap();
+        scheduleNextSector();
       }
     }
 

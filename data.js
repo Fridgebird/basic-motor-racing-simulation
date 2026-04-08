@@ -13,26 +13,30 @@ export const ENGINES = {
   honda: {
     name: 'Honda RA168E',
     // Dominant 1.5-litre turbo; McLaren won 15 of 16 races this season
-    power:       95,
-    reliability: 85,
+    power:         95,
+    reliability:   85,
+    fuelBurnRate:  1.15,  // turbos drink ~15% more fuel than the NA baseline
   },
   ferrari: {
     name: 'Ferrari 035/L',
     // Strong turbo but Ferrari chassis limited its potential
-    power:       88,
-    reliability: 73,
+    power:         88,
+    reliability:   73,
+    fuelBurnRate:  1.12,
   },
   megatron: {
     name: 'Megatron M12/13',
     // BMW-derived turbo supplied to Arrows; powerful but fragile
-    power:       82,
-    reliability: 62,
+    power:         82,
+    reliability:   62,
+    fuelBurnRate:  1.10,
   },
   ford: {
     name: 'Ford Cosworth DFZ',
     // 3.5-litre normally-aspirated V8; well down on power but supremely reliable
-    power:       52,
-    reliability: 92,
+    power:         52,
+    reliability:   92,
+    fuelBurnRate:  1.00,  // baseline
   },
 };
 
@@ -464,35 +468,38 @@ export const CIRCUIT = {
   totalLaps:          70,
   trackAbrasiveness:  0.80,   // 0–1; high = harder on tyres (like a rough street circuit)
   fuelCapacity:       100,    // kg maximum fuel load
-  baseFuelBurnPerLap: 1.40,   // kg/lap at racing pace (slightly modified by engine type in sim)
+  baseFuelBurnPerLap: 3.50,   // kg/lap baseline (NA); turbos multiply via engine.fuelBurnRate
   baseStopTime:       25,     // seconds for a stationary pit stop before crew quality scaling
 
   sectors: [
     {
       id:          1,
       label:       'Technical corners',
-      // Favours chassis aero and driver skill; wears tyres hard
+      // Favours chassis aero and driver skill; wears tyres hard; less full-throttle
       powerWeight: 0.02,
       aeroWeight:  0.05,
       wearWeight:  1.30,
-      baseSectorTime: 28.0,   // seconds
+      fuelWeight:  0.85,  // tight corners = partial throttle → lower fuel burn
+      baseSectorTime: 28.0,
     },
     {
       id:          2,
       label:       'Power straight',
-      // Engine horsepower dominant; easy on tyres
+      // Engine horsepower dominant; easy on tyres; sustained full throttle
       powerWeight: 0.06,
       aeroWeight:  0.01,
       wearWeight:  0.70,
+      fuelWeight:  1.30,  // flat-out → highest fuel burn of the three sectors
       baseSectorTime: 22.0,
     },
     {
       id:          3,
       label:       'Mixed flowing',
-      // Balanced; where tyre degradation becomes critical late in a stint
+      // Balanced demands; average fuelWeight across all 3 sectors = 1.0
       powerWeight: 0.03,
       aeroWeight:  0.03,
       wearWeight:  1.00,
+      fuelWeight:  0.85,
       baseSectorTime: 25.0,
     },
   ],

@@ -175,8 +175,11 @@ export function tick(rng) {
     car.tyreWear = Math.min(1, car.tyreWear + wearDelta);
 
     // ── Fuel burn ────────────────────────────────────────────────────────────
-    // Burn one-third of the per-lap rate each sector
-    const fuelBurnPerSector = CIRCUIT.baseFuelBurnPerLap / 3;
+    // Base rate × engine's thirst multiplier × sector throttle demand
+    // Average fuelWeight across 3 sectors = 1.0, so per-lap total stays consistent
+    const fuelBurnPerSector = (CIRCUIT.baseFuelBurnPerLap / 3)
+      * car.engine.fuelBurnRate
+      * sectorDef.fuelWeight;
     car.fuel = Math.max(0, car.fuel - fuelBurnPerSector);
 
     // ── End-of-lap processing ────────────────────────────────────────────────
@@ -211,6 +214,7 @@ export function tick(rng) {
             const severity = 1.08 + rng() * 0.12; // 1.08–1.20
             car.reliabilityFactor *= severity;
             const label = FAILURE_LABELS[Math.floor(rng() * FAILURE_LABELS.length)];
+            car.degradedLabel = label;  // stored on car state for live display
             events.push({ type: 'mechanical', severity: 'degraded', label, factor: +severity.toFixed(3) });
           }
         }
@@ -272,7 +276,7 @@ function shouldPit(car, rng) {
   if (car.stopsMade >= 2) return false;
 
   // Emergency stop: fuel critically low (< 4 laps' worth remaining) with time to pit
-  const fuelLapsLeft = car.fuel / CIRCUIT.baseFuelBurnPerLap;
+  const fuelLapsLeft = car.fuel / (CIRCUIT.baseFuelBurnPerLap * car.engine.fuelBurnRate);
   const raceLapsLeft = CIRCUIT.totalLaps - race.lap;
   if (fuelLapsLeft < 4 && raceLapsLeft > 4) return true;
 
@@ -302,9 +306,10 @@ function executePitStop(car, rng) {
   const lapsUntilNextStop = stopsStillPlanned > 0
     ? Math.ceil(lapsLeft / (stopsStillPlanned + 1))
     : lapsLeft;
+  const effectiveBurnPerLap = CIRCUIT.baseFuelBurnPerLap * car.engine.fuelBurnRate;
   const fuelTarget = Math.min(
     CIRCUIT.fuelCapacity,
-    car.fuel + lapsUntilNextStop * CIRCUIT.baseFuelBurnPerLap * 1.10,  // 10% safety buffer
+    car.fuel + lapsUntilNextStop * effectiveBurnPerLap * 1.10,  // 10% safety buffer
   );
   const fuelAdded = +(fuelTarget - car.fuel).toFixed(1);
 

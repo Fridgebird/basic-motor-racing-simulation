@@ -39,7 +39,7 @@ const SEP_Y      = COL_HDR_Y + 6;   // separator line y
 const ROWS_Y     = SEP_Y + 8;       // first car row top
 
 // Canvas dimensions — exported so index.html can size the element correctly
-export const CANVAS_W = 648;
+export const CANVAS_W = 700;
 export const CANVAS_H = ROWS_Y + 24 * ROW_H + 32;  // 32 px footer
 
 // ─── Column definitions ───────────────────────────────────────────────────────
@@ -47,12 +47,15 @@ export const CANVAS_H = ROWS_Y + 24 * ROW_H + 32;  // 32 px footer
 const COLS = [
   { key: 'pos',     label: 'POS',      x:   8 },
   { key: 'driver',  label: 'DRIVER',   x:  44 },
-  { key: 'team',    label: 'TEAM',     x: 156 },
-  { key: 'lastLap', label: 'LAST LAP', x: 248 },
-  { key: 'gap',     label: 'GAP',      x: 332 },
-  { key: 'tyre',    label: 'TYRE',     x: 426 },
-  { key: 'stops',   label: 'STP',      x: 502 },
-  { key: 'status',  label: 'STATUS',   x: 538 },
+  { key: 'team',    label: 'TEAM',     x: 158 },
+  { key: 'lastLap', label: 'LAST LAP', x: 246 },
+  { key: 'gap',     label: 'GAP',      x: 320 },
+  { key: 'tyre',    label: 'TYRE',     x: 400 },
+  { key: 'wear',    label: 'WEAR',     x: 446 },
+  { key: 'fuel',    label: 'FUEL',     x: 494 },
+  { key: 'stops',   label: 'STP',      x: 542 },
+  { key: 'status',  label: 'STATUS',   x: 570 },
+  { key: 'health',  label: 'HEALTH',   x: 604 },
 ];
 
 // ─── Renderer class ───────────────────────────────────────────────────────────
@@ -215,24 +218,54 @@ export class Renderer {
     ctx.fillText(gapStr, COLS[4].x, textY);
 
     // TYRE  ────────────────────────────────────────────────────────────────
-    // Show compound initial and how many laps on the current set
     const compChar = car.compound[0].toUpperCase();  // S / M / H
     const age      = String(car.stintLap).padStart(2, ' ');
-    ctx.fillText(`${compChar} L${age}   `, COLS[5].x, textY);
+    ctx.fillText(`${compChar} L${age}`, COLS[5].x, textY);
+
+    // WEAR  ────────────────────────────────────────────────────────────────
+    // Colour-coded: white = fresh, yellow = degrading, red = worn out
+    const wearPct = Math.round(car.tyreWear * 100);
+    if (!retired) {
+      if (wearPct >= 71)      ctx.fillStyle = C.red;
+      else if (wearPct >= 41) ctx.fillStyle = C.yellow;
+      else                    ctx.fillStyle = rowColour;
+    }
+    ctx.fillText(`${wearPct}%`.padStart(4), COLS[6].x, textY);
+    ctx.fillStyle = rowColour;
+
+    // FUEL  ────────────────────────────────────────────────────────────────
+    // Colour-coded: white = plenty, yellow = getting low, red = critical
+    const fuelKg = Math.round(car.fuel);
+    if (!retired) {
+      if (fuelKg < 15)      ctx.fillStyle = C.red;
+      else if (fuelKg < 30) ctx.fillStyle = C.yellow;
+      else                  ctx.fillStyle = rowColour;
+    }
+    ctx.fillText(`${fuelKg}kg`.padStart(5), COLS[7].x, textY);
+    ctx.fillStyle = rowColour;
 
     // STOPS  ───────────────────────────────────────────────────────────────
-    ctx.fillText(String(car.stopsMade), COLS[6].x, textY);
+    ctx.fillText(String(car.stopsMade), COLS[8].x, textY);
 
     // STATUS  ──────────────────────────────────────────────────────────────
-    // Only populated for notable states; blank = racing normally
     if (pitted) {
       ctx.fillStyle = C.yellow;
-      ctx.fillText('PIT', COLS[7].x, textY);
+      ctx.fillText('PIT', COLS[9].x, textY);
+      ctx.fillStyle = rowColour;
     } else if (retired) {
       ctx.fillStyle = C.magenta;
-      ctx.fillText(car.retiredReason === 'crash' ? 'CRASH' : 'RETIRED', COLS[7].x, textY);
+      ctx.fillText('OUT', COLS[9].x, textY);
+      ctx.fillStyle = rowColour;
     }
-    // (rowColour already set above — no need to restore for remaining cols)
+
+    // HEALTH  ──────────────────────────────────────────────────────────────
+    // Shows degraded component label in red while the car is still running;
+    // switches to magenta once the car retires from a mechanical failure.
+    if (car.degradedLabel) {
+      ctx.fillStyle = retired ? C.magenta : C.red;
+      ctx.fillText(car.degradedLabel.toUpperCase(), COLS[10].x, textY);
+      ctx.fillStyle = rowColour;
+    }
   }
 
   // ── _drawFooter ─────────────────────────────────────────────────────────────

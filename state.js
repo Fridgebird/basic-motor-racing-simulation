@@ -47,6 +47,10 @@ export function updatePositions() {
     const bRetired = b.status === 'retired';
     if (aRetired && !bRetired) return 1;
     if (!aRetired && bRetired) return -1;
+    // Among retired cars: sort by retirement lap descending so the most recent
+    // retiree appears nearest the top of the retired section and the first
+    // retiree sits at the very bottom of the leaderboard.
+    if (aRetired && bRetired) return (b.retiredLap ?? 0) - (a.retiredLap ?? 0);
     return a.cumulativeTime - b.cumulativeTime;
   });
 

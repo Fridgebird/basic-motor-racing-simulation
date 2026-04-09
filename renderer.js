@@ -39,7 +39,7 @@ const SEP_Y      = COL_HDR_Y + 6;   // separator line y
 const ROWS_Y     = SEP_Y + 8;       // first car row top
 
 // Canvas dimensions — exported so index.html can size the element correctly
-export const CANVAS_W = 700;
+export const CANVAS_W = 780;
 export const CANVAS_H = ROWS_Y + 24 * ROW_H + 32;  // 32 px footer
 
 // ─── Column definitions ───────────────────────────────────────────────────────
@@ -48,14 +48,14 @@ const COLS = [
   { key: 'pos',     label: 'POS',      x:   8 },
   { key: 'driver',  label: 'DRIVER',   x:  44 },
   { key: 'team',    label: 'TEAM',     x: 158 },
-  { key: 'lastLap', label: 'LAST LAP', x: 246 },
-  { key: 'gap',     label: 'GAP',      x: 320 },
+  { key: 'lastLap', label: 'LAST LAP', x: 248 },
+  { key: 'gap',     label: 'GAP',      x: 322 },
   { key: 'tyre',    label: 'TYRE',     x: 400 },
-  { key: 'wear',    label: 'WEAR',     x: 446 },
-  { key: 'fuel',    label: 'FUEL',     x: 494 },
-  { key: 'stops',   label: 'STP',      x: 542 },
-  { key: 'status',  label: 'STATUS',   x: 570 },
-  { key: 'health',  label: 'HEALTH',   x: 604 },
+  { key: 'wear',    label: 'WEAR',     x: 462 },
+  { key: 'fuel',    label: 'FUEL',     x: 510 },
+  { key: 'stops',   label: 'STP',      x: 556 },
+  { key: 'status',  label: 'STATUS',   x: 582 },
+  { key: 'health',  label: 'HEALTH',   x: 616 },
 ];
 
 // ─── Renderer class ───────────────────────────────────────────────────────────
@@ -208,8 +208,7 @@ export class Renderer {
     // GAP  ─────────────────────────────────────────────────────────────────
     let gapStr;
     if (retired) {
-      // Show the reason rather than a time gap
-      gapStr = car.retiredReason === 'crash' ? 'CRASH   ' : 'MECH    ';
+      gapStr = '        ';  // reason shown in HEALTH column
     } else if (car.position === 1) {
       gapStr = 'LEADER  ';
     } else {
@@ -219,8 +218,7 @@ export class Renderer {
 
     // TYRE  ────────────────────────────────────────────────────────────────
     const compChar = car.compound[0].toUpperCase();  // S / M / H
-    const age      = String(car.stintLap).padStart(2, ' ');
-    ctx.fillText(`${compChar} L${age}`, COLS[5].x, textY);
+    ctx.fillText(`${compChar} (${car.stintLap})`, COLS[5].x, textY);
 
     // WEAR  ────────────────────────────────────────────────────────────────
     // Colour-coded: white = fresh, yellow = degrading, red = worn out
@@ -259,10 +257,16 @@ export class Renderer {
     }
 
     // HEALTH  ──────────────────────────────────────────────────────────────
-    // Shows degraded component label in red while the car is still running;
-    // switches to magenta once the car retires from a mechanical failure.
-    if (car.degradedLabel) {
-      ctx.fillStyle = retired ? C.magenta : C.red;
+    // Running car with damage: component label in red.
+    // Retired car: cause + retirement lap in magenta (e.g. "ENGINE (L23)").
+    if (retired) {
+      ctx.fillStyle = C.magenta;
+      const cause   = car.retiredReason === 'crash' ? 'CRASH' : (car.degradedLabel || 'MECH').toUpperCase();
+      const lapNote = car.retiredLap != null ? ` L${car.retiredLap}` : '';
+      ctx.fillText(`${cause}${lapNote}`, COLS[10].x, textY);
+      ctx.fillStyle = rowColour;
+    } else if (car.degradedLabel) {
+      ctx.fillStyle = C.red;
       ctx.fillText(car.degradedLabel.toUpperCase(), COLS[10].x, textY);
       ctx.fillStyle = rowColour;
     }

@@ -207,6 +207,8 @@ export function tick(rng) {
             events.push({ type: 'mechanical', severity: 'retirement', label });
             car.status        = 'retired';
             car.retiredReason = 'mechanical';
+            car.degradedLabel = label;
+            car.retiredLap    = race.lap;
 
           } else {
             // 70% chance → degraded performance for remainder of race
@@ -226,6 +228,8 @@ export function tick(rng) {
           events.push({ type: 'mechanical', severity: 'retirement', label: 'Fuel' });
           car.status        = 'retired';
           car.retiredReason = 'mechanical';
+          car.degradedLabel = 'Fuel';
+          car.retiredLap    = race.lap;
         }
       }
 
@@ -241,6 +245,7 @@ export function tick(rng) {
     if (crashOccurred) {
       car.status        = 'retired';
       car.retiredReason = 'crash';
+      car.retiredLap    = race.lap;
     }
 
     // ── Race log entry ───────────────────────────────────────────────────────
@@ -272,16 +277,18 @@ function shouldPit(car, rng) {
   // No point pitting in the last 3 laps
   if (race.lap >= CIRCUIT.totalLaps - 3) return false;
 
-  // Hard cap: 2 stops per race
-  if (car.stopsMade >= 2) return false;
-
-  // Emergency stop: fuel critically low (< 4 laps' worth remaining) with time to pit
-  const fuelLapsLeft = car.fuel / (CIRCUIT.baseFuelBurnPerLap * car.engine.fuelBurnRate);
+  // Emergency fuel stop — checked BEFORE the stop count limit so a car can
+  // always pit to avoid running out. Triggers when < 3 laps of fuel remain.
+  const effectiveBurnPerLap = CIRCUIT.baseFuelBurnPerLap * car.engine.fuelBurnRate;
+  const fuelLapsLeft = car.fuel / effectiveBurnPerLap;
   const raceLapsLeft = CIRCUIT.totalLaps - race.lap;
-  if (fuelLapsLeft < 4 && raceLapsLeft > 4) return true;
+  if (fuelLapsLeft < 3 && raceLapsLeft > 3) return true;
+
+  // Normal wear-triggered stop: cap at 3 planned stops per race
+  if (car.stopsMade >= 3) return false;
 
   // Normal trigger: tyre wear exceeds threshold.
-  // Add a small rng jitter per car so teams don't all pit on the same lap.
+  // Small rng jitter so teams don't all pit on the same lap.
   const wearThreshold = 0.60 + rng() * 0.10; // 0.60–0.70
   return car.tyreWear >= wearThreshold;
 }
@@ -295,16 +302,18 @@ function executePitStop(car, rng) {
   car.cumulativeTime += duration;
 
   // Compound choice:
-  //   First stop early in race (<= lap 40)  → medium (fresh pace for middle stint)
-  //   First stop late, or any second stop   → hard  (durability to the flag)
-  const newCompound = (car.stopsMade === 0 && race.lap <= 40) ? 'medium' : 'hard';
+  //   First two stops → medium (pace during the middle stints)
+  //   Final stop      → hard  (durability to the flag)
+  const newCompound = car.stopsMade < 2 ? 'medium' : 'hard';
 
-  // Refuel: calculate fuel needed to reach next planned stop or end of race.
-  // If this is the first stop, plan one more stop; otherwise go to the end.
-  const lapsLeft         = CIRCUIT.totalLaps - race.lap;
-  const stopsStillPlanned = car.stopsMade === 0 ? 1 : 0;
-  const lapsUntilNextStop = stopsStillPlanned > 0
-    ? Math.ceil(lapsLeft / (stopsStillPlanned + 1))
+  // Refuel: work out how many planned stops remain and load enough fuel for the
+  // next stint. Targets 3 total stops; after the 3rd just load to the finish.
+  // car.stopsMade is still the pre-increment value here.
+  const MAX_STOPS       = 3;
+  const lapsLeft        = CIRCUIT.totalLaps - race.lap;
+  const stopsRemaining  = Math.max(0, MAX_STOPS - 1 - car.stopsMade);
+  const lapsUntilNextStop = stopsRemaining > 0
+    ? Math.ceil(lapsLeft / (stopsRemaining + 1))
     : lapsLeft;
   const effectiveBurnPerLap = CIRCUIT.baseFuelBurnPerLap * car.engine.fuelBurnRate;
   const fuelTarget = Math.min(

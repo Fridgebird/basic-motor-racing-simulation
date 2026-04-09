@@ -82,6 +82,12 @@ Draws the Spectrum-style timing display onto Canvas:
 - Race log viewer / replay tool — filter by car, lap range, event type; inspect factor values and rolls to diagnose model behaviour
 - Practice session with lap time data
 - Qualifying session to set grid
+- **Per-team race strategy derived from practice data:**
+  - During practice each car runs laps and the AI observes its own empirical tyre wear rate (which naturally varies by driver aggression, tyre manufacturer, and compound)
+  - From observed wear rate each team calculates the lap at which wear will hit its trigger threshold, and therefore how many stops are needed
+  - This produces genuine strategy differentiation: a smooth Goodyear driver may emerge as a 2-stop car while an aggressive Pirelli driver plans 3 stops
+  - The pit threshold in the race is set per-car from the practice plan rather than being a shared reactive value
+  - Do not shortcut this with a pre-race calculation — the emergent quality of observing wear in practice is the point
 - Multiple circuits with different characteristics
 - Random circuit selection or full season series
 - Ambient temperature and weather effects

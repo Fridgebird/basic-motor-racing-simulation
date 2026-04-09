@@ -469,7 +469,8 @@ export const CIRCUIT = {
   trackAbrasiveness:  0.80,   // 0–1; high = harder on tyres (like a rough street circuit)
   fuelCapacity:       100,    // kg maximum fuel load
   baseFuelBurnPerLap: 3.50,   // kg/lap baseline (NA); turbos multiply via engine.fuelBurnRate
-  baseStopTime:       25,     // seconds for a stationary pit stop before crew quality scaling
+  baseTyreChangeTime: 7,      // seconds for tyre change at best crew (100); scales up with lower ratings
+  fuelRigRate:        0.52,   // seconds per kg of fuel added; same for all teams (hardware limit)
 
   sectors: [
     {

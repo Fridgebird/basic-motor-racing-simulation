@@ -98,7 +98,7 @@ export function tick(rng) {
     const compound        = COMPOUNDS[car.compound];
     const effectiveMaxGrip = Math.min(100, car.tyres.maxGrip + compound.gripModifier);
     const grip             = (effectiveMaxGrip / 100) * (1 - car.tyreWear); // 0–1
-    const tyreFactor       = 1.0 + (1 - grip) * 0.08;
+    const tyreFactor       = 1.0 + (1 - grip) * tyreConfig.penaltyCoeff;
     factors.tyre = +tyreFactor.toFixed(4);
 
     // ── 6. Reliability factor ───────────────────────────────────────────────
@@ -269,6 +269,11 @@ export function tick(rng) {
 
 // ─── Pit Stop AI ──────────────────────────────────────────────────────────────
 
+// Override wear threshold range for experiments. Set wearMin === wearMax for a
+// fixed threshold, or leave as default {0.60, 0.70} for normal random behaviour.
+export const pitConfig  = { wearMin: 0.60, wearMax: 0.70 };
+export const tyreConfig = { penaltyCoeff: 0.16 };
+
 // Returns true if this car should pit at the end of the current lap.
 function shouldPit(car, rng) {
   // Only evaluate at lap boundary
@@ -289,17 +294,16 @@ function shouldPit(car, rng) {
 
   // Normal trigger: tyre wear exceeds threshold.
   // Small rng jitter so teams don't all pit on the same lap.
-  const wearThreshold = 0.60 + rng() * 0.10; // 0.60–0.70
+  const wearThreshold = pitConfig.wearMin + rng() * (pitConfig.wearMax - pitConfig.wearMin);
   return car.tyreWear >= wearThreshold;
 }
 
 // Executes the pit stop: adds stop duration to cumulativeTime, refuels, fits new tyres.
 // Returns the pit event object for the race log.
 function executePitStop(car, rng) {
-  // Stop duration formula: baseStopTime × (1 + (1 - pitCrewRating/100) × 0.3)
-  // Best crew (100) = 25.0 s; worst crew (40) = 29.5 s
-  const duration = CIRCUIT.baseStopTime * (1 + (1 - car.team.pitCrewRating / 100) * 0.3);
-  car.cumulativeTime += duration;
+  // Tyre change and fuelling run in parallel; stop ends when the slower is done.
+  // Crew rating affects tyre change only — the fuel rig rate is fixed hardware.
+  const tyreChangeTime = CIRCUIT.baseTyreChangeTime * (1 + (1 - car.team.pitCrewRating / 100));
 
   // Compound choice:
   //   First two stops → medium (pace during the middle stints)
@@ -322,6 +326,11 @@ function executePitStop(car, rng) {
   );
   const fuelAdded = +(fuelTarget - car.fuel).toFixed(1);
 
+  // Fuelling runs in parallel with tyre change; stop ends when the slower is done.
+  const fuellingTime = fuelAdded * CIRCUIT.fuelRigRate;
+  const duration     = +Math.max(tyreChangeTime, fuellingTime).toFixed(1);
+  car.cumulativeTime += duration;
+
   car.fuel     = fuelTarget;
   car.compound = newCompound;
   car.tyreWear = 0;
@@ -329,9 +338,11 @@ function executePitStop(car, rng) {
   car.stopsMade++;
 
   return {
-    type:      'pit',
-    compound:  newCompound,
-    duration:  +duration.toFixed(1),
+    type:          'pit',
+    compound:      newCompound,
+    duration,
+    tyreChangeTime: +tyreChangeTime.toFixed(1),
+    fuellingTime:   +fuellingTime.toFixed(1),
     fuelAdded,
   };
 }

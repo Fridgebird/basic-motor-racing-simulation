@@ -72,8 +72,10 @@ Draws the Spectrum-style timing display onto Canvas:
 
 ## Backlog (do not build yet)
 - ~~Overtaking model with dirty air and proximity effects~~ ✓ Done
-- **Cap degraded mechanical failure severity** — currently a degraded failure can add up to 20% lap time penalty (up to ~15s/lap), making the car a rolling chicane with no hope of a result. Fix: cap the degraded severity multiplier at ~1.12 (roughly 1–2s/lap); anything that would roll higher than that should result in retirement instead. The 30% outright retirement probability already handles catastrophic failures — this tightens what "continuing with damage" can look like.
+- ~~Cap degraded mechanical failure severity~~ ✓ Done
 - **Sector rewind / replay in the renderer** — allow the viewer to step back a few sectors to review something that just happened. The race log already captures full state every sector tick, so this is a renderer/UX feature: store the last N rendered frames and allow backwards stepping. Independent of the simulation engine.
+- **Lap chart panel** — a line chart showing each driver's race position per lap. One line per driver, x-axis = lap number, y-axis = position (1 at top). Should fit alongside the timing sheet on desktop. Use Spectrum palette; consider colour-coding by team. Good for seeing the big picture of strategy plays and position changes across the race.
+- **Mobile display** — the canvas timing sheet is designed for desktop. Need a strategy for mobile: either a responsive layout that stacks panels vertically, a simplified mobile view showing only top 6 or so, or a portrait-optimised alternative renderer. Consider touch interactions (tap a driver to highlight their line on the lap chart, etc.).
 - Race log viewer / replay tool — filter by car, lap range, event type; inspect factor values and rolls to diagnose model behaviour
 - Practice session with lap time data
 - Qualifying session to set grid

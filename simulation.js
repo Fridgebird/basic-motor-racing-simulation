@@ -256,8 +256,10 @@ export function tick(rng) {
 
           } else {
             // 70% chance → degraded performance for remainder of race
-            // reliabilityFactor stacks if the car suffers multiple failures
-            const severity = 1.08 + rng() * 0.12; // 1.08–1.20
+            // Severity kept small so a damaged car remains a plausible finisher:
+            // 1.005–1.025 adds roughly 0.4–1.9 s/lap; anything worse retires instead.
+            // reliabilityFactor stacks if the car suffers multiple failures.
+            const severity = 1.005 + rng() * 0.02; // 1.005–1.025
             car.reliabilityFactor *= severity;
             const label = FAILURE_LABELS[Math.floor(rng() * FAILURE_LABELS.length)];
             car.degradedLabel = label;  // stored on car state for live display

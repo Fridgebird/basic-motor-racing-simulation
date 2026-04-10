@@ -36,6 +36,27 @@ const AGGRESSION_WEAR_SCALE = 0.4;
 // raising their crash and slow-sector thresholds.
 const WORN_TYRE_CONSISTENCY_PENALTY = 25;
 
+// ─── Dirty air / overtaking constants ────────────────────────────────────────
+// Dirty air applies when the gap to the car ahead is within DIRTY_AIR_RANGE.
+//
+// DIRTY_AIR_AERO_LOSS: fraction of aero effectiveness lost at gap = 0.
+//   At 0.40, a car right on another's tail loses 40% of their aero advantage.
+//   Effect scales linearly to zero at DIRTY_AIR_RANGE.
+//   On S1 (aeroWeight 0.05) this costs ~0.9 s/lap at maximum proximity.
+//   On S2 (aeroWeight 0.01) the effect is minimal — straights are largely unaffected.
+// DIRTY_AIR_WEAR_MULT: extra tyre wear fraction at gap = 0; scales linearly.
+//   At 0.20, a car at maximum proximity takes 20% more tyre wear per sector.
+const DIRTY_AIR_RANGE     = 1.00;  // seconds
+const DIRTY_AIR_AERO_LOSS = 0.40;
+const DIRTY_AIR_WEAR_MULT = 0.20;
+
+// Overtake attempt fires when gap < OVERTAKE_RANGE and the following car has a
+// pace advantage (fresher tyres / lighter fuel). Outcome is probabilistic.
+// FAILED_OVERTAKE_PENALTY: seconds added to following car on a failed attempt —
+//   represents backing out of the move and losing momentum.
+const OVERTAKE_RANGE          = 0.30;  // seconds
+const FAILED_OVERTAKE_PENALTY = 0.40;  // seconds
+
 // ─── Failure labels ────────────────────────────────────────────────────────────
 const FAILURE_LABELS = [
   'Engine', 'Gearbox', 'Turbo', 'Oil pressure',
@@ -58,6 +79,20 @@ export function tick(rng) {
   const sectorDef  = CIRCUIT.sectors[race.sector - 1];
   const isEndOfLap = race.sector === 3;
 
+  // ── Build dirty-air proximity map ──────────────────────────────────────────
+  // Snapshot cumulative times before any car is processed this sector.
+  // cars[] is already sorted by position from the previous updatePositions() call,
+  // so iterating forward gives us the nearest active car ahead for each car.
+  const gapAhead = new Map(); // car → gap (seconds) to nearest active car ahead
+  let lastActiveCar = null;
+  for (const car of cars) {
+    if (car.status === 'retired') continue;
+    if (lastActiveCar !== null) {
+      gapAhead.set(car, Math.max(0, car.cumulativeTime - lastActiveCar.cumulativeTime));
+    }
+    lastActiveCar = car;
+  }
+
   // ── Process each car ─────────────────────────────────────────────────────────
   for (const car of cars) {
     if (car.status === 'retired') continue;
@@ -76,9 +111,15 @@ export function tick(rng) {
     factors.engine = +engineFactor.toFixed(4);
 
     // ── 2. Chassis factor ───────────────────────────────────────────────────
-    // Formula: 1.0 + (1 - aero/100) × sectorAeroWeight
-    const chassisFactor = 1.0 + (1 - car.team.aero / 100) * sectorDef.aeroWeight;
-    factors.chassis = +chassisFactor.toFixed(4);
+    // Dirty air reduces effective aero when following closely.
+    // proximity = 1.0 at gap=0 (fully in dirty air), 0.0 at gap=DIRTY_AIR_RANGE.
+    // Effect is strongest in corner-heavy sectors (high aeroWeight) and minimal
+    // on the power straight (low aeroWeight) — falls out of the formula naturally.
+    const proximity    = Math.max(0, 1 - (gapAhead.get(car) ?? Infinity) / DIRTY_AIR_RANGE);
+    const effectiveAero = car.team.aero * (1 - proximity * DIRTY_AIR_AERO_LOSS);
+    const chassisFactor = 1.0 + (1 - effectiveAero / 100) * sectorDef.aeroWeight;
+    factors.chassis  = +chassisFactor.toFixed(4);
+    factors.dirtyAir = +proximity.toFixed(3); // 0 = clean air, 1 = maximum dirty air
 
     // ── 3. Setup factor ─────────────────────────────────────────────────────
     // Formula: 1.0 + (1 - setup/100) × 0.04
@@ -165,13 +206,16 @@ export function tick(rng) {
     car.currentSectorTimes.push(+sectorTime.toFixed(3));
 
     // ── Tyre wear accumulation ───────────────────────────────────────────────
-    // Formula: wear += baseWearRate × compoundMult × sectorWearWeight × aggressionMult × trackAbrasiveness
-    const aggressionMult = 1.0 + (car.driver.aggression / 100) * AGGRESSION_WEAR_SCALE;
+    // Formula: wear += baseWearRate × compoundMult × sectorWearWeight × aggressionMult × trackAbrasiveness × dirtyAirMult
+    // dirtyAirMult: following in turbulent air increases tyre stress.
+    const aggressionMult  = 1.0 + (car.driver.aggression / 100) * AGGRESSION_WEAR_SCALE;
+    const dirtyAirWearMult = 1.0 + proximity * DIRTY_AIR_WEAR_MULT;
     const wearDelta = car.tyres.wearRate
       * compound.wearMultiplier
       * sectorDef.wearWeight
       * aggressionMult
-      * CIRCUIT.trackAbrasiveness;
+      * CIRCUIT.trackAbrasiveness
+      * dirtyAirWearMult;
     car.tyreWear = Math.min(1, car.tyreWear + wearDelta);
 
     // ── Fuel burn ────────────────────────────────────────────────────────────
@@ -264,7 +308,79 @@ export function tick(rng) {
     });
   }
 
+  // ── Resolve overtake attempts ──────────────────────────────────────────────
+  // Sort active cars by updated cumulative time to find genuine proximity.
+  // Only the car immediately ahead is considered — one attempted pass per sector.
+  const activeSorted = cars
+    .filter(c => c.status !== 'retired')
+    .sort((a, b) => a.cumulativeTime - b.cumulativeTime);
+
+  for (let i = 1; i < activeSorted.length; i++) {
+    const ahead  = activeSorted[i - 1];
+    const behind = activeSorted[i];
+    const gap    = behind.cumulativeTime - ahead.cumulativeTime;
+
+    if (gap <= 0 || gap >= OVERTAKE_RANGE) continue;
+
+    const delta = paceDelta(behind, ahead);
+    if (delta <= 0) continue; // behind car has no pace advantage — no attempt
+
+    const prob = overtakeProbability(behind, ahead, sectorDef);
+    const roll = rng();
+
+    if (roll < prob) {
+      // ── Successful overtake ───────────────────────────────────────────────
+      // Place the overtaking car just ahead in cumulative time.
+      behind.cumulativeTime = ahead.cumulativeTime - 0.05;
+      raceLog.entries.push({
+        tick: race.tick, lap: race.lap, sector: race.sector,
+        car:    behind.driver.name,
+        events: [{ type: 'overtake', passed: ahead.driver.name, result: 'success',
+                   gap: +gap.toFixed(3), prob: +prob.toFixed(3), roll: +roll.toFixed(4) }],
+      });
+    } else {
+      // ── Failed attempt ────────────────────────────────────────────────────
+      // Penalty for backing out of the move — gap opens back up.
+      behind.cumulativeTime += FAILED_OVERTAKE_PENALTY;
+      raceLog.entries.push({
+        tick: race.tick, lap: race.lap, sector: race.sector,
+        car:    behind.driver.name,
+        events: [{ type: 'overtake', passed: ahead.driver.name, result: 'failed',
+                   gap: +gap.toFixed(3), prob: +prob.toFixed(3), roll: +roll.toFixed(4) }],
+      });
+    }
+  }
+
   updatePositions();
+}
+
+// ─── Overtaking helpers ───────────────────────────────────────────────────────
+
+// Returns the pace advantage of 'behind' over 'ahead' based on current tyre and
+// fuel state. Positive = behind car is faster right now.
+function paceDelta(behind, ahead) {
+  function tyrePlusFuel(car) {
+    const compound        = COMPOUNDS[car.compound];
+    const effectiveMaxGrip = Math.min(100, car.tyres.maxGrip + compound.gripModifier);
+    const grip             = (effectiveMaxGrip / 100) * (1 - car.tyreWear);
+    return (1.0 + (1 - grip) * tyreConfig.penaltyCoeff)   // tyreFactor
+         + (1.0 + (car.fuel / CIRCUIT.fuelCapacity) * 0.03); // fuelFactor
+  }
+  return tyrePlusFuel(ahead) - tyrePlusFuel(behind); // positive = behind is faster
+}
+
+// Returns the probability (0–1) of a successful overtake attempt.
+// Scaled by pace advantage, driver aggression, and sector type.
+function overtakeProbability(behind, ahead, sectorDef) {
+  const delta = paceDelta(behind, ahead);
+  let prob = 0.25 + delta * 3;
+  prob += (behind.driver.aggression - 50) / 100 * 0.20; // aggression ±0.10
+
+  // Sector modifier: power straight = much easier to pass; tight corners = very hard
+  if (sectorDef.id === 2) prob *= 1.50;
+  if (sectorDef.id === 1) prob *= 0.55;
+
+  return Math.min(0.80, Math.max(0, prob));
 }
 
 // ─── Pit Stop AI ──────────────────────────────────────────────────────────────

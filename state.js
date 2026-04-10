@@ -75,7 +75,7 @@ export function initRace(seed) {
   raceLog.entries = [];
   race.tick   = 0;
   race.lap    = 0;
-  race.sector = 0;
+  race.sector = 3;  // so first tick() produces lap=1, sector=1 (not a phantom lap 0)
 
   const rng = createRng(seed);
 

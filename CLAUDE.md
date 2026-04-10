@@ -71,14 +71,9 @@ Draws the Spectrum-style timing display onto Canvas:
 ---
 
 ## Backlog (do not build yet)
-- Overtaking model with dirty air and proximity effects:
-  - Proximity defined as gap < 1.0s in cumulative race time between two consecutive cars
-  - Checked at end of each sector tick
-  - Dirty air: car behind loses aero grip % — effect strongest in technical sectors (corners), weakest on straights
-  - Elevated tyre wear per sector (on top of normal per-sector degradation) when in proximity
-  - Overtake attempt triggered when gap < 0.3s AND following car has a performance advantage (fresher tyres, lower fuel load, better sector rating)
-  - Overtake success is probabilistic — avoids cars sitting unrealistically close forever
-  - Force an overtake attempt if gap stays below threshold for multiple consecutive sectors
+- ~~Overtaking model with dirty air and proximity effects~~ ✓ Done
+- **Cap degraded mechanical failure severity** — currently a degraded failure can add up to 20% lap time penalty (up to ~15s/lap), making the car a rolling chicane with no hope of a result. Fix: cap the degraded severity multiplier at ~1.12 (roughly 1–2s/lap); anything that would roll higher than that should result in retirement instead. The 30% outright retirement probability already handles catastrophic failures — this tightens what "continuing with damage" can look like.
+- **Sector rewind / replay in the renderer** — allow the viewer to step back a few sectors to review something that just happened. The race log already captures full state every sector tick, so this is a renderer/UX feature: store the last N rendered frames and allow backwards stepping. Independent of the simulation engine.
 - Race log viewer / replay tool — filter by car, lap range, event type; inspect factor values and rolls to diagnose model behaviour
 - Practice session with lap time data
 - Qualifying session to set grid

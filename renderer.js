@@ -22,6 +22,20 @@ export class Renderer {
     this._stripScroll    = document.getElementById('strip-scroll');
     this._zoomLabel      = document.getElementById('strip-zoom-label');
 
+    // Commentary focus filter — 'all', 'top10', 'top5'
+    this._commentaryFilter = 'all';
+    const filterLevels = ['all', 'top10', 'top5'];
+    const filterLabels = { all: 'ALL', top10: 'TOP 10', top5: 'TOP 5' };
+    const filterBtn = document.getElementById('commentary-filter-btn');
+    if (filterBtn) {
+      filterBtn.addEventListener('click', () => {
+        const idx = filterLevels.indexOf(this._commentaryFilter);
+        this._commentaryFilter = filterLevels[(idx + 1) % filterLevels.length];
+        filterBtn.textContent = filterLabels[this._commentaryFilter];
+        this._rebuildCommentary();
+      });
+    }
+
     // Zoom levels — seconds of race gap visible in one strip-height
     this._zoomLevels = [120, 60, 30, 15, 5];
     this._zoomIdx    = 0;   // start fully zoomed out (120s)
@@ -73,6 +87,9 @@ export class Renderer {
   reset() {
     this.prevPositions.clear();
     this._lastCommentaryTick = -1;
+    this._commentaryFilter = 'all';
+    const filterBtn = document.getElementById('commentary-filter-btn');
+    if (filterBtn) filterBtn.textContent = 'ALL';
     this._zoomIdx = 0;
     if (this._zoomLabel) this._zoomLabel.textContent = `${this._zoomLevels[0]}s`;
     if (this._stripCanvas) {
@@ -289,6 +306,7 @@ export class Renderer {
 
     // Iterate forward (chronological) and prepend each entry — newest ends at top
     for (const entry of newEntries) {
+      if (!this._passesFilter(entry)) continue;
       for (const ev of entry.events) {
         const el = this._formatEvent(entry, ev);
         if (el) this._commentaryFeed.insertBefore(el, this._commentaryFeed.firstChild);
@@ -301,6 +319,40 @@ export class Renderer {
     }
 
     this._lastCommentaryTick = newEntries[newEntries.length - 1].tick;
+  }
+
+  // ── _rebuildCommentary ─────────────────────────────────────────────────────
+  // Rebuilds the feed from scratch using the current filter. Called when the
+  // user changes the filter level mid-race.
+  _rebuildCommentary() {
+    if (!this._commentaryFeed) return;
+    this._commentaryFeed.innerHTML = '';
+
+    const allEntries = raceLog.entries.filter(
+      e => e.tick > 0 && e.events && e.events.length > 0,
+    );
+
+    // Iterate chronologically, prepend each — newest ends at top
+    for (const entry of allEntries) {
+      if (!this._passesFilter(entry)) continue;
+      for (const ev of entry.events) {
+        const el = this._formatEvent(entry, ev);
+        if (el) this._commentaryFeed.insertBefore(el, this._commentaryFeed.firstChild);
+      }
+    }
+
+    while (this._commentaryFeed.children.length > 150) {
+      this._commentaryFeed.removeChild(this._commentaryFeed.lastChild);
+    }
+  }
+
+  // ── _passesFilter ──────────────────────────────────────────────────────────
+  // Returns true if the entry's car is within the current filter threshold.
+  _passesFilter(entry) {
+    if (this._commentaryFilter === 'all') return true;
+    const limit = this._commentaryFilter === 'top5' ? 5 : 10;
+    const car = cars.find(c => c.driver.name === entry.car);
+    return car != null && car.position <= limit;
   }
 
   // ── _formatEvent ───────────────────────────────────────────────────────────

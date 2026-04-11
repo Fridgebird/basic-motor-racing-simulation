@@ -222,6 +222,9 @@
     }
 
     #commentary-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       color: #00ffff;
       font-size: 11px;
       letter-spacing: 2px;
@@ -231,6 +234,17 @@
       margin-bottom: 6px;
       flex-shrink: 0;
     }
+
+    #commentary-filter-btn {
+      font-size: 9px;
+      padding: 2px 6px;
+      border: 1px solid #555;
+      color: #aaa;
+      letter-spacing: 0;
+      height: auto;
+      text-transform: uppercase;
+    }
+    #commentary-filter-btn:hover { background: #333; color: #fff; }
 
     #commentary-feed {
       overflow-y: auto;
@@ -426,7 +440,10 @@
 
     <!-- Commentary feed -->
     <div id="commentary-panel">
-      <div id="commentary-title">RACE COMMENTARY</div>
+      <div id="commentary-title">
+        <span>RACE COMMENTARY</span>
+        <button id="commentary-filter-btn">ALL</button>
+      </div>
       <div id="commentary-feed"></div>
     </div>
 

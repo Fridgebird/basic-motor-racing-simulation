@@ -304,20 +304,24 @@ export class Renderer {
 
   // ── _updateSpacingStrip ────────────────────────────────────────────────────
   // Draws one dot + label per active car at a y-position proportional to their
-  // real gap from the leader. No minimum spacing — overlaps are intentional and
-  // signal battles. Zoom controls scale the canvas; a scrollbar handles overflow.
+  // real gap from the leader. Min spacing prevents overlap; zoom in to separate
+  // battles. Canvas is always taller than the scroll container so a scrollbar
+  // appears and the full field is reachable.
   _updateSpacingStrip() {
     const canvas = this._stripCanvas;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const W   = canvas.width;   // 64px
 
-    // GAP_CAP: cars further behind than this are pinned at the bottom
-    const GAP_CAP      = 120;
+    // GAP_CAP covers the full realistic field spread (~7 laps = 630s in a
+    // 90s/lap race). MAX_CANVAS caps height so the browser stays happy.
+    const GAP_CAP      = 630;
+    const MAX_CANVAS   = 5000;
     const visibleSecs  = this._zoomLevels[this._zoomIdx];
-    const BASE_H       = 560;   // matches max-height of the scroll container
+    const BASE_H       = 560;   // matches scroll container max-height
     const PPS          = BASE_H / visibleSecs;          // pixels per second
-    const H            = Math.round(GAP_CAP * PPS);     // total canvas height
+    // Canvas is always at least BASE_H + 1 so a scrollbar always appears
+    const H            = Math.min(MAX_CANVAS, Math.max(BASE_H + 1, Math.round(GAP_CAP * PPS)));
 
     if (canvas.height !== H) canvas.height = H;
     ctx.clearRect(0, 0, W, H);
@@ -341,7 +345,7 @@ export class Renderer {
     let lastY = -Infinity;
 
     for (const car of active) {
-      const rawY = TOP_PAD + Math.min(car.gap, GAP_CAP) * PPS;
+      const rawY = Math.min(TOP_PAD + car.gap * PPS, H - 8);
       const y    = Math.max(rawY, lastY + MIN_STEP);
       lastY = y;
 

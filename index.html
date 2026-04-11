@@ -135,6 +135,20 @@
 
     tr.first-retired td { border-top: 1px solid #333; padding-top: 5px; }
 
+    /* Position swap animation — FLIP technique */
+    #timing-body tr { will-change: transform; }
+
+    @keyframes pass-flash {
+      0%   { background-color: rgba(0, 255, 0, 0.30); }
+      100% { background-color: transparent; }
+    }
+    @keyframes drop-flash {
+      0%   { background-color: rgba(255, 60, 60, 0.20); }
+      100% { background-color: transparent; }
+    }
+    tr.anim-pass { animation: pass-flash 600ms ease-out forwards; }
+    tr.anim-drop { animation: drop-flash 600ms ease-out forwards; }
+
     /* Wear / fuel colour coding */
     td.warn-red    { color: #ff4444; }
     td.warn-yellow { color: #ffff00; }
@@ -507,6 +521,9 @@
     // ── Game loop ──────────────────────────────────────────────────────────
     function advanceSector() {
       if (paused || isRaceOver()) return;
+
+      const delay = Math.round(parseInt(speedSel.value, 10) / 3);
+      renderer.animationsEnabled = delay >= 1000;  // off at Very Fast and Instant
 
       tick(rng);
       renderer.render();

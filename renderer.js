@@ -38,6 +38,9 @@ export class Renderer {
     // Commentary: only process raceLog entries newer than this tick number
     this._lastCommentaryTick = -1;
 
+    // Set to false at Very Fast / Instant speed — game loop controls this
+    this.animationsEnabled = true;
+
     // Gap column mode: 'gap' = gap to leader, 'interval' = gap to car ahead
     this._gapMode = 'gap';
     this._gapHeader = document.getElementById('gap-toggle-header');
@@ -105,12 +108,34 @@ export class Renderer {
   // ── _updateTimingTable ─────────────────────────────────────────────────────
   _updateTimingTable() {
     if (!this._tbody) return;
+
+    // ── FLIP step 1: snapshot current row positions ────────────────────────
+    // Also clear any in-progress transform so we read resting positions, not
+    // mid-animation positions from a previous tick.
+    const snapshots = new Map();
+    if (this.animationsEnabled) {
+      for (const row of this._tbody.rows) {
+        row.style.transition = 'none';
+        row.style.transform  = '';
+      }
+      // Force layout flush so cleared transforms are applied before reading
+      if (this._tbody.rows.length) this._tbody.rows[0].getBoundingClientRect();
+
+      for (const row of this._tbody.rows) {
+        if (row.dataset.driver) {
+          snapshots.set(row.dataset.driver, row.getBoundingClientRect().top);
+        }
+      }
+    }
+
     this._tbody.innerHTML = '';
 
     let firstRetired = true;
 
     for (const car of cars) {
       const tr      = document.createElement('tr');
+      tr.dataset.driver = car.driver.name;   // needed for FLIP lookup
+
       const prev    = this.prevPositions.get(car.driver.name);
       const retired = car.status === 'retired';
       const pitted  = car.status === 'pitted';
@@ -208,6 +233,47 @@ export class Renderer {
       tr.appendChild(healthTd);
 
       this._tbody.appendChild(tr);
+    }
+
+    // ── FLIP steps 2–4: invert → flush → play ─────────────────────────────
+    if (this.animationsEnabled && snapshots.size > 0) {
+      // Step 2 — force layout so new row positions are computed
+      this._tbody.getBoundingClientRect();
+
+      // Step 3 — invert: snap each moved row back to its old visual position
+      const movedRows = [];
+      for (const row of this._tbody.rows) {
+        const name   = row.dataset.driver;
+        const oldTop = snapshots.get(name);
+        if (oldTop === undefined) continue;
+        const newTop = row.getBoundingClientRect().top;
+        const delta  = oldTop - newTop;
+        if (Math.abs(delta) < 1) continue;   // didn't move — skip
+
+        row.style.transition = 'none';
+        row.style.transform  = `translateY(${delta}px)`;
+
+        // Flash: green for rows moving up (gained), red for rows dropping
+        if (delta > 0) row.classList.add('anim-pass');
+        else           row.classList.add('anim-drop');
+
+        movedRows.push(row);
+      }
+
+      if (movedRows.length) {
+        // Step 4 — force flush to register the inverted positions, then play
+        this._tbody.getBoundingClientRect();
+        for (const row of movedRows) {
+          row.style.transition = 'transform 350ms ease-out';
+          row.style.transform  = '';
+        }
+        // Clean up flash classes after the animation completes
+        setTimeout(() => {
+          for (const row of movedRows) {
+            row.classList.remove('anim-pass', 'anim-drop');
+          }
+        }, 650);
+      }
     }
   }
 

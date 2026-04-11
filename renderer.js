@@ -77,8 +77,11 @@ export class Renderer {
         .clearRect(0, 0, this._stripCanvas.width, this._stripCanvas.height);
     }
     this.render();
-    // Clear after render — render() would re-populate from the old raceLog otherwise
+    // Clear after render — render() would re-populate from the old raceLog otherwise.
+    // Also reset the tick cursor AFTER render() has consumed old entries, so the
+    // new race's ticks (starting from 1) are not silently skipped.
     if (this._commentaryFeed) this._commentaryFeed.innerHTML = '';
+    this._lastCommentaryTick = -1;
   }
 
   // ── _updateHeader ──────────────────────────────────────────────────────────

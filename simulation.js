@@ -82,8 +82,7 @@ export function tick(rng) {
   // ── Snapshot positions before this tick for silent-pass detection ─────────
   // Keyed by driver name → position. Used after updatePositions() to find
   // cars that gained a place without a logged overtake event.
-  const preTickPositions  = new Map(cars.map(c => [c.driver.name, c.position]));
-  const preTickByPosition = new Map(cars.map(c => [c.position, c.driver.name]));
+  const preTickPositions = new Map(cars.map(c => [c.driver.name, c.position]));
 
   // ── Build dirty-air proximity map ──────────────────────────────────────────
   // Snapshot cumulative times before any car is processed this sector.
@@ -368,18 +367,8 @@ export function tick(rng) {
   // gainer actually displaced, then filter out cases where the passed car is
   // pitting (that's a strategy move, not a racing pass worth commentary).
   {
-    // Set of cars that already have an overtake-success event this tick
-    const overtakerNames = new Set(
-      raceLog.entries
-        .filter(e => e.tick === race.tick)
-        .flatMap(e => e.events)
-        .filter(ev => ev.type === 'overtake' && ev.result === 'success')
-        .map((_, __, arr) => {
-          // The car name is on the entry, not the event — rebuild from entries
-          return null;
-        })
-    );
-    // Rebuild properly: collect driver names that have a success overtake this tick
+    // Set of cars that already have a formal overtake-success event this tick —
+    // silent pass detection skips these to avoid double commentary.
     const overtakeEntries = raceLog.entries.filter(e => e.tick === race.tick &&
       e.events.some(ev => ev.type === 'overtake' && ev.result === 'success'));
     const overtakerSet = new Set(overtakeEntries.map(e => e.car));
@@ -398,18 +387,32 @@ export function tick(rng) {
       // Skip if already covered by a formal overtake event
       if (overtakerSet.has(car.driver.name)) continue;
 
-      // Find who was displaced — the driver previously at this position
-      const passedName = preTickByPosition.get(newPos);
-      if (!passedName || passedName === car.driver.name) continue;
+      // Find the car this driver actually crossed: was ahead before (smaller position)
+      // and is now behind (larger position). Report the one that was closest ahead
+      // (highest pre-tick position number). Using preTickByPosition.get(newPos) was
+      // wrong when two cars both pass the same car in the same tick — it would blame
+      // the wrong victim (e.g. "C passes B" when both B and C passed A).
+      let passedCar    = null;
+      let passedOldPos = -1;
+      for (let j = 0; j < newOrder.length; j++) {
+        const other = newOrder[j];
+        if (other === car) continue;
+        const otherOldPos = preTickPositions.get(other.driver.name);
+        if (otherOldPos === undefined) continue;
+        const otherNewPos = j + 1;
+        // Was ahead before (lower position) and is now behind (higher position)
+        if (otherOldPos < oldPos && otherNewPos > newPos && otherOldPos > passedOldPos) {
+          passedOldPos = otherOldPos;
+          passedCar    = other;
+        }
+      }
 
-      // Only log if the passed car is still actively racing (not pitting)
-      const passedCar = cars.find(c => c.driver.name === passedName);
       if (!passedCar || passedCar.status !== 'racing') continue;
 
       raceLog.entries.push({
         tick: race.tick, lap: race.lap, sector: race.sector,
         car:  car.driver.name,
-        events: [{ type: 'silent_pass', passed: passedName, position: newPos }],
+        events: [{ type: 'silent_pass', passed: passedCar.driver.name, position: newPos }],
       });
     }
   }

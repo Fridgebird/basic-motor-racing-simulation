@@ -67,6 +67,90 @@ export class Renderer {
         this._updateTimingTable();
       });
     }
+
+    // Snapshot history for sector stepping (◀ / ▶ in pause mode)
+    this._snapshots = [];
+    this._viewIdx   = -1;   // -1 = live; >= 0 = replay index
+
+    // Set true only during a forward step render so FLIP and row colouring fire
+    this._animateForwardStep = false;
+  }
+
+  // ── Display source getters ─────────────────────────────────────────────────
+  // All render methods read from these so replay mode is transparent.
+  get _displayCars() { return this._viewIdx >= 0 ? this._snapshots[this._viewIdx].cars : cars; }
+  get _displayRace() { return this._viewIdx >= 0 ? this._snapshots[this._viewIdx].race : race; }
+  get inReplay()     { return this._viewIdx >= 0; }
+  get canStepBack()  { return this._viewIdx >= 0 ? this._viewIdx > 0 : this._snapshots.length >= 2; }
+
+  // ── Snapshot API ───────────────────────────────────────────────────────────
+  // Called by the game loop after each tick() to save state for stepping.
+  pushSnapshot() {
+    this._snapshots.push({
+      race: { lap: race.lap, sector: race.sector, tick: race.tick },
+      cars: cars.map(c => ({
+        // static refs — driver/team never change during a race
+        driver:          c.driver,
+        team:            c.team,
+        // mutable simulation state — copy by value
+        position:        c.position,
+        gap:             c.gap,
+        cumulativeTime:  c.cumulativeTime,
+        status:          c.status,
+        lastLapTime:     c.lastLapTime,
+        compound:        c.compound,
+        stintLap:        c.stintLap,
+        tyreWear:        c.tyreWear,
+        fuel:            c.fuel,
+        stopsMade:       c.stopsMade,
+        degradedLabel:   c.degradedLabel,
+        retiredReason:   c.retiredReason,
+        retiredLap:      c.retiredLap,
+      })),
+    });
+  }
+
+  // Step one sector back. Returns false if already at the beginning.
+  stepBack() {
+    const target = this._viewIdx >= 0 ? this._viewIdx - 1 : this._snapshots.length - 2;
+    if (target < 0) return false;
+    this._viewIdx = target;
+    this.render();
+    return true;
+  }
+
+  // Step one sector forward. Exits replay when reaching the latest snapshot.
+  stepForward() {
+    if (this._viewIdx < 0) return false;
+    if (this._viewIdx >= this._snapshots.length - 1) {
+      this.exitReplay();
+      return true;
+    }
+
+    // Load the current snapshot's positions into prevPositions so the FLIP
+    // animation has a valid "before" to compare against.
+    for (const car of this._snapshots[this._viewIdx].cars) {
+      this.prevPositions.set(car.driver.name, car.position);
+    }
+
+    this._viewIdx++;
+    this._animateForwardStep = true;
+    this.render();
+    this._animateForwardStep = false;
+    return true;
+  }
+
+  // Return to live view.
+  exitReplay() {
+    this._viewIdx = -1;
+    this.prevPositions.clear();   // avoid spurious flash on first live render
+    this.render();
+  }
+
+  // Wipe all snapshots — called on race reset.
+  clearSnapshots() {
+    this._snapshots = [];
+    this._viewIdx   = -1;
   }
 
   // ── render ────────────────────────────────────────────────────────────────
@@ -74,17 +158,30 @@ export class Renderer {
     this._updateHeader();
     this._updateTimingTable();
     this._updateSpacingStrip();
-    this._updateCommentary();
+
+    // Commentary: in replay show all entries up to this snapshot's tick;
+    // in live mode run the normal incremental update.
+    if (this.inReplay) {
+      this._rebuildCommentaryUpTo(this._snapshots[this._viewIdx].race.tick);
+    } else {
+      this._updateCommentary();
+    }
+
     this._updateFooter();
 
-    // Snapshot positions for next render's gain/loss detection
-    for (const car of cars) {
-      this.prevPositions.set(car.driver.name, car.position);
+    // Update prevPositions in live mode, and also after a forward step so the
+    // next step has correct "before" positions to compare against.
+    // Skip in replay mode (stepBack / no-anim renders) to avoid stale state.
+    if (!this.inReplay || this._animateForwardStep) {
+      for (const car of this._displayCars) {
+        this.prevPositions.set(car.driver.name, car.position);
+      }
     }
   }
 
   // ── reset ─────────────────────────────────────────────────────────────────
   reset() {
+    this.clearSnapshots();
     this.prevPositions.clear();
     this._lastCommentaryTick = -1;
     this._commentaryFilter = 'all';
@@ -107,12 +204,18 @@ export class Renderer {
   // ── _updateHeader ──────────────────────────────────────────────────────────
   _updateHeader() {
     if (!this._statusEl) return;
-    const lap     = race.lap    || 0;
-    const sector  = race.sector || 0;
-    const running = cars.filter(c => c.status !== 'retired').length;
+    const displayRace = this._displayRace;
+    const displayCars = this._displayCars;
+    const lap     = displayRace.lap    || 0;
+    const sector  = displayRace.sector || 0;
+    const running = displayCars.filter(c => c.status !== 'retired').length;
 
     let status;
-    if (cars.length === 0 || lap === 0) {
+    if (this.inReplay) {
+      const total = this._snapshots.length;
+      const idx   = this._viewIdx + 1;
+      status = `◀ REPLAY  L${String(lap).padStart(2)} S${sector}  (${idx}/${total}) ▶`;
+    } else if (displayCars.length === 0 || lap === 0) {
       status = 'PRE-RACE';
     } else if (lap >= CIRCUIT.totalLaps && sector >= 3) {
       status = `FINISHED — ${running} CLASSIFIED`;
@@ -129,8 +232,11 @@ export class Renderer {
     // ── FLIP step 1: snapshot current row positions ────────────────────────
     // Also clear any in-progress transform so we read resting positions, not
     // mid-animation positions from a previous tick.
+    // Skip FLIP in replay mode, except on an explicit forward step where we want
+    // to show the row-swap animation. Always animate forward steps regardless of
+    // the speed setting (user is paused and stepping deliberately).
     const snapshots = new Map();
-    if (this.animationsEnabled) {
+    if ((this.animationsEnabled || this._animateForwardStep) && (!this.inReplay || this._animateForwardStep)) {
       for (const row of this._tbody.rows) {
         row.style.transition = 'none';
         row.style.transform  = '';
@@ -149,11 +255,15 @@ export class Renderer {
 
     let firstRetired = true;
 
-    for (const car of cars) {
+    for (const car of this._displayCars) {
       const tr      = document.createElement('tr');
       tr.dataset.driver = car.driver.name;   // needed for FLIP lookup
 
-      const prev    = this.prevPositions.get(car.driver.name);
+      // Skip gain/loss colouring in replay mode, except on a forward step where
+      // prevPositions has been loaded with the previous snapshot's positions.
+      const prev    = (this.inReplay && !this._animateForwardStep)
+        ? undefined
+        : this.prevPositions.get(car.driver.name);
       const retired = car.status === 'retired';
       const pitted  = car.status === 'pitted';
 
@@ -198,8 +308,8 @@ export class Renderer {
         gapStr = formatGap(car.gap);
       } else {
         // Interval: gap to the car immediately ahead in the sorted array
-        const idx  = cars.indexOf(car);
-        const prev2 = idx > 0 ? cars[idx - 1] : null;
+        const idx  = this._displayCars.indexOf(car);
+        const prev2 = idx > 0 ? this._displayCars[idx - 1] : null;
         const interval = prev2 && prev2.gap != null && car.gap != null
           ? car.gap - prev2.gap
           : null;
@@ -346,12 +456,32 @@ export class Renderer {
     }
   }
 
+  // ── _rebuildCommentaryUpTo ─────────────────────────────────────────────────
+  // Replay-mode version: shows only entries up to (and including) the given tick.
+  _rebuildCommentaryUpTo(tick) {
+    if (!this._commentaryFeed) return;
+    this._commentaryFeed.innerHTML = '';
+    const entries = raceLog.entries.filter(
+      e => e.tick > 0 && e.tick <= tick && e.events && e.events.length > 0,
+    );
+    for (const entry of entries) {
+      if (!this._passesFilter(entry)) continue;
+      for (const ev of entry.events) {
+        const el = this._formatEvent(entry, ev);
+        if (el) this._commentaryFeed.insertBefore(el, this._commentaryFeed.firstChild);
+      }
+    }
+    while (this._commentaryFeed.children.length > 150) {
+      this._commentaryFeed.removeChild(this._commentaryFeed.lastChild);
+    }
+  }
+
   // ── _passesFilter ──────────────────────────────────────────────────────────
   // Returns true if the entry's car is within the current filter threshold.
   _passesFilter(entry) {
     if (this._commentaryFilter === 'all') return true;
     const limit = this._commentaryFilter === 'top5' ? 5 : 10;
-    const car = cars.find(c => c.driver.name === entry.car);
+    const car = this._displayCars.find(c => c.driver.name === entry.car);
     return car != null && car.position <= limit;
   }
 
@@ -456,7 +586,7 @@ export class Renderer {
     ctx.fillStyle = '#1a1a1a';
     ctx.fillRect(0, 0, 1, H);
 
-    const active = cars.filter(c => c.status !== 'retired' && c.gap != null);
+    const active = this._displayCars.filter(c => c.status !== 'retired' && c.gap != null);
     if (active.length === 0) return;
 
     ctx.font = '10px "Courier New", monospace';

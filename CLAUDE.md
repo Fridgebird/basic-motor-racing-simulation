@@ -73,15 +73,16 @@ Draws the Spectrum-style timing display onto Canvas:
 ## Backlog (do not build yet)
 - ~~Overtaking model with dirty air and proximity effects~~ ✓ Done
 - ~~Cap degraded mechanical failure severity~~ ✓ Done
-- **Sector rewind / replay in the renderer** — allow the viewer to step back a few sectors to review something that just happened. The race log already captures full state every sector tick, so this is a renderer/UX feature: store the last N rendered frames and allow backwards stepping. Independent of the simulation engine.
+- ~~**Sector rewind / replay in the renderer**~~ ✓ Done — ◀/▶ buttons enabled in pause mode; each sector tick is snapshotted after tick(); stepping back/forward updates timing sheet, spacing strip, and commentary. Forward step plays the FLIP row-swap animation. Stepping back renders neutrally (no misleading colours).
 - ~~**Gap vs Interval toggle**~~ ✓ Done
 - ~~**Visual car spacing strip**~~ ✓ Done — narrow canvas panel between timing sheet and commentary; dots labelled "12 SEN" style; zoom (+/−) and scroll; min spacing prevents overlap, zoom in to separate battles.
-- **Position swap animation** — when an overtake is logged, briefly animate the two affected rows on the timing sheet (e.g. flash or slide) and the two dots on the spacing strip swapping positions. The Spectrum aesthetic can be relaxed here in favour of readability and drama. Complexity unknown — investigate CSS transition approach for rows vs a canvas-drawn animation for the strip dots.
+- ~~**Position swap animation**~~ ✓ Done — FLIP technique animates rows on the timing sheet; strip dot animation deferred.
 - ~~**Event commentary pane**~~ ✓ Done
 - ~~**Commentary focus filter**~~ ✓ Done — ALL / TOP 10 / TOP 5 button in commentary header; rebuilds feed on change.
 - ~~**Commentary on silent passes**~~ ✓ Done — detected in tick(), logged as silent_pass events, displayed with pace-based verbs ("powers past", "glides past" etc.). Wheel-to-wheel overtake verbs now circuit-aware (derived from sector powerWeight vs aeroWeight).
 - **Lap chart panel** — a line chart showing each driver's race position per lap. One line per driver, x-axis = lap number, y-axis = position (1 at top). Should fit alongside the timing sheet on desktop. Use Spectrum palette; consider colour-coding by team. Good for seeing the big picture of strategy plays and position changes across the race.
 - **Mobile display** — the canvas timing sheet is designed for desktop. Need a strategy for mobile: either a responsive layout that stacks panels vertically, a simplified mobile view showing only top 6 or so, or a portrait-optimised alternative renderer. Consider touch interactions (tap a driver to highlight their line on the lap chart, etc.).
+- **Simulation sanity checking** — run parameter sweep tests to verify lap time deltas feel realistic and strategically meaningful: tyre wear progression (low vs high wear), compound comparison at equal wear, fuel load effect (full vs empty), tyre manufacturer differences, reliability failure rates over a full race distance. The game is a fictional world, not a 1988 replica, so the target is: outcomes are somewhat predictable (a good strategy should usually help), somewhat surprising (variance keeps it interesting), and the player should be able to make a meaningful difference. `tyreConfig.penaltyCoeff` is currently 0.16 (double the original spec of 0.08); at 0.16 the difference between 10% and 60% worn hard tyres is ~5–6s/lap which may be too large — investigate as part of this work.
 - Race log viewer / replay tool — filter by car, lap range, event type; inspect factor values and rolls to diagnose model behaviour
 - Practice session with lap time data
 - Qualifying session to set grid

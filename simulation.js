@@ -338,6 +338,7 @@ export function tick(rng) {
         tick: race.tick, lap: race.lap, sector: race.sector,
         car:    behind.driver.name,
         events: [{ type: 'overtake', passed: ahead.driver.name, result: 'success',
+                   position: ahead.position,
                    gap: +gap.toFixed(3), prob: +prob.toFixed(3), roll: +roll.toFixed(4) }],
       });
     } else {

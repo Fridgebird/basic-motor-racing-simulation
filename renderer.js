@@ -1,308 +1,383 @@
-// renderer.js — Sinclair Spectrum-style canvas timing display
+// renderer.js — HTML-based timing sheet and commentary pane
+//
+// Replaces the canvas renderer with responsive DOM updates.
+// Reads directly from state.js on each render() call.
 //
 // Usage:
-//   const renderer = new Renderer(document.getElementById('canvas'));
-//   renderer.render();   // call after each tick or lap to refresh the display
-//
-// Reads directly from the live state exported by state.js.
-// Has no knowledge of the simulation — pure display logic only.
+//   const r = new Renderer();
+//   r.render();   // call after each tick
+//   r.reset();    // call on race reset
 
 import { cars, race, raceLog } from './state.js';
 import { CIRCUIT } from './data.js';
 
-// ─── Sinclair Spectrum colour palette ────────────────────────────────────────
-// Authentic ZX Spectrum colours only. No gradients, no intermediate shades.
-const C = {
-  black:   '#000000',
-  white:   '#FFFFFF',
-  cyan:    '#00FFFF',
-  yellow:  '#FFFF00',
-  red:     '#FF0000',
-  green:   '#00FF00',
-  magenta: '#FF00FF',
-  blue:    '#0000FF',
-  // Dim variants for less prominent text (using Spectrum's "normal" brightness)
-  dimCyan:  '#00D7D7',
-  dimWhite: '#AAAAAA',
-};
-
-// ─── Layout constants ─────────────────────────────────────────────────────────
-const FONT      = '14px "Courier New", Courier, monospace';
-const FONT_BOLD = 'bold 14px "Courier New", Courier, monospace';
-const ROW_H     = 20;       // px per car row
-
-// Vertical regions
-const TITLE_Y    = 20;      // race title baseline
-const LAP_Y      = 40;      // lap / sector info baseline
-const COL_HDR_Y  = 64;      // column header baseline
-const SEP_Y      = COL_HDR_Y + 6;   // separator line y
-const ROWS_Y     = SEP_Y + 8;       // first car row top
-
-// Canvas dimensions — exported so index.html can size the element correctly
-export const CANVAS_W = 780;
-export const CANVAS_H = ROWS_Y + 24 * ROW_H + 32;  // 32 px footer
-
-// ─── Column definitions ───────────────────────────────────────────────────────
-// x: left edge in px. Columns must fit within CANVAS_W.
-const COLS = [
-  { key: 'pos',     label: 'POS',      x:   8 },
-  { key: 'driver',  label: 'DRIVER',   x:  44 },
-  { key: 'team',    label: 'TEAM',     x: 158 },
-  { key: 'lastLap', label: 'LAST LAP', x: 248 },
-  { key: 'gap',     label: 'GAP',      x: 322 },
-  { key: 'tyre',    label: 'TYRE',     x: 400 },
-  { key: 'wear',    label: 'WEAR',     x: 462 },
-  { key: 'fuel',    label: 'FUEL',     x: 510 },
-  { key: 'stops',   label: 'STP',      x: 556 },
-  { key: 'status',  label: 'STATUS',   x: 582 },
-  { key: 'health',  label: 'HEALTH',   x: 616 },
-];
-
-// ─── Renderer class ───────────────────────────────────────────────────────────
 export class Renderer {
 
-  constructor(canvas) {
-    this.canvas = canvas;
-    this.ctx    = canvas.getContext('2d');
-    this.ctx.imageSmoothingEnabled = false;  // pixel-perfect, no anti-aliasing
+  constructor() {
+    this._tbody          = document.getElementById('timing-body');
+    this._statusEl       = document.getElementById('timing-status');
+    this._commentaryFeed = document.getElementById('commentary-feed');
+    this._seedDisplay    = document.getElementById('seed-display');
+    this._stripCanvas    = document.getElementById('spacing-strip');
+    this._stripScroll    = document.getElementById('strip-scroll');
+    this._zoomLabel      = document.getElementById('strip-zoom-label');
 
-    // Previous positions keyed by driver name; used to detect changes each render
+    // Zoom levels — seconds of race gap visible in one strip-height
+    this._zoomLevels = [120, 60, 30, 15, 5];
+    this._zoomIdx    = 0;   // start fully zoomed out (120s)
+
+    const zoomIn  = document.getElementById('strip-zoom-in');
+    const zoomOut = document.getElementById('strip-zoom-out');
+    // + zooms in (fewer seconds visible = higher index), − zooms out (more seconds)
+    if (zoomIn)  zoomIn .addEventListener('click', () => this._changeZoom(+1));
+    if (zoomOut) zoomOut.addEventListener('click', () => this._changeZoom(-1));
+
+    // Previous positions — drives gained/lost row colouring each render
     this.prevPositions = new Map();
+
+    // Commentary: only process raceLog entries newer than this tick number
+    this._lastCommentaryTick = -1;
+
+    // Gap column mode: 'gap' = gap to leader, 'interval' = gap to car ahead
+    this._gapMode = 'gap';
+    this._gapHeader = document.getElementById('gap-toggle-header');
+    if (this._gapHeader) {
+      this._gapHeader.style.cursor = 'pointer';
+      this._gapHeader.title = 'Click to toggle gap / interval';
+      this._gapHeader.addEventListener('click', () => {
+        this._gapMode = this._gapMode === 'gap' ? 'interval' : 'gap';
+        this._gapHeader.textContent = this._gapMode === 'gap' ? 'GAP ▾' : 'INT ▾';
+        this._updateTimingTable();
+      });
+    }
   }
 
-  // ── render ──────────────────────────────────────────────────────────────────
-  // Full redraw. Call once per lap for a smooth timing-sheet feel, or once per
-  // tick if you want sector-level updates.
+  // ── render ────────────────────────────────────────────────────────────────
   render() {
-    const { ctx, canvas } = this;
+    this._updateHeader();
+    this._updateTimingTable();
+    this._updateSpacingStrip();
+    this._updateCommentary();
+    this._updateFooter();
 
-    // Black background
-    ctx.fillStyle = C.black;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    this._drawHeader();
-    this._drawColumnHeaders();
-    this._drawSeparator(SEP_Y);
-    this._drawCarRows();
-    this._drawFooter();
-
-    // Snapshot positions for next render cycle (drives gain/loss colouring)
+    // Snapshot positions for next render's gain/loss detection
     for (const car of cars) {
       this.prevPositions.set(car.driver.name, car.position);
     }
   }
 
-  // ── _drawHeader ─────────────────────────────────────────────────────────────
-  _drawHeader() {
-    const { ctx } = this;
+  // ── reset ─────────────────────────────────────────────────────────────────
+  reset() {
+    this.prevPositions.clear();
+    this._lastCommentaryTick = -1;
+    this._zoomIdx = 0;
+    if (this._zoomLabel) this._zoomLabel.textContent = `${this._zoomLevels[0]}s`;
+    if (this._commentaryFeed) this._commentaryFeed.innerHTML = '';
+    if (this._stripCanvas) {
+      this._stripCanvas.getContext('2d')
+        .clearRect(0, 0, this._stripCanvas.width, this._stripCanvas.height);
+    }
+    this.render();
+  }
+
+  // ── _updateHeader ──────────────────────────────────────────────────────────
+  _updateHeader() {
+    if (!this._statusEl) return;
     const lap     = race.lap    || 0;
     const sector  = race.sector || 0;
+    const running = cars.filter(c => c.status !== 'retired').length;
 
-    // Race name — yellow, bold
-    ctx.font      = FONT_BOLD;
-    ctx.fillStyle = C.yellow;
-    ctx.fillText(CIRCUIT.name.toUpperCase(), 8, TITLE_Y);
-
-    // Lap and sector counter — cyan
-    ctx.font      = FONT;
-    ctx.fillStyle = C.cyan;
-
-    let lapInfo;
-    if (lap === 0) {
-      lapInfo = 'PRE-RACE';
-    } else if (lap > CIRCUIT.totalLaps || (lap === CIRCUIT.totalLaps && sector === 3)) {
-      lapInfo = `FINISHED  ${countRunning()} CLASSIFIED`;
+    let status;
+    if (cars.length === 0 || lap === 0) {
+      status = 'PRE-RACE';
+    } else if (lap >= CIRCUIT.totalLaps && sector >= 3) {
+      status = `FINISHED — ${running} CLASSIFIED`;
     } else {
-      lapInfo = `LAP ${String(lap).padStart(2, ' ')} / ${CIRCUIT.totalLaps}` +
-                `   SECTOR ${sector}` +
-                `   ${countRunning()} RUNNING`;
+      status = `LAP ${String(lap).padStart(2)} / ${CIRCUIT.totalLaps}   S${sector}   ${running} RUNNING`;
     }
-    ctx.fillText(lapInfo, 8, LAP_Y);
+    this._statusEl.textContent = status;
   }
 
-  // ── _drawColumnHeaders ──────────────────────────────────────────────────────
-  _drawColumnHeaders() {
-    const { ctx } = this;
-    ctx.font      = FONT_BOLD;
-    ctx.fillStyle = C.cyan;
-    for (const col of COLS) {
-      ctx.fillText(col.label, col.x, COL_HDR_Y);
+  // ── _updateTimingTable ─────────────────────────────────────────────────────
+  _updateTimingTable() {
+    if (!this._tbody) return;
+    this._tbody.innerHTML = '';
+
+    let firstRetired = true;
+
+    for (const car of cars) {
+      const tr      = document.createElement('tr');
+      const prev    = this.prevPositions.get(car.driver.name);
+      const retired = car.status === 'retired';
+      const pitted  = car.status === 'pitted';
+
+      // Visual separator before the first retired car
+      if (retired && firstRetired) {
+        tr.classList.add('first-retired');
+        firstRetired = false;
+      }
+
+      // Row class — controls text colour and background tint
+      if      (retired)                                        tr.classList.add('retired');
+      else if (pitted)                                         tr.classList.add('pitted');
+      else if (car.position === 1)                             tr.classList.add('leader');
+      else if (prev !== undefined && car.position < prev)      tr.classList.add('gained');
+      else if (prev !== undefined && car.position > prev)      tr.classList.add('lost');
+
+      // POS
+      tr.appendChild(cell(retired ? 'RET' : `P${car.position}`, 'col-pos'));
+
+      // # — driver number
+      tr.appendChild(cell(String(car.driver.number ?? ''), 'col-num'));
+
+      // DRIVER
+      tr.appendChild(cell(car.driver.name.toUpperCase(), 'col-driver'));
+
+      // TEAM — hidden on mobile
+      tr.appendChild(cell(car.team.name.toUpperCase(), 'col-team hide-mobile'));
+
+      // LAST LAP — hidden on mobile
+      tr.appendChild(cell(
+        car.lastLapTime != null ? formatLapTime(car.lastLapTime) : '---',
+        'col-lastlap hide-mobile',
+      ));
+
+      // GAP / INTERVAL
+      let gapStr;
+      if (retired) {
+        gapStr = '';
+      } else if (car.position === 1) {
+        gapStr = this._gapMode === 'gap' ? 'LEADER' : 'INTERVAL';
+      } else if (this._gapMode === 'gap') {
+        gapStr = formatGap(car.gap);
+      } else {
+        // Interval: gap to the car immediately ahead in the sorted array
+        const idx  = cars.indexOf(car);
+        const prev2 = idx > 0 ? cars[idx - 1] : null;
+        const interval = prev2 && prev2.gap != null && car.gap != null
+          ? car.gap - prev2.gap
+          : null;
+        gapStr = formatGap(interval);
+      }
+      tr.appendChild(cell(gapStr, 'col-gap'));
+
+      // TYRE — compound initial + laps on current set
+      tr.appendChild(cell(
+        `${car.compound[0].toUpperCase()} (${car.stintLap})`,
+        'col-tyre',
+      ));
+
+      // WEAR — colour-coded; hidden on mobile
+      const wearPct = Math.round(car.tyreWear * 100);
+      const wearTd  = cell(`${wearPct}%`, 'col-wear hide-mobile');
+      if (!retired) {
+        if      (wearPct >= 71) wearTd.classList.add('warn-red');
+        else if (wearPct >= 41) wearTd.classList.add('warn-yellow');
+      }
+      tr.appendChild(wearTd);
+
+      // FUEL — colour-coded; hidden on mobile
+      const fuelKg = Math.round(car.fuel);
+      const fuelTd = cell(`${fuelKg}kg`, 'col-fuel hide-mobile');
+      if (!retired) {
+        if      (fuelKg < 15) fuelTd.classList.add('warn-red');
+        else if (fuelKg < 30) fuelTd.classList.add('warn-yellow');
+      }
+      tr.appendChild(fuelTd);
+
+      // STOPS — hidden on mobile
+      tr.appendChild(cell(String(car.stopsMade), 'col-stops hide-mobile'));
+
+      // STATUS
+      const statusTd = cell(pitted ? 'PIT' : retired ? 'OUT' : '', 'col-status');
+      if (pitted)  statusTd.classList.add('status-pit');
+      if (retired) statusTd.classList.add('status-out');
+      tr.appendChild(statusTd);
+
+      // HEALTH — damage label or retirement cause
+      let healthStr = '';
+      if (retired) {
+        const cause = car.retiredReason === 'crash'
+          ? 'CRASH'
+          : (car.degradedLabel || 'MECH').toUpperCase();
+        healthStr = car.retiredLap != null ? `${cause} L${car.retiredLap}` : cause;
+      } else if (car.degradedLabel) {
+        healthStr = car.degradedLabel.toUpperCase();
+      }
+      const healthTd = cell(healthStr, 'col-health');
+      if (retired)              healthTd.classList.add('health-out');
+      else if (car.degradedLabel) healthTd.classList.add('health-dmg');
+      tr.appendChild(healthTd);
+
+      this._tbody.appendChild(tr);
     }
   }
 
-  // ── _drawSeparator ──────────────────────────────────────────────────────────
-  _drawSeparator(y) {
-    const { ctx, canvas } = this;
-    ctx.strokeStyle = C.cyan;
-    ctx.lineWidth   = 1;
-    ctx.beginPath();
-    ctx.moveTo(4, y);
-    ctx.lineTo(canvas.width - 4, y);
-    ctx.stroke();
-  }
+  // ── _updateCommentary ──────────────────────────────────────────────────────
+  _updateCommentary() {
+    if (!this._commentaryFeed) return;
 
-  // ── _drawCarRows ────────────────────────────────────────────────────────────
-  _drawCarRows() {
-    for (let i = 0; i < cars.length; i++) {
-      this._drawCarRow(cars[i], ROWS_Y + i * ROW_H);
-    }
-  }
-
-  // ── _drawCarRow ─────────────────────────────────────────────────────────────
-  _drawCarRow(car, rowTop) {
-    const { ctx }  = this;
-    const textY    = rowTop + ROW_H - 5;   // text baseline within the row
-    const prev     = this.prevPositions.get(car.driver.name);
-    const retired  = car.status === 'retired';
-    const pitted   = car.status === 'pitted';
-
-    // ── Row background tint ──────────────────────────────────────────────
-    if (pitted) {
-      ctx.fillStyle = '#1A1A00';    // dim yellow tint
-      ctx.fillRect(4, rowTop, this.canvas.width - 8, ROW_H - 1);
-    } else if (!retired && car.position === 1) {
-      ctx.fillStyle = '#001800';    // dim green tint for leader
-      ctx.fillRect(4, rowTop, this.canvas.width - 8, ROW_H - 1);
-    }
-
-    // ── Row text colour ──────────────────────────────────────────────────
-    // Colours encode position delta since the last render call.
-    let rowColour;
-    if (retired) {
-      rowColour = C.magenta;
-    } else if (pitted) {
-      rowColour = C.yellow;
-    } else if (prev !== undefined && car.position < prev) {
-      rowColour = C.green;          // gained at least one place
-    } else if (prev !== undefined && car.position > prev) {
-      rowColour = C.red;            // lost at least one place
-    } else {
-      rowColour = C.white;
-    }
-
-    ctx.font      = FONT;
-    ctx.fillStyle = rowColour;
-
-    // POS  ─────────────────────────────────────────────────────────────────
-    const posStr = retired ? 'RET' : `P${car.position}`;
-    ctx.fillText(posStr, COLS[0].x, textY);
-
-    // DRIVER  ──────────────────────────────────────────────────────────────
-    ctx.fillText(
-      car.driver.name.toUpperCase().padEnd(13).slice(0, 13),
-      COLS[1].x, textY,
+    // Only process entries we haven't shown yet
+    const newEntries = raceLog.entries.filter(
+      e => e.tick > this._lastCommentaryTick && e.events && e.events.length > 0,
     );
+    if (newEntries.length === 0) return;
 
-    // TEAM  ────────────────────────────────────────────────────────────────
-    ctx.fillText(
-      car.team.name.toUpperCase().padEnd(10).slice(0, 10),
-      COLS[2].x, textY,
-    );
+    // Iterate forward (chronological) and prepend each entry — newest ends at top
+    for (const entry of newEntries) {
+      for (const ev of entry.events) {
+        const el = this._formatEvent(entry, ev);
+        if (el) this._commentaryFeed.insertBefore(el, this._commentaryFeed.firstChild);
+      }
+    }
 
-    // LAST LAP  ────────────────────────────────────────────────────────────
-    const lapTimeStr = car.lastLapTime != null
-      ? formatLapTime(car.lastLapTime)
-      : '  ---   ';
-    ctx.fillText(lapTimeStr, COLS[3].x, textY);
+    // Cap at 150 entries so the DOM doesn't grow indefinitely
+    while (this._commentaryFeed.children.length > 150) {
+      this._commentaryFeed.removeChild(this._commentaryFeed.lastChild);
+    }
 
-    // GAP  ─────────────────────────────────────────────────────────────────
-    let gapStr;
-    if (retired) {
-      gapStr = '        ';  // reason shown in HEALTH column
-    } else if (car.position === 1) {
-      gapStr = 'LEADER  ';
+    this._lastCommentaryTick = newEntries[newEntries.length - 1].tick;
+  }
+
+  // ── _formatEvent ───────────────────────────────────────────────────────────
+  _formatEvent(entry, ev) {
+    // Skip setup rolls and failed overtake attempts (too noisy)
+    if (ev.type === 'setup_roll') return null;
+    if (ev.type === 'overtake' && ev.result === 'failed') return null;
+
+    const lapStr = entry.sector > 0
+      ? `L${entry.lap} S${entry.sector}`
+      : `L${entry.lap}`;
+
+    let tag, tagClass, detail;
+
+    if (ev.type === 'pit') {
+      tag      = 'PIT';
+      tagClass = 'tag-pit';
+      detail   = `${entry.car.toUpperCase()} — ${ev.compound[0].toUpperCase()} tyres +${ev.fuelAdded}kg (${ev.duration}s)`;
+
+    } else if (ev.type === 'mechanical' && ev.severity === 'retirement') {
+      tag      = 'OUT';
+      tagClass = 'tag-out';
+      detail   = `${entry.car.toUpperCase()} — ${ev.label.toUpperCase()}`;
+
+    } else if (ev.type === 'driver_error' && ev.severity === 'crash') {
+      tag      = 'CRASH';
+      tagClass = 'tag-crash';
+      detail   = `${entry.car.toUpperCase()} — OUT`;
+
+    } else if (ev.type === 'mechanical' && ev.severity === 'degraded') {
+      tag      = 'DMG';
+      tagClass = 'tag-dmg';
+      detail   = `${entry.car.toUpperCase()} — ${ev.label.toUpperCase()}`;
+
+    } else if (ev.type === 'driver_error' && ev.severity === 'slow_sector') {
+      tag      = 'SPIN';
+      tagClass = 'tag-spin';
+      detail   = `${entry.car.toUpperCase()} — spin / lock-up`;
+
+    } else if (ev.type === 'overtake' && ev.result === 'success') {
+      tag      = 'PASS';
+      tagClass = 'tag-pass';
+      const posStr = ev.position != null ? ` for ${ordinal(ev.position)}` : '';
+      detail   = `${entry.car.toUpperCase()} passes ${ev.passed.toUpperCase()}${posStr}`;
+
     } else {
-      gapStr = formatGap(car.gap);
-    }
-    ctx.fillText(gapStr, COLS[4].x, textY);
-
-    // TYRE  ────────────────────────────────────────────────────────────────
-    const compChar = car.compound[0].toUpperCase();  // S / M / H
-    ctx.fillText(`${compChar} (${car.stintLap})`, COLS[5].x, textY);
-
-    // WEAR  ────────────────────────────────────────────────────────────────
-    // Colour-coded: white = fresh, yellow = degrading, red = worn out
-    const wearPct = Math.round(car.tyreWear * 100);
-    if (!retired) {
-      if (wearPct >= 71)      ctx.fillStyle = C.red;
-      else if (wearPct >= 41) ctx.fillStyle = C.yellow;
-      else                    ctx.fillStyle = rowColour;
-    }
-    ctx.fillText(`${wearPct}%`.padStart(4), COLS[6].x, textY);
-    ctx.fillStyle = rowColour;
-
-    // FUEL  ────────────────────────────────────────────────────────────────
-    // Colour-coded: white = plenty, yellow = getting low, red = critical
-    const fuelKg = Math.round(car.fuel);
-    if (!retired) {
-      if (fuelKg < 15)      ctx.fillStyle = C.red;
-      else if (fuelKg < 30) ctx.fillStyle = C.yellow;
-      else                  ctx.fillStyle = rowColour;
-    }
-    ctx.fillText(`${fuelKg}kg`.padStart(5), COLS[7].x, textY);
-    ctx.fillStyle = rowColour;
-
-    // STOPS  ───────────────────────────────────────────────────────────────
-    ctx.fillText(String(car.stopsMade), COLS[8].x, textY);
-
-    // STATUS  ──────────────────────────────────────────────────────────────
-    if (pitted) {
-      ctx.fillStyle = C.yellow;
-      ctx.fillText('PIT', COLS[9].x, textY);
-      ctx.fillStyle = rowColour;
-    } else if (retired) {
-      ctx.fillStyle = C.magenta;
-      ctx.fillText('OUT', COLS[9].x, textY);
-      ctx.fillStyle = rowColour;
+      return null;
     }
 
-    // HEALTH  ──────────────────────────────────────────────────────────────
-    // Running car with damage: component label in red.
-    // Retired car: cause + retirement lap in magenta (e.g. "ENGINE (L23)").
-    if (retired) {
-      ctx.fillStyle = C.magenta;
-      const cause   = car.retiredReason === 'crash' ? 'CRASH' : (car.degradedLabel || 'MECH').toUpperCase();
-      const lapNote = car.retiredLap != null ? ` L${car.retiredLap}` : '';
-      ctx.fillText(`${cause}${lapNote}`, COLS[10].x, textY);
-      ctx.fillStyle = rowColour;
-    } else if (car.degradedLabel) {
-      ctx.fillStyle = C.red;
-      ctx.fillText(car.degradedLabel.toUpperCase(), COLS[10].x, textY);
-      ctx.fillStyle = rowColour;
+    const div = document.createElement('div');
+    div.className = 'c-entry';
+    div.innerHTML =
+      `<span class="c-lap">${lapStr}</span> ` +
+      `<span class="c-tag ${tagClass}">[${tag}]</span> ` +
+      `<span class="c-detail">${detail}</span>`;
+    return div;
+  }
+
+  // ── _changeZoom ────────────────────────────────────────────────────────────
+  _changeZoom(dir) {
+    this._zoomIdx = Math.max(0, Math.min(this._zoomLevels.length - 1, this._zoomIdx + dir));
+    if (this._zoomLabel) {
+      this._zoomLabel.textContent = `${this._zoomLevels[this._zoomIdx]}s`;
+    }
+    this._updateSpacingStrip();
+  }
+
+  // ── _updateSpacingStrip ────────────────────────────────────────────────────
+  // Draws one dot + label per active car at a y-position proportional to their
+  // real gap from the leader. No minimum spacing — overlaps are intentional and
+  // signal battles. Zoom controls scale the canvas; a scrollbar handles overflow.
+  _updateSpacingStrip() {
+    const canvas = this._stripCanvas;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W   = canvas.width;   // 64px
+
+    // GAP_CAP: cars further behind than this are pinned at the bottom
+    const GAP_CAP      = 120;
+    const visibleSecs  = this._zoomLevels[this._zoomIdx];
+    const BASE_H       = 560;   // matches max-height of the scroll container
+    const PPS          = BASE_H / visibleSecs;          // pixels per second
+    const H            = Math.round(GAP_CAP * PPS);     // total canvas height
+
+    if (canvas.height !== H) canvas.height = H;
+    ctx.clearRect(0, 0, W, H);
+
+    // Subtle left-edge guide line
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, 1, H);
+
+    const active = cars.filter(c => c.status !== 'retired' && c.gap != null);
+    if (active.length === 0) return;
+
+    ctx.font = '10px "Courier New", monospace';
+    ctx.textBaseline = 'middle';
+
+    // Small top padding so the leader dot isn't clipped at the canvas edge
+    const TOP_PAD = 8;
+
+    // Minimum pixel gap between successive labels — prevents overlap.
+    // At low zoom the user zooms in until dots separate naturally.
+    const MIN_STEP = 13;
+    let lastY = -Infinity;
+
+    for (const car of active) {
+      const rawY = TOP_PAD + Math.min(car.gap, GAP_CAP) * PPS;
+      const y    = Math.max(rawY, lastY + MIN_STEP);
+      lastY = y;
+
+      const isLeader = car.position === 1;
+      const isPitted = car.status === 'pitted';
+
+      // Dot colour
+      ctx.fillStyle = isLeader ? '#ffff00' : isPitted ? '#555' : '#00ffff';
+      ctx.fillRect(4, y - 3, 5, 5);
+
+      // Label: "12 SEN"
+      const abbr = car.driver.name.replace(/\s+/g, '').toUpperCase().slice(0, 3);
+      ctx.fillStyle = isLeader ? '#ffff00' : isPitted ? '#666' : '#ccc';
+      ctx.fillText(`${car.driver.number} ${abbr}`, 13, y);
     }
   }
 
-  // ── _drawFooter ─────────────────────────────────────────────────────────────
-  _drawFooter() {
-    const { ctx } = this;
-    const footerY = ROWS_Y + 24 * ROW_H + 22;
-
-    this._drawSeparator(ROWS_Y + 24 * ROW_H + 4);
-
-    // Seed (left) — lets viewers replicate the race
-    ctx.font      = FONT;
-    ctx.fillStyle = C.dimCyan;
-    ctx.fillText(`SEED: ${raceLog.seed}`, 8, footerY);
-
-    // Colour legend (right)
-    const legend = [
-      { colour: C.green,   label: 'GAINED' },
-      { colour: C.red,     label: 'LOST'   },
-      { colour: C.yellow,  label: 'PIT'    },
-      { colour: C.magenta, label: 'OUT'    },
-    ];
-    let lx = 280;
-    for (const item of legend) {
-      ctx.fillStyle = item.colour;
-      ctx.fillText(item.label, lx, footerY);
-      lx += item.label.length * 8.4 + 18;
+  // ── _updateFooter ──────────────────────────────────────────────────────────
+  _updateFooter() {
+    if (this._seedDisplay && raceLog.seed != null) {
+      this._seedDisplay.textContent = `SEED: ${raceLog.seed}`;
     }
   }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// Format a time in seconds as "M:SS.ddd" (e.g. "1:15.234")
+function cell(text, className) {
+  const td = document.createElement('td');
+  td.textContent = text;
+  if (className) className.split(' ').forEach(c => c && td.classList.add(c));
+  return td;
+}
+
 function formatLapTime(seconds) {
   const m  = Math.floor(seconds / 60);
   const s  = Math.floor(seconds % 60);
@@ -310,20 +385,16 @@ function formatLapTime(seconds) {
   return `${m}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
 }
 
-// Format a gap in seconds as "+SS.ddd" or "+M:SS.d", padded to 8 chars
-function formatGap(gap) {
-  if (gap == null || gap < 0) return '        ';
-  if (gap < 60) {
-    // e.g. "+23.456"
-    return ('+' + gap.toFixed(3)).padEnd(8);
-  }
-  // e.g. "+1:23.4"
-  const m = Math.floor(gap / 60);
-  const s = (gap % 60).toFixed(1).padStart(4, '0');
-  return (`+${m}:${s}`).padEnd(8);
+function ordinal(n) {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
-// Count cars still running (not retired)
-function countRunning() {
-  return cars.filter(c => c.status !== 'retired').length;
+function formatGap(gap) {
+  if (gap == null || gap < 0) return '';
+  if (gap < 60) return `+${gap.toFixed(3)}`;
+  const m = Math.floor(gap / 60);
+  const s = (gap % 60).toFixed(1).padStart(4, '0');
+  return `+${m}:${s}`;
 }

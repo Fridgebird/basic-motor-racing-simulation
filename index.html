@@ -5,37 +5,289 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Motor Racing Simulation</title>
   <style>
-    /* Spectrum-style page: black background, centred canvas */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    /* ── Reset ────────────────────────────────────────────────────────────── */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    /* ── Base ─────────────────────────────────────────────────────────────── */
     body {
       background: #000;
+      color: #fff;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 13px;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      padding: 16px;
+      padding: 12px 8px 24px;
+    }
+
+    /* ── Race header ──────────────────────────────────────────────────────── */
+    #race-header {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 0 4px 8px;
+      border-bottom: 1px solid #333;
+      margin-bottom: 10px;
+    }
+
+    #circuit-name {
+      color: #00ffff;
+      font-size: 15px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* ── Tab bar (mobile only) ────────────────────────────────────────────── */
+    #tab-bar {
+      display: none;
+      width: 100%;
+      max-width: 1100px;
+      margin-bottom: 8px;
+      gap: 4px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      background: #000;
+      color: #555;
+      border: 1px solid #333;
       font-family: "Courier New", Courier, monospace;
-      color: #fff;
+      font-size: 13px;
+      padding: 6px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
-    canvas {
-      display: block;
-      /* 2× pixel scaling for chunky Spectrum aesthetic */
-      image-rendering: pixelated;
-      image-rendering: crisp-edges;
+    .tab-btn.active { color: #00ffff; border-color: #00ffff; }
+
+    /* ── Main content ─────────────────────────────────────────────────────── */
+    #main-content {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
     }
 
+    /* ── Timing panel ─────────────────────────────────────────────────────── */
+    #timing-panel { flex: 1 1 600px; min-width: 0; }
+
+    #timing-status {
+      color: #ffff00;
+      font-size: 12px;
+      letter-spacing: 1px;
+      padding: 0 4px 6px;
+    }
+
+    th.gap-toggle:hover { color: #fff; }
+    th.gap-toggle { user-select: none; }
+
+    #timing-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    #timing-table thead tr {
+      border-bottom: 1px solid #333;
+    }
+
+    #timing-table th {
+      color: #00ffff;
+      text-align: left;
+      padding: 3px 5px;
+      font-weight: normal;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    #timing-table td {
+      padding: 3px 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Column widths — driver is auto; all others are trimmed to give it room */
+    .col-pos    { width: 38px; }
+    .col-num    { width: 32px; color: #aaa; }
+    .col-driver { width: auto; min-width: 90px; }
+    .col-team   { width: 88px; }
+    .col-lastlap{ width: 80px; }
+    .col-gap    { width: 70px; }
+    .col-tyre   { width: 56px; }
+    .col-wear   { width: 44px; }
+    .col-fuel   { width: 44px; }
+    .col-stops  { width: 34px; }
+    .col-status { width: 32px; }
+    .col-health { width: 72px; }
+
+    /* Row states */
+    tr.leader   { color: #ffff00; }
+    tr.gained   { color: #00ff00; }
+    tr.lost     { color: #ff4444; }
+    tr.pitted   { color: #888; }
+    tr.retired  { color: #999; }
+
+    tr.first-retired td { border-top: 1px solid #333; padding-top: 5px; }
+
+    /* Wear / fuel colour coding */
+    td.warn-red    { color: #ff4444; }
+    td.warn-yellow { color: #ffff00; }
+
+    /* Status cell */
+    td.status-pit { color: #ffff00; }
+    td.status-out { color: #ff4444; }
+
+    /* Health cell */
+    td.health-out { color: #ff4444; }
+    td.health-dmg { color: #ff8800; }
+
+    /* ── Spacing strip ────────────────────────────────────────────────────── */
+    #strip-panel {
+      flex: 0 0 70px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    #strip-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 20px;          /* matches #timing-status height */
+      margin-bottom: 6px;
+      gap: 2px;
+    }
+
+    #strip-controls button {
+      flex: 0 0 18px;
+      height: 18px;
+      padding: 0;
+      font-size: 14px;
+      line-height: 1;
+      border: 1px solid #555;
+      color: #aaa;
+      min-width: unset;
+      letter-spacing: 0;
+    }
+
+    #strip-controls button:hover { background: #333; color: #fff; }
+
+    #strip-zoom-label {
+      flex: 1;
+      text-align: center;
+      font-size: 9px;
+      color: #aaa;
+      letter-spacing: 0;
+    }
+
+    #strip-scroll {
+      overflow-y: auto;
+      overflow-x: hidden;
+      max-height: 560px;
+      scrollbar-width: thin;
+      scrollbar-color: #333 #000;
+    }
+
+    #strip-scroll::-webkit-scrollbar       { width: 4px; }
+    #strip-scroll::-webkit-scrollbar-track { background: #000; }
+    #strip-scroll::-webkit-scrollbar-thumb { background: #333; }
+
+    #spacing-strip { display: block; }
+
+    /* ── Commentary panel ─────────────────────────────────────────────────── */
+    #commentary-panel {
+      flex: 0 0 280px;
+      min-width: 0;
+      max-height: 600px;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid #333;
+      padding-left: 10px;
+    }
+
+    #commentary-title {
+      color: #00ffff;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #333;
+      margin-bottom: 6px;
+      flex-shrink: 0;
+    }
+
+    #commentary-feed {
+      overflow-y: auto;
+      flex: 1;
+      scrollbar-width: thin;
+      scrollbar-color: #333 #000;
+    }
+
+    #commentary-feed::-webkit-scrollbar { width: 5px; }
+    #commentary-feed::-webkit-scrollbar-track { background: #000; }
+    #commentary-feed::-webkit-scrollbar-thumb { background: #333; }
+
+    .c-entry {
+      padding: 3px 0;
+      border-bottom: 1px solid #111;
+      line-height: 1.4;
+      font-size: 12px;
+    }
+
+    .c-lap    { color: #aaa; }
+    .c-tag    { font-weight: bold; }
+    .c-detail { color: #ccc; }
+
+    .tag-pit   { color: #ffff00; }
+    .tag-out   { color: #ff44ff; }
+    .tag-crash { color: #ff44ff; }
+    .tag-dmg   { color: #ff8800; }
+    .tag-spin  { color: #ff8800; }
+    .tag-pass  { color: #00ff00; }
+
+    /* ── Footer ───────────────────────────────────────────────────────────── */
+    #race-footer {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #333;
+    }
+
+    #seed-display { color: #555; font-size: 11px; }
+
+    #legend {
+      display: flex;
+      gap: 12px;
+      font-size: 11px;
+    }
+
+    .leg-item { color: #555; }
+    .leg-item span { margin-right: 3px; }
+    .leg-lead  { color: #ffff00; }
+    .leg-gain  { color: #00ff00; }
+    .leg-lose  { color: #ff4444; }
+    .leg-pit   { color: #888; }
+    .leg-ret   { color: #444; }
+
+    /* ── Controls ─────────────────────────────────────────────────────────── */
     #controls {
       margin-top: 14px;
       display: flex;
-      gap: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
       align-items: center;
+      justify-content: center;
     }
 
     button {
@@ -53,16 +305,13 @@
     button:hover  { background: #00ffff; color: #000; }
     button:active { background: #00aaaa; color: #000; }
     button:disabled {
-      border-color: #444;
-      color: #444;
+      border-color: #333;
+      color: #333;
       cursor: default;
       background: #000;
     }
 
-    #speed-label {
-      color: #00ffff;
-      font-size: 13px;
-    }
+    #speed-label, #seed-label { color: #00ffff; font-size: 13px; }
 
     select {
       background: #000;
@@ -83,13 +332,111 @@
       width: 100px;
     }
 
-    #seed-label { color: #ffff00; font-size: 13px; }
+    /* ── Mobile ───────────────────────────────────────────────────────────── */
+    @media (max-width: 767px) {
+      body { padding: 8px 4px 16px; font-size: 12px; }
+
+      #race-header { flex-direction: column; gap: 4px; }
+
+      #tab-bar { display: flex; }
+
+      #main-content { flex-direction: column; }
+
+      #strip-panel { display: none; }
+
+      #commentary-panel {
+        flex: none;
+        width: 100%;
+        max-height: 300px;
+        border-left: none;
+        border-top: 1px solid #333;
+        padding-left: 0;
+        padding-top: 8px;
+      }
+
+      .hide-mobile { display: none !important; }
+
+      #legend { display: none; }
+
+      /* Hide the panel that isn't active on mobile */
+      #timing-panel.tab-hidden,
+      #commentary-panel.tab-hidden { display: none; }
+    }
   </style>
 </head>
 <body>
 
-  <canvas id="canvas"></canvas>
+  <!-- ── Race header ─────────────────────────────────────────────────────── -->
+  <div id="race-header">
+    <span id="circuit-name">1988 SEASON — RACE 1</span>
+  </div>
 
+  <!-- ── Tab bar (mobile only) ──────────────────────────────────────────── -->
+  <div id="tab-bar">
+    <button class="tab-btn active" data-panel="timing">TIMING</button>
+    <button class="tab-btn"        data-panel="commentary">COMMENTARY</button>
+  </div>
+
+  <!-- ── Main content ────────────────────────────────────────────────────── -->
+  <div id="main-content">
+
+    <!-- Timing sheet -->
+    <div id="timing-panel">
+      <div id="timing-status">PRE-RACE</div>
+      <table id="timing-table">
+        <thead>
+          <tr>
+            <th class="col-pos">POS</th>
+            <th class="col-num">#</th>
+            <th class="col-driver">DRIVER</th>
+            <th class="col-team    hide-mobile">TEAM</th>
+            <th class="col-lastlap hide-mobile">LAST LAP</th>
+            <th class="col-gap gap-toggle" id="gap-toggle-header">GAP ▾</th>
+            <th class="col-tyre">TYRE</th>
+            <th class="col-wear  hide-mobile">WEAR</th>
+            <th class="col-fuel  hide-mobile">FUEL</th>
+            <th class="col-stops hide-mobile">STP</th>
+            <th class="col-status">ST</th>
+            <th class="col-health">HEALTH</th>
+          </tr>
+        </thead>
+        <tbody id="timing-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Car spacing strip -->
+    <div id="strip-panel">
+      <div id="strip-controls">
+        <button id="strip-zoom-out">−</button>
+        <span id="strip-zoom-label">120s</span>
+        <button id="strip-zoom-in">+</button>
+      </div>
+      <div id="strip-scroll">
+        <canvas id="spacing-strip" width="64" height="560"></canvas>
+      </div>
+    </div>
+
+    <!-- Commentary feed -->
+    <div id="commentary-panel">
+      <div id="commentary-title">RACE COMMENTARY</div>
+      <div id="commentary-feed"></div>
+    </div>
+
+  </div>
+
+  <!-- ── Footer ──────────────────────────────────────────────────────────── -->
+  <div id="race-footer">
+    <span id="seed-display"></span>
+    <div id="legend">
+      <span class="leg-item"><span class="leg-lead">■</span>LEADER</span>
+      <span class="leg-item"><span class="leg-gain">■</span>GAINED</span>
+      <span class="leg-item"><span class="leg-lose">■</span>LOST</span>
+      <span class="leg-item"><span class="leg-pit">■</span>PIT</span>
+      <span class="leg-item"><span class="leg-ret">■</span>RETIRED</span>
+    </div>
+  </div>
+
+  <!-- ── Controls ────────────────────────────────────────────────────────── -->
   <div id="controls">
     <button id="btn-start">START RACE</button>
     <button id="btn-pause" disabled>PAUSE</button>
@@ -110,23 +457,17 @@
   </div>
 
   <script type="module">
-    import { CANVAS_W, CANVAS_H, Renderer } from './renderer.js';
-    import { initRace, cars, race }         from './state.js';
-    import { tick, isRaceOver }             from './simulation.js';
+    import { Renderer }              from './renderer.js';
+    import { initRace }              from './state.js';
+    import { tick, isRaceOver }      from './simulation.js';
 
-    // ── Canvas setup ───────────────────────────────────────────────────────
-    const canvas  = document.getElementById('canvas');
-    canvas.width  = CANVAS_W;
-    canvas.height = CANVAS_H;
-    canvas.style.width  = `${CANVAS_W}px`;
-    canvas.style.height = `${CANVAS_H}px`;
-
-    const renderer = new Renderer(canvas);
+    // ── Renderer ───────────────────────────────────────────────────────────
+    const renderer = new Renderer();
 
     // ── State ──────────────────────────────────────────────────────────────
-    let rng      = null;
-    let loopId   = null;   // setTimeout handle
-    let paused   = false;
+    let rng    = null;
+    let loopId = null;
+    let paused = false;
 
     // ── Controls ───────────────────────────────────────────────────────────
     const btnStart  = document.getElementById('btn-start');
@@ -139,29 +480,37 @@
     btnPause.addEventListener('click', togglePause);
     btnReset.addEventListener('click', resetRace);
 
+    // ── Mobile tab switching ───────────────────────────────────────────────
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const target = btn.dataset.panel;
+        document.getElementById('timing-panel').classList.toggle('tab-hidden', target !== 'timing');
+        document.getElementById('commentary-panel').classList.toggle('tab-hidden', target !== 'commentary');
+      });
+    });
+
     // ── Initial blank render ───────────────────────────────────────────────
     renderer.render();
 
     // ── startRace ──────────────────────────────────────────────────────────
     function startRace() {
-      const seed    = parseInt(seedInput.value, 10) || 198804;
-      window._raceSeed = seed;  // picked up by renderer footer
+      const seed = parseInt(seedInput.value, 10) || 198804;
 
-      rng = initRace(seed);
+      rng    = initRace(seed);
       paused = false;
 
-      btnStart.disabled = true;
-      btnPause.disabled = false;
-      btnReset.disabled = false;
+      btnStart.disabled  = true;
+      btnPause.disabled  = false;
+      btnReset.disabled  = false;
       seedInput.disabled = true;
 
-      renderer.render();  // show grid / pre-race state
+      renderer.render();
       scheduleNextSector();
     }
 
     // ── Game loop ──────────────────────────────────────────────────────────
-    // Advances one full lap (3 sector ticks) per iteration, then re-renders.
-    // The delay between laps is controlled by the speed selector.
     function advanceSector() {
       if (paused || isRaceOver()) return;
 
@@ -177,48 +526,39 @@
 
     function scheduleNextSector() {
       const delay = Math.round(parseInt(speedSel.value, 10) / 3);
-      if (delay === 0) {
-        loopId = setTimeout(advanceSector, 0);
-      } else {
-        loopId = setTimeout(advanceSector, delay);
-      }
+      loopId = setTimeout(advanceSector, delay);
     }
 
     // ── togglePause ────────────────────────────────────────────────────────
     function togglePause() {
       paused = !paused;
       btnPause.textContent = paused ? 'RESUME' : 'PAUSE';
-      if (!paused && !isRaceOver()) {
-        scheduleNextSector();
-      }
+      if (!paused && !isRaceOver()) scheduleNextSector();
     }
 
     // ── resetRace ──────────────────────────────────────────────────────────
     function resetRace() {
       clearTimeout(loopId);
       paused = false;
+      rng    = null;
 
-      btnStart.disabled  = false;
-      btnPause.disabled  = true;
+      btnStart.disabled    = false;
+      btnPause.disabled    = true;
       btnPause.textContent = 'PAUSE';
-      btnReset.disabled  = true;
-      seedInput.disabled = false;
+      btnReset.disabled    = true;
+      seedInput.disabled   = false;
 
-      // Clear state by re-rendering a blank pre-race display
-      // (full re-init happens on next Start)
-      rng = null;
-      renderer.prevPositions.clear();
-      renderer.render();
+      renderer.reset();
     }
 
     // ── onRaceFinished ─────────────────────────────────────────────────────
     function onRaceFinished() {
       btnPause.disabled = true;
-      renderer.render();  // final render with FINISHED status
+      renderer.render();
       console.log('Race complete. Full log available at: window.raceLog');
     }
 
-    // Expose race log to browser console for debugging / tuning
+    // Expose race log to browser console for debugging
     import('./state.js').then(m => { window.raceLog = m.raceLog; });
   </script>
 

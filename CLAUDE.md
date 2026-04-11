@@ -74,9 +74,11 @@ Draws the Spectrum-style timing display onto Canvas:
 - ~~Overtaking model with dirty air and proximity effects~~ ✓ Done
 - ~~Cap degraded mechanical failure severity~~ ✓ Done
 - **Sector rewind / replay in the renderer** — allow the viewer to step back a few sectors to review something that just happened. The race log already captures full state every sector tick, so this is a renderer/UX feature: store the last N rendered frames and allow backwards stepping. Independent of the simulation engine.
-- **Gap vs Interval toggle** — a button to switch the gap column between "gap to leader" (current) and "gap to car in front" (interval). Both values are derivable from the cars array. Simple toggle on the timing sheet column header.
-- **Visual car spacing strip** — a narrow vertical bar alongside the timing sheet showing each car as a dot, spaced proportionally to real cumulative time gaps. Communicates race spread and battle proximity at a glance. Linear is more readable than circular and fits the Spectrum aesthetic. Update each sector tick.
-- **Event commentary pane** — a scrolling panel showing plain-language events as they happen: "LAP 15 S2 — SENNA: SPIN", "LAP 22 — DE CESARIS: RETIRES (CRASH)", "LAP 26 — PROST: PITS, MEDIUMS + 50kg". All data is already in the events arrays on each tick. Narrow panel alongside or below the timing sheet.
+- ~~**Gap vs Interval toggle**~~ ✓ Done
+- ~~**Visual car spacing strip**~~ ✓ Done — narrow canvas panel between timing sheet and commentary; dots labelled "12 SEN" style; zoom (+/−) and scroll; min spacing prevents overlap, zoom in to separate battles.
+- **Position swap animation** — when an overtake is logged, briefly animate the two affected rows on the timing sheet (e.g. flash or slide) and the two dots on the spacing strip swapping positions. The Spectrum aesthetic can be relaxed here in favour of readability and drama. Complexity unknown — investigate CSS transition approach for rows vs a canvas-drawn animation for the strip dots.
+- ~~**Event commentary pane**~~ ✓ Done
+- **Commentary on silent passes** — position changes that happen without a wheel-to-wheel overtake attempt (car pulls ahead on pace over multiple sectors, never within 0.3s) are currently invisible in the commentary. Consider a lower-key [POS] tag for these, or a threshold (e.g. only log if the position change is P5 or better) to avoid noise from the midfield.
 - **Lap chart panel** — a line chart showing each driver's race position per lap. One line per driver, x-axis = lap number, y-axis = position (1 at top). Should fit alongside the timing sheet on desktop. Use Spectrum palette; consider colour-coding by team. Good for seeing the big picture of strategy plays and position changes across the race.
 - **Mobile display** — the canvas timing sheet is designed for desktop. Need a strategy for mobile: either a responsive layout that stacks panels vertically, a simplified mobile view showing only top 6 or so, or a portrait-optimised alternative renderer. Consider touch interactions (tap a driver to highlight their line on the lap chart, etc.).
 - Race log viewer / replay tool — filter by car, lap range, event type; inspect factor values and rolls to diagnose model behaviour
@@ -94,6 +96,9 @@ Draws the Spectrum-style timing display onto Canvas:
 - Tyre compound choice per stint
 
 ---
+
+## Session discipline
+- **At the end of every session:** commit all changes with a clean descriptive message and push to GitHub. Also update this CLAUDE.md — mark completed backlog items as done, add any new backlog items discussed.
 
 ## Coding Conventions
 - Vanilla JS only — no npm, no bundlers, no frameworks

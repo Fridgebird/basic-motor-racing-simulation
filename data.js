@@ -232,6 +232,7 @@ export const DRIVERS = [
   // ── McLaren ─────────────────────────────────────────────────────────────────
   {
     name:        'Senna',
+    number:      12,
     team:        'mclaren',
     // 8 wins in 1988; qualifying pace was essentially supernatural
     skill:       99,
@@ -240,6 +241,7 @@ export const DRIVERS = [
   },
   {
     name:        'Prost',
+    number:      11,
     team:        'mclaren',
     // 7 wins, World Champion; the Professor — metronomic, devastatingly consistent
     skill:       97,
@@ -250,6 +252,7 @@ export const DRIVERS = [
   // ── Ferrari ─────────────────────────────────────────────────────────────────
   {
     name:        'Berger',
+    number:      28,
     team:        'ferrari',
     // Won the last two races of the season; fast but error-prone
     skill:       85,
@@ -258,6 +261,7 @@ export const DRIVERS = [
   },
   {
     name:        'Alboreto',
+    number:      27,
     team:        'ferrari',
     // Past his peak by 1988 but still a safe, measured driver
     skill:       81,
@@ -268,6 +272,7 @@ export const DRIVERS = [
   // ── Lotus ───────────────────────────────────────────────────────────────────
   {
     name:        'Piquet',
+    number:      1,
     team:        'lotus',
     // Three-time champion; Honda power couldn't rescue an uninspiring package
     skill:       88,
@@ -276,6 +281,7 @@ export const DRIVERS = [
   },
   {
     name:        'Nakajima',
+    number:      2,
     team:        'lotus',
     // Honda-backed; competent but outclassed in this company
     skill:       64,
@@ -286,6 +292,7 @@ export const DRIVERS = [
   // ── Williams ─────────────────────────────────────────────────────────────────
   {
     name:        'Mansell',
+    number:      5,
     team:        'williams',
     // Lion-hearted racer; spectacular but occasionally wild
     skill:       91,
@@ -294,6 +301,7 @@ export const DRIVERS = [
   },
   {
     name:        'Patrese',
+    number:      6,
     team:        'williams',
     // Steady, experienced; a strong second driver
     skill:       82,
@@ -304,6 +312,7 @@ export const DRIVERS = [
   // ── Benetton ─────────────────────────────────────────────────────────────────
   {
     name:        'Boutsen',
+    number:      20,
     team:        'benetton',
     // Smooth, precise Belgian; excellent on circuits suiting the car
     skill:       78,
@@ -312,6 +321,7 @@ export const DRIVERS = [
   },
   {
     name:        'Nannini',
+    number:      19,
     team:        'benetton',
     // Quick Italian with an attacking style; won in Japan the following year
     skill:       76,
@@ -322,6 +332,7 @@ export const DRIVERS = [
   // ── Arrows ───────────────────────────────────────────────────────────────────
   {
     name:        'Cheever',
+    number:      9,
     team:        'arrows',
     // Hard-charger; capable of strong performances on his day
     skill:       74,
@@ -330,6 +341,7 @@ export const DRIVERS = [
   },
   {
     name:        'Warwick',
+    number:      10,
     team:        'arrows',
     // Underrated talent; consistently strong despite never having a front-running car
     skill:       77,
@@ -340,6 +352,7 @@ export const DRIVERS = [
   // ── March ────────────────────────────────────────────────────────────────────
   {
     name:        'Gugelmin',
+    number:      16,
     team:        'march',
     // Promising Brazilian; solid if unspectacular
     skill:       72,
@@ -348,6 +361,7 @@ export const DRIVERS = [
   },
   {
     name:        'Capelli',
+    number:      17,
     team:        'march',
     // Very nearly won Portugal '88; showed genuine top-level pace
     skill:       76,
@@ -358,6 +372,7 @@ export const DRIVERS = [
   // ── Tyrrell ──────────────────────────────────────────────────────────────────
   {
     name:        'Bailey',
+    number:      3,
     team:        'tyrrell',
     // Julian Bailey — strong in F3 but struggled to translate to F1
     skill:       57,
@@ -366,6 +381,7 @@ export const DRIVERS = [
   },
   {
     name:        'Palmer',
+    number:      4,
     team:        'tyrrell',
     // Jonathan Palmer — journeyman with occasional points; won the Jim Clark Trophy
     skill:       63,
@@ -376,6 +392,7 @@ export const DRIVERS = [
   // ── Rial ─────────────────────────────────────────────────────────────────────
   {
     name:        'de Cesaris',
+    number:      38,
     team:        'rial',
     // Notoriously fast on Saturday, crash-prone on Sunday; feared and erratic
     skill:       74,
@@ -384,6 +401,7 @@ export const DRIVERS = [
   },
   {
     name:        'Danner',
+    number:      39,
     team:        'rial',
     // Christian Danner — German veteran; safe pair of hands for a small team
     skill:       60,
@@ -394,6 +412,7 @@ export const DRIVERS = [
   // ── Minardi ──────────────────────────────────────────────────────────────────
   {
     name:        'Martini',
+    number:      23,
     team:        'minardi',
     // Pierluigi Martini — loyal to Minardi; showed the car's true potential
     skill:       65,
@@ -402,6 +421,7 @@ export const DRIVERS = [
   },
   {
     name:        'Sala',
+    number:      24,
     team:        'minardi',
     // Luis Perez Sala — steady Spanish pay driver
     skill:       57,
@@ -412,6 +432,7 @@ export const DRIVERS = [
   // ── Dallara ──────────────────────────────────────────────────────────────────
   {
     name:        'Caffi',
+    number:      36,
     team:        'dallara',
     // Alex Caffi — spirited Italian; unlapped himself from the leaders occasionally
     skill:       68,
@@ -420,6 +441,7 @@ export const DRIVERS = [
   },
   {
     name:        'Modena',
+    number:      37,
     team:        'dallara',
     // Stefano Modena — quick on his day; later raced for Brabham and Tyrrell
     skill:       64,
@@ -430,6 +452,7 @@ export const DRIVERS = [
   // ── Ligier ───────────────────────────────────────────────────────────────────
   {
     name:        'Arnoux',
+    number:      25,
     team:        'ligier',
     // René Arnoux — wily veteran; faded pace but race-craft intact
     skill:       73,
@@ -438,6 +461,7 @@ export const DRIVERS = [
   },
   {
     name:        'Johansson',
+    number:      26,
     team:        'ligier',
     // Stefan Johansson — dropped by Ferrari, found a home at Ligier; dependable
     skill:       70,

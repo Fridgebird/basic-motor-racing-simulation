@@ -396,7 +396,15 @@ export class Renderer {
       tag      = 'PASS';
       tagClass = 'tag-pass';
       const posStr = ev.position != null ? ` for ${ordinal(ev.position)}` : '';
-      detail   = `${entry.car.toUpperCase()} passes ${ev.passed.toUpperCase()}${posStr}`;
+      const verb   = wheelToWheelVerb(entry.sector);
+      detail   = `${entry.car.toUpperCase()} ${verb} ${ev.passed.toUpperCase()}${posStr}`;
+
+    } else if (ev.type === 'silent_pass') {
+      tag      = 'PASS';
+      tagClass = 'tag-pass';
+      const posStr = ev.position != null ? ` for ${ordinal(ev.position)}` : '';
+      const verb   = silentPassVerb();
+      detail   = `${entry.car.toUpperCase()} ${verb} ${ev.passed.toUpperCase()}${posStr}`;
 
     } else {
       return null;
@@ -503,6 +511,21 @@ function formatLapTime(seconds) {
   const s  = Math.floor(seconds % 60);
   const ms = Math.round((seconds % 1) * 1000);
   return `${m}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+}
+
+// Sector-varied verb for a wheel-to-wheel overtake
+function wheelToWheelVerb(sector) {
+  const byS1 = ['outbrakes', 'dives inside', 'squeezes past'];
+  const byS2 = ['blasts past', 'pulls alongside and passes', 'drives past'];
+  const byS3 = ['muscles past', 'forces the issue on', 'makes the move on'];
+  const pool = sector === 1 ? byS1 : sector === 2 ? byS2 : byS3;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// Verb for a pace-based silent pass
+function silentPassVerb() {
+  const verbs = ['powers past', 'glides past', 'sails by', 'steals past', 'sweeps past'];
+  return verbs[Math.floor(Math.random() * verbs.length)];
 }
 
 function ordinal(n) {

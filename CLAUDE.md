@@ -96,6 +96,16 @@ Draws the Spectrum-style timing display onto Canvas:
 - Ambient temperature and weather effects
 - Tyre compound choice per stint
 
+### Championship mode (major feature — build after UI work is complete)
+A multi-race season with persistent standings, fictional teams/drivers, and a path towards player team management. Key decisions already made:
+- **6–8 races** across circuits with distinct characteristics (power circuit, street circuit, tyre-destroyer, etc.)
+- **24 cars / 12 teams**, all fictional names to avoid licensing issues; keep 1988 turbo-era feel through aesthetics not real names
+- **Points system** — top 10 finishers score (e.g. 25-18-15-12-10-8-6-4-2-1); both driver and constructor standings
+- **Persistence via localStorage** — championship state (results, standings, current race) saved between browser sessions; RNG seed stored per race for full replayability
+- **Pure simulation first** — build the full championship as a spectator experience before adding any player control
+- **Player team management (later phase)** — player picks a team pre-season and controls pit strategy during each race; practice session data is the input for strategy planning
+- **Data export** — "Download CSV" button after practice exports per-lap data (lap time, compound, wear %, fuel kg, position) so the player can build their own strategy model in Excel or similar
+
 ---
 
 ## Session discipline

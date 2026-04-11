@@ -72,12 +72,13 @@ export class Renderer {
     this._lastCommentaryTick = -1;
     this._zoomIdx = 0;
     if (this._zoomLabel) this._zoomLabel.textContent = `${this._zoomLevels[0]}s`;
-    if (this._commentaryFeed) this._commentaryFeed.innerHTML = '';
     if (this._stripCanvas) {
       this._stripCanvas.getContext('2d')
         .clearRect(0, 0, this._stripCanvas.width, this._stripCanvas.height);
     }
     this.render();
+    // Clear after render — render() would re-populate from the old raceLog otherwise
+    if (this._commentaryFeed) this._commentaryFeed.innerHTML = '';
   }
 
   // ── _updateHeader ──────────────────────────────────────────────────────────
@@ -187,12 +188,6 @@ export class Renderer {
 
       // STOPS — hidden on mobile
       tr.appendChild(cell(String(car.stopsMade), 'col-stops hide-mobile'));
-
-      // STATUS
-      const statusTd = cell(pitted ? 'PIT' : retired ? 'OUT' : '', 'col-status');
-      if (pitted)  statusTd.classList.add('status-pit');
-      if (retired) statusTd.classList.add('status-out');
-      tr.appendChild(statusTd);
 
       // HEALTH — damage label or retirement cause
       let healthStr = '';

@@ -513,12 +513,17 @@ function formatLapTime(seconds) {
   return `${m}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
 }
 
-// Sector-varied verb for a wheel-to-wheel overtake
+// Sector-varied verb for a wheel-to-wheel overtake.
+// Derives the sector character from circuit power/aero weights rather than
+// sector number — so it works correctly across different circuit layouts.
 function wheelToWheelVerb(sector) {
-  const byS1 = ['outbrakes', 'dives inside', 'squeezes past'];
-  const byS2 = ['blasts past', 'pulls alongside and passes', 'drives past'];
-  const byS3 = ['muscles past', 'forces the issue on', 'makes the move on'];
-  const pool = sector === 1 ? byS1 : sector === 2 ? byS2 : byS3;
+  const def      = CIRCUIT.sectors[sector - 1];
+  const isPower  = def && def.powerWeight > def.aeroWeight;   // straight-dominant
+  const isCorner = def && def.aeroWeight  > def.powerWeight;  // corner-dominant
+  const power    = ['blasts past', 'pulls alongside and passes', 'drives past'];
+  const corner   = ['outbrakes', 'dives inside', 'squeezes past'];
+  const mixed    = ['muscles past', 'forces the issue on', 'makes the move on'];
+  const pool     = isPower ? power : isCorner ? corner : mixed;
   return pool[Math.floor(Math.random() * pool.length)];
 }
 

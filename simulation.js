@@ -32,6 +32,10 @@ const FAILURE_SCALE = 0.016;
 // Driver aggression scales tyre wear. At 0.4, maximum aggression (100) adds 40% extra wear.
 const AGGRESSION_WEAR_SCALE = 0.4;
 
+// Fuel load increases tyre wear — heavier car puts more stress on tyres.
+// At 0.20, a full tank (100kg) adds 20% extra wear vs an empty car.
+const FUEL_WEAR_COEFF = 0.20;
+
 // Worn-tyre consistency penalty. At full wear (1.0) a driver loses up to 25 consistency points,
 // raising their crash and slow-sector thresholds.
 const WORN_TYRE_CONSISTENCY_PENALTY = 25;
@@ -102,6 +106,14 @@ export function tick(rng) {
   for (const car of cars) {
     if (car.status === 'retired') continue;
 
+    // Initialise strategy on first sector — done here to keep state.js free of
+    // simulation imports. Uses one rng() call per car so sequence stays deterministic.
+    // Apply the planned starting compound immediately (aggressive drivers start on softs).
+    if (!car.strategy) {
+      car.strategy = planStrategy(car, rng);
+      car.compound = car.strategy.stints[0].compound;
+    }
+
     // 'pitted' is a display state set at end of previous lap; clear it now
     if (car.status === 'pitted') car.status = 'racing';
 
@@ -140,7 +152,7 @@ export function tick(rng) {
 
     // ── 5. Tyre factor ──────────────────────────────────────────────────────
     // grip = normalised effective grip considering manufacturer, compound and wear
-    // Formula: tyreFactor = 1.0 + (1 - grip) × 0.08
+    // Formula: tyreFactor = 1.0 + (1 - grip) × penaltyCoeff
     const compound        = COMPOUNDS[car.compound];
     const effectiveMaxGrip = Math.min(100, car.tyres.maxGrip + compound.gripModifier);
     const grip             = (effectiveMaxGrip / 100) * (1 - car.tyreWear); // 0–1
@@ -211,14 +223,16 @@ export function tick(rng) {
     car.currentSectorTimes.push(+sectorTime.toFixed(3));
 
     // ── Tyre wear accumulation ───────────────────────────────────────────────
-    // Formula: wear += baseWearRate × compoundMult × sectorWearWeight × aggressionMult × trackAbrasiveness × dirtyAirMult
+    // Formula: wear += baseWearRate × compoundMult × sectorWearWeight × aggressionMult × fuelWearMult × trackAbrasiveness × dirtyAirMult
     // dirtyAirMult: following in turbulent air increases tyre stress.
     const aggressionMult  = 1.0 + (car.driver.aggression / 100) * AGGRESSION_WEAR_SCALE;
+    const fuelWearMult    = 1.0 + (car.fuel / CIRCUIT.fuelCapacity) * FUEL_WEAR_COEFF;
     const dirtyAirWearMult = 1.0 + proximity * DIRTY_AIR_WEAR_MULT;
     const wearDelta = car.tyres.wearRate
       * compound.wearMultiplier
       * sectorDef.wearWeight
       * aggressionMult
+      * fuelWearMult
       * CIRCUIT.trackAbrasiveness
       * dirtyAirWearMult;
     car.tyreWear = Math.min(1, car.tyreWear + wearDelta);
@@ -286,7 +300,7 @@ export function tick(rng) {
 
       // Pit stop AI — evaluated once per lap after reliability check
       if (car.status === 'racing' && shouldPit(car, rng)) {
-        const pitEvent = executePitStop(car, rng);
+        const pitEvent = executePitStop(car);
         events.push(pitEvent);
         car.status = 'pitted';  // display state; cleared at start of next sector
       }
@@ -454,7 +468,60 @@ function overtakeProbability(behind, ahead, sectorDef) {
 // Override wear threshold range for experiments. Set wearMin === wearMax for a
 // fixed threshold, or leave as default {0.60, 0.70} for normal random behaviour.
 export const pitConfig  = { wearMin: 0.60, wearMax: 0.70 };
-export const tyreConfig = { penaltyCoeff: 0.16 };
+export const tyreConfig = { penaltyCoeff: 0.06 };
+
+// Build a race strategy for a car before the race starts.
+// Returns { stints: [{ compound, lapTarget }], currentStint: 0 }
+// Each stint runs until lapTarget, then the car pits for the next compound.
+// The final stint always runs to the flag (lapTarget = totalLaps).
+//
+// Strategy personality is derived from driver aggression + random jitter:
+//   Aggressive (≥72): soft opener → medium → hard to flag  (2 stops)
+//   Standard  (≥45): medium × 3 → hard to flag              (3 stops)
+//   Conservative(<45): medium → hard to flag                 (1 stop)
+function planStrategy(car, rng) {
+  const aggressionMult = 1.0 + (car.driver.aggression / 100) * AGGRESSION_WEAR_SCALE;
+  const fuelWearMult   = 1.0 + 0.5 * FUEL_WEAR_COEFF; // half-tank average for estimation
+  const sumWearWeights = CIRCUIT.sectors.reduce((s, sec) => s + sec.wearWeight, 0);
+  const baseWearPerLap = car.tyres.wearRate
+    * sumWearWeights * aggressionMult * fuelWearMult * CIRCUIT.trackAbrasiveness;
+
+  // Estimated laps on each compound before hitting the pit trigger threshold
+  const estLaps = (compound) => Math.max(5, Math.floor(
+    pitConfig.wearMin / (baseWearPerLap * COMPOUNDS[compound].wearMultiplier)
+  ));
+  const softLaps   = estLaps('soft');
+  const mediumLaps = estLaps('medium');
+
+  // One random call to set this car's strategic personality
+  const personalityScore = car.driver.aggression + (rng() - 0.5) * 40;
+
+  let stints;
+  if (personalityScore >= 72) {
+    // Aggressive: soft opener → medium → hard to flag
+    stints = [
+      { compound: 'soft',   lapTarget: softLaps },
+      { compound: 'medium', lapTarget: softLaps + mediumLaps },
+      { compound: 'hard',   lapTarget: CIRCUIT.totalLaps },
+    ];
+  } else if (personalityScore >= 45) {
+    // Standard: medium × 3 → hard to flag
+    stints = [
+      { compound: 'medium', lapTarget: mediumLaps },
+      { compound: 'medium', lapTarget: mediumLaps * 2 },
+      { compound: 'medium', lapTarget: mediumLaps * 3 },
+      { compound: 'hard',   lapTarget: CIRCUIT.totalLaps },
+    ];
+  } else {
+    // Conservative: medium → hard to flag (1 stop)
+    stints = [
+      { compound: 'medium', lapTarget: mediumLaps },
+      { compound: 'hard',   lapTarget: CIRCUIT.totalLaps },
+    ];
+  }
+
+  return { stints, currentStint: 0 };
+}
 
 // Returns true if this car should pit at the end of the current lap.
 function shouldPit(car, rng) {
@@ -464,68 +531,71 @@ function shouldPit(car, rng) {
   // No point pitting in the last 3 laps
   if (race.lap >= CIRCUIT.totalLaps - 3) return false;
 
-  // Emergency fuel stop — checked BEFORE the stop count limit so a car can
-  // always pit to avoid running out. Triggers when < 3 laps of fuel remain.
+  // Emergency fuel stop — always allowed regardless of strategy
   const effectiveBurnPerLap = CIRCUIT.baseFuelBurnPerLap * car.engine.fuelBurnRate;
-  const fuelLapsLeft = car.fuel / effectiveBurnPerLap;
-  const raceLapsLeft = CIRCUIT.totalLaps - race.lap;
-  if (fuelLapsLeft < 3 && raceLapsLeft > 3) return true;
+  if (car.fuel < effectiveBurnPerLap * 3 && race.lap < CIRCUIT.totalLaps - 3) return true;
 
-  // Normal wear-triggered stop: cap at 3 planned stops per race
-  if (car.stopsMade >= 3) return false;
+  const { stints, currentStint } = car.strategy;
 
-  // Normal trigger: tyre wear exceeds threshold.
-  // Small rng jitter so teams don't all pit on the same lap.
+  // Already on final planned stint — no more stops
+  if (currentStint >= stints.length - 1) return false;
+
+  const currentPlan = stints[currentStint];
+
+  // Pit if wear threshold exceeded OR we've reached the planned lap target.
+  // Small rng jitter on the threshold so teams don't all pit on the same lap.
   const wearThreshold = pitConfig.wearMin + rng() * (pitConfig.wearMax - pitConfig.wearMin);
-  return car.tyreWear >= wearThreshold;
+  return car.tyreWear >= wearThreshold || race.lap >= currentPlan.lapTarget;
 }
 
 // Executes the pit stop: adds stop duration to cumulativeTime, refuels, fits new tyres.
 // Returns the pit event object for the race log.
-function executePitStop(car, rng) {
-  // Tyre change and fuelling run in parallel; stop ends when the slower is done.
-  // Crew rating affects tyre change only — the fuel rig rate is fixed hardware.
+function executePitStop(car) {
+  // Advance to next planned stint
+  car.strategy.currentStint = Math.min(
+    car.strategy.currentStint + 1,
+    car.strategy.stints.length - 1
+  );
+  const nextStint   = car.strategy.stints[car.strategy.currentStint];
+  const newCompound = nextStint.compound;
+
+  // Pit lane time: fixed cost for entry, traversal, and exit
+  const pitLaneTime    = CIRCUIT.pitLaneTime;
   const tyreChangeTime = CIRCUIT.baseTyreChangeTime * (1 + (1 - car.team.pitCrewRating / 100));
 
-  // Compound choice:
-  //   First two stops → medium (pace during the middle stints)
-  //   Final stop      → hard  (durability to the flag)
-  const newCompound = car.stopsMade < 2 ? 'medium' : 'hard';
-
-  // Refuel: work out how many planned stops remain and load enough fuel for the
-  // next stint. Targets 3 total stops; after the 3rd just load to the finish.
-  // car.stopsMade is still the pre-increment value here.
-  const MAX_STOPS       = 3;
-  const lapsLeft        = CIRCUIT.totalLaps - race.lap;
-  const stopsRemaining  = Math.max(0, MAX_STOPS - 1 - car.stopsMade);
-  const lapsUntilNextStop = stopsRemaining > 0
-    ? Math.ceil(lapsLeft / (stopsRemaining + 1))
-    : lapsLeft;
+  // Fuel: load enough to reach the next planned stop (or finish), plus 10% safety margin
+  const nextNextStint    = car.strategy.stints[car.strategy.currentStint + 1];
+  const lapsToNextStop   = nextNextStint
+    ? Math.max(1, nextNextStint.lapTarget - race.lap)
+    : CIRCUIT.totalLaps - race.lap;
   const effectiveBurnPerLap = CIRCUIT.baseFuelBurnPerLap * car.engine.fuelBurnRate;
   const fuelTarget = Math.min(
     CIRCUIT.fuelCapacity,
-    car.fuel + lapsUntilNextStop * effectiveBurnPerLap * 1.10,  // 10% safety buffer
+    car.fuel + Math.ceil(lapsToNextStop * effectiveBurnPerLap * 1.10)
   );
-  const fuelAdded = +(fuelTarget - car.fuel).toFixed(1);
+  const fuelAdded = +(Math.max(0, fuelTarget - car.fuel)).toFixed(1);
 
-  // Fuelling runs in parallel with tyre change; stop ends when the slower is done.
-  const fuellingTime = fuelAdded * CIRCUIT.fuelRigRate;
-  const duration     = +Math.max(tyreChangeTime, fuellingTime).toFixed(1);
+  // Tyre change and fuelling run in parallel; total stop = pit lane + slower of the two
+  const fuellingTime   = fuelAdded > 0 ? fuelAdded * CIRCUIT.fuelRigRate : 0;
+  const stationaryTime = +Math.max(tyreChangeTime, fuellingTime).toFixed(1);
+  const duration       = +(pitLaneTime + stationaryTime).toFixed(1);
+
   car.cumulativeTime += duration;
-
-  car.fuel     = fuelTarget;
-  car.compound = newCompound;
-  car.tyreWear = 0;
-  car.stintLap = 0;
+  car.fuel      = fuelTarget;
+  car.compound  = newCompound;
+  car.tyreWear  = 0;
+  car.stintLap  = 0;
   car.stopsMade++;
 
   return {
     type:          'pit',
     compound:      newCompound,
     duration,
+    pitLaneTime,
     tyreChangeTime: +tyreChangeTime.toFixed(1),
     fuellingTime:   +fuellingTime.toFixed(1),
     fuelAdded,
+    plannedStrategy: car.strategy.stints.map(s => `${s.compound[0].toUpperCase()}@${s.lapTarget}`).join('→'),
   };
 }
 

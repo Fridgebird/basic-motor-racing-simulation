@@ -465,9 +465,17 @@ function overtakeProbability(behind, ahead, sectorDef) {
 
 // ─── Pit Stop AI ──────────────────────────────────────────────────────────────
 
-// Override wear threshold range for experiments. Set wearMin === wearMax for a
-// fixed threshold, or leave as default {0.60, 0.70} for normal random behaviour.
-export const pitConfig  = { wearMin: 0.60, wearMax: 0.70 };
+// Per-compound wear thresholds for pit decisions.
+// Softs: bail out earlier — performance drops sharply and stints are short anyway.
+// Mediums: mid-range trigger.
+// Hards: push further — slow to start with, gradual degradation, stop costs more than staying out.
+export const pitConfig = {
+  wearBands: {
+    soft:   [0.50, 0.62],
+    medium: [0.60, 0.70],
+    hard:   [0.72, 0.82],
+  },
+};
 export const tyreConfig = { penaltyCoeff: 0.06 };
 
 // Build a race strategy for a car before the race starts.
@@ -487,9 +495,12 @@ function planStrategy(car, rng) {
     * sumWearWeights * aggressionMult * fuelWearMult * CIRCUIT.trackAbrasiveness;
 
   // Estimated laps on each compound before hitting the pit trigger threshold
-  const estLaps = (compound) => Math.max(5, Math.floor(
-    pitConfig.wearMin / (baseWearPerLap * COMPOUNDS[compound].wearMultiplier)
-  ));
+  // Use the midpoint of each compound's wear band for planning purposes.
+  const estLaps = (compound) => {
+    const [min, max] = pitConfig.wearBands[compound];
+    const midpoint = (min + max) / 2;
+    return Math.max(5, Math.floor(midpoint / (baseWearPerLap * COMPOUNDS[compound].wearMultiplier)));
+  };
   const softLaps   = estLaps('soft');
   const mediumLaps = estLaps('medium');
 
@@ -543,8 +554,10 @@ function shouldPit(car, rng) {
   const currentPlan = stints[currentStint];
 
   // Pit if wear threshold exceeded OR we've reached the planned lap target.
-  // Small rng jitter on the threshold so teams don't all pit on the same lap.
-  const wearThreshold = pitConfig.wearMin + rng() * (pitConfig.wearMax - pitConfig.wearMin);
+  // Threshold is compound-specific: softs bail early, hards run deep into the stint.
+  // Small rng jitter within the band so teams don't all pit on the same lap.
+  const [wearMin, wearMax] = pitConfig.wearBands[car.compound];
+  const wearThreshold = wearMin + rng() * (wearMax - wearMin);
   return car.tyreWear >= wearThreshold || race.lap >= currentPlan.lapTarget;
 }
 

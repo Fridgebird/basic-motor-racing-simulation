@@ -80,9 +80,10 @@ Draws the Spectrum-style timing display onto Canvas:
 - ~~**Event commentary pane**~~ ✓ Done
 - ~~**Commentary focus filter**~~ ✓ Done — ALL / TOP 10 / TOP 5 button in commentary header; rebuilds feed on change.
 - ~~**Commentary on silent passes**~~ ✓ Done — detected in tick(), logged as silent_pass events, displayed with pace-based verbs ("powers past", "glides past" etc.). Wheel-to-wheel overtake verbs now circuit-aware (derived from sector powerWeight vs aeroWeight).
+- **[NEXT] Simulation sanity checking** — run parameter sweep tests to verify lap time deltas feel realistic and strategically meaningful: tyre wear progression (low vs high wear), compound comparison at equal wear, fuel load effect (full vs empty), tyre manufacturer differences, reliability failure rates over a full race distance. The game is a fictional world, not a 1988 replica, so the target is: outcomes are somewhat predictable (a good strategy should usually help), somewhat surprising (variance keeps it interesting), and the player should be able to make a meaningful difference. `tyreConfig.penaltyCoeff` is currently 0.16 (double the original spec of 0.08); at 0.16 the difference between 10% and 60% worn hard tyres is ~5–6s/lap which may be too large — investigate as part of this work.
+- **[NEXT] Smarter pit stop strategy** — AI should plan its full strategy at race start and revise at every stop: calculate how many stops are required based on wear rate and compound, then fuel only to reach the next stop plus a small safety margin (not a full tank). This avoids the current behaviour of carrying excess fuel unnecessarily. All 3 tyre compounds (soft/medium/hard) should be in active use as part of strategic variety. Also add a fixed `pitLaneTime` constant (~18–20s) representing pit lane entry/exit — currently missing, meaning light-fuel stops are unrealistically cheap. Formula becomes: `duration = pitLaneTime + max(tyreChangeTime, fuellingTime)`.
 - **Lap chart panel** — a line chart showing each driver's race position per lap. One line per driver, x-axis = lap number, y-axis = position (1 at top). Should fit alongside the timing sheet on desktop. Use Spectrum palette; consider colour-coding by team. Good for seeing the big picture of strategy plays and position changes across the race.
 - **Mobile display** — the canvas timing sheet is designed for desktop. Need a strategy for mobile: either a responsive layout that stacks panels vertically, a simplified mobile view showing only top 6 or so, or a portrait-optimised alternative renderer. Consider touch interactions (tap a driver to highlight their line on the lap chart, etc.).
-- **Simulation sanity checking** — run parameter sweep tests to verify lap time deltas feel realistic and strategically meaningful: tyre wear progression (low vs high wear), compound comparison at equal wear, fuel load effect (full vs empty), tyre manufacturer differences, reliability failure rates over a full race distance. The game is a fictional world, not a 1988 replica, so the target is: outcomes are somewhat predictable (a good strategy should usually help), somewhat surprising (variance keeps it interesting), and the player should be able to make a meaningful difference. `tyreConfig.penaltyCoeff` is currently 0.16 (double the original spec of 0.08); at 0.16 the difference between 10% and 60% worn hard tyres is ~5–6s/lap which may be too large — investigate as part of this work.
 - Race log viewer / replay tool — filter by car, lap range, event type; inspect factor values and rolls to diagnose model behaviour
 - Practice session with lap time data
 - Qualifying session to set grid
@@ -96,6 +97,22 @@ Draws the Spectrum-style timing display onto Canvas:
 - Random circuit selection or full season series
 - Ambient temperature and weather effects
 - Tyre compound choice per stint
+
+---
+
+### Future fork: Persistent Global World (design only — not started)
+A separate project built on top of this sim's core engine. Key decisions made in design discussion:
+- **Concept:** Zero-player, one race per day globally. Every visitor sees the same deterministic race. A soap opera the whole world watches together.
+- **Determinism:** Seed derived from calendar date (`parseInt(YYYYMMDD)`). Same date = same race for everyone.
+- **Season:** ~20 races, one per day (~3 weeks). Seasonal progression: drivers age +1/season, retire probabilistically above ~40, teams improve slightly each season, full reset after season 5 ("new technical era").
+- **State persistence (Option A — preferred for launch):** Pure client-side replay with localStorage caching of season-end snapshots. Returning visitors compute only today's race (~2ms). Cold-cache worst case at season 50 (~2.7 years in) is ~2s behind a loading screen. Migrate to Option B if needed.
+- **State persistence (Option B — upgrade path):** GitHub Actions daily cron writes canonical results JSON to repo; clients read it. Adds narrative/announcement possibilities.
+- **Driver names:** Pre-populated lookup table of ~500–600 profiles in shuffled order, pulled sequentially by ID. Nationality is a driver attribute (not team-based); both first and last name drawn from the same nationality's pool. Append-only extension never disturbs existing assignments.
+- **Career stats:** Feasible at no extra cost — the standings replay loop already processes all results; stats are aggregations of the same data.
+- **Transparency:** With client-side arch, the entire future is computable by anyone in the browser console. Options: accept it (soap opera argument holds), obfuscation (theatrical only), or server-side computation (real protection, adds infrastructure). Decision deferred — experiment in dev phase.
+- **Tech stack:** No change from HTML+JS. Core sim files (`data.js`, `simulation.js`, `state.js`) need no changes. New file: `championship.js` for replay loop and standings.
+
+---
 
 ### Championship mode (major feature — build after UI work is complete)
 A multi-race season with persistent standings, fictional teams/drivers, and a path towards player team management. Key decisions already made:

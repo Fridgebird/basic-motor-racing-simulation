@@ -12,29 +12,29 @@
 export const ENGINES = {
   honda: {
     name: 'Honda RA168E',
-    // Dominant 1.5-litre turbo; McLaren won 15 of 16 races this season
-    power:         95,
+    // Best turbo of the era; compressed from historical dominance for game balance
+    power:         88,
     reliability:   85,
     fuelBurnRate:  1.15,  // turbos drink ~15% more fuel than the NA baseline
   },
   ferrari: {
     name: 'Ferrari 035/L',
-    // Strong turbo but Ferrari chassis limited its potential
-    power:         88,
+    // Strong turbo; genuine threat on fast circuits
+    power:         84,
     reliability:   73,
     fuelBurnRate:  1.12,
   },
   megatron: {
     name: 'Megatron M12/13',
     // BMW-derived turbo supplied to Arrows; powerful but fragile
-    power:         82,
+    power:         79,
     reliability:   62,
     fuelBurnRate:  1.10,
   },
   ford: {
     name: 'Ford Cosworth DFZ',
-    // 3.5-litre normally-aspirated V8; well down on power but supremely reliable
-    power:         52,
+    // 3.5-litre normally-aspirated V8; raised from historical deficit for game balance
+    power:         68,
     reliability:   92,
     fuelBurnRate:  1.00,  // baseline
   },
@@ -50,13 +50,13 @@ export const TYRES = {
     name: 'Goodyear',
     // Dominant supplier in 1988; well-developed across all compounds
     maxGrip:  90,
-    wearRate: 0.016,
+    wearRate: 0.0107,
   },
   pirelli: {
     name: 'Pirelli',
     // Challenger supplier; slightly lower peak grip, wears a touch faster
     maxGrip:  85,
-    wearRate: 0.020,
+    wearRate: 0.0134,
   },
 };
 
@@ -68,15 +68,15 @@ export const TYRES = {
 export const COMPOUNDS = {
   soft: {
     wearMultiplier: 1.4,
-    gripModifier:    5,
+    gripModifier:   10,   // Goodyear soft caps at 100 (perfect grip); Pirelli soft = 95
   },
   medium: {
     wearMultiplier: 1.0,
     gripModifier:    0,
   },
   hard: {
-    wearMultiplier: 0.7,
-    gripModifier:   -5,
+    wearMultiplier: 0.40,  // ~1.8s/lap slower than new soft; degrades less dramatically
+    gripModifier:  -30,    // hard lasts ~53 laps (Goodyear) — viable 1-stopper
   },
 };
 
@@ -92,8 +92,8 @@ export const TEAMS = [
     name:               'McLaren',
     engine:             'honda',
     tyres:              'goodyear',
-    // MP4/4: arguably the most dominant F1 car ever built
-    aero:               95,
+    // Best car of the era; reduced from historical dominance for game balance
+    aero:               87,
     chassisReliability: 92,
     pitCrewRating:      96,
     setupAbility:       93,
@@ -234,8 +234,8 @@ export const DRIVERS = [
     name:        'Senna',
     number:      12,
     team:        'mclaren',
-    // 8 wins in 1988; qualifying pace was essentially supernatural
-    skill:       99,
+    // Exceptional qualifier and racer; reduced from historical dominance for game balance
+    skill:       94,
     consistency: 87,
     aggression:  82,
   },
@@ -243,8 +243,8 @@ export const DRIVERS = [
     name:        'Prost',
     number:      11,
     team:        'mclaren',
-    // 7 wins, World Champion; the Professor — metronomic, devastatingly consistent
-    skill:       97,
+    // The Professor — metronomic, devastatingly consistent; reduced for game balance
+    skill:       92,
     consistency: 96,
     aggression:  50,
   },
@@ -493,6 +493,7 @@ export const CIRCUIT = {
   trackAbrasiveness:  0.80,   // 0–1; high = harder on tyres (like a rough street circuit)
   fuelCapacity:       100,    // kg maximum fuel load
   baseFuelBurnPerLap: 3.50,   // kg/lap baseline (NA); turbos multiply via engine.fuelBurnRate
+  pitLaneTime:        18,     // seconds lost slowing, traversing, and rejoining — fixed for all cars
   baseTyreChangeTime: 7,      // seconds for tyre change at best crew (100); scales up with lower ratings
   fuelRigRate:        0.52,   // seconds per kg of fuel added; same for all teams (hardware limit)
 

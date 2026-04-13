@@ -312,7 +312,7 @@ export function tick(rng) {
 
       // Pit stop AI — evaluated once per lap after reliability check
       if (car.status === 'racing' && shouldPit(car, rng)) {
-        const pitEvent = executePitStop(car);
+        const pitEvent = executePitStop(car, rng);
         events.push(pitEvent);
         car.status = 'pitted';  // display state; cleared at start of next sector
       }
@@ -523,25 +523,52 @@ function chooseStartingCompound(car, rng) {
   return 'hard';
 }
 
-// At each pit stop: pick the softest (fastest) compound that can reach the flag.
-// If none can, pick soft — accept another stop rather than over-conserving on tyres.
-// Returns { compound, estimates } where estimates logs the AI's reasoning for all 3
-// compounds, fulfilling the requirement that all estimates are inspectable in the log.
-function chooseNextCompound(car) {
+// At each pit stop: choose compound based on what can reach the flag and driver aggression.
+//
+// Rule (softest-viable constraint):
+//   soft can reach  → always soft (no reason to be harder)
+//   medium can reach (not soft) → soft or medium by aggressiveness; hard excluded
+//   only hard can reach, OR nothing can reach → full aggression-based distribution (S/M/H)
+//
+// An aggressive driver may always choose a softer compound (accepting an extra stop).
+// A harder-than-necessary compound is never chosen — if medium makes the flag, hard won't be.
+// One rng() call always consumed so the sequence stays deterministic.
+function chooseNextCompound(car, rng) {
   const lapsRemaining = CIRCUIT.totalLaps - race.lap;
   const estimates     = {};
 
+  // Find the softest compound that can reach the flag
+  let minViable = null;
   for (const compound of ['soft', 'medium', 'hard']) {
     const estLaps  = estimateStintLaps(car, compound);
     const canReach = estLaps >= lapsRemaining;
     estimates[compound] = { estLaps, canReach };
-    if (canReach) {
-      return { compound, estimates };
-    }
+    if (canReach && minViable === null) minViable = compound;
   }
 
-  // No compound reaches the flag — pick softest (will make another stop)
-  return { compound: 'soft', estimates };
+  // Aggression-based probabilities (same as starting compound)
+  const agg   = car.driver.aggression / 100;
+  const pSoft = agg * 0.75;
+  const pHard = (1 - agg) * 0.55;
+  const roll  = rng();  // always consumed
+
+  let chosen;
+  if (minViable === 'soft') {
+    // Soft makes the flag — always soft regardless of aggressiveness
+    chosen = 'soft';
+
+  } else if (minViable === 'medium') {
+    // Medium is softest viable — soft (extra stop) or medium by aggression; never hard
+    chosen = roll < pSoft ? 'soft' : 'medium';
+
+  } else {
+    // Only hard makes the flag, or nothing does — full aggression distribution
+    if      (roll < pSoft)       chosen = 'soft';
+    else if (roll < 1 - pHard)  chosen = 'medium';
+    else                         chosen = 'hard';
+  }
+
+  return { compound: chosen, estimates, minViable };
 }
 
 // Returns true if this car should pit at the end of the current lap.
@@ -569,10 +596,10 @@ function shouldPit(car, rng) {
 
 // Executes the pit stop: chooses compound reactively, refuels for estimated stint,
 // adds stop time to cumulativeTime. Returns the pit event object for the race log.
-function executePitStop(car) {
+function executePitStop(car, rng) {
   // ── Reactive compound choice ─────────────────────────────────────────────────
-  // Pick the softest compound that can reach the flag; log all estimates for inspection.
-  const { compound: newCompound, estimates } = chooseNextCompound(car);
+  // Apply softest-viable rule then aggressiveness; log all estimates for inspection.
+  const { compound: newCompound, estimates, minViable } = chooseNextCompound(car, rng);
   const lapsRemaining = CIRCUIT.totalLaps - race.lap;
   const isLastStint   = estimates[newCompound].canReach;  // chosen compound reaches flag
 
@@ -611,6 +638,7 @@ function executePitStop(car) {
     // AI reasoning logged in full so strategy decisions are inspectable
     aiEstimates: {
       lapsRemaining,
+      minViable,      // softest compound that can reach the flag (or null)
       soft:   estimates.soft,
       medium: estimates.medium,
       hard:   estimates.hard,

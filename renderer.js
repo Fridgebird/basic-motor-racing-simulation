@@ -500,7 +500,9 @@ export class Renderer {
     if (ev.type === 'pit') {
       tag      = 'PIT';
       tagClass = 'tag-pit';
-      detail   = `${entry.car.toUpperCase()} — ${ev.compound[0].toUpperCase()} tyres +${ev.fuelAdded}kg (${ev.duration}s)`;
+      const estLaps = ev.aiEstimates?.estimates?.[ev.compound]?.estLaps;
+      const estStr  = estLaps != null ? ` · est ${estLaps}L` : '';
+      detail   = `${entry.car.toUpperCase()} — ${ev.compound[0].toUpperCase()} tyres +${ev.fuelAdded}kg (${ev.duration}s)${estStr}`;
 
     } else if (ev.type === 'mechanical' && ev.severity === 'retirement') {
       tag      = 'OUT';

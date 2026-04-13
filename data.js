@@ -75,8 +75,8 @@ export const COMPOUNDS = {
     gripModifier:    0,
   },
   hard: {
-    wearMultiplier: 0.40,  // ~1.8s/lap slower than new soft; degrades less dramatically
-    gripModifier:  -30,    // hard lasts ~53 laps (Goodyear) — viable 1-stopper
+    wearMultiplier: 0.75,  // ~1.8s/lap slower than new soft; degrades less dramatically
+    gripModifier:  -30,    // hard lasts ~30 laps on high abrasion, ~50 on medium, ~80+ on low
   },
 };
 
@@ -568,7 +568,7 @@ export const CIRCUIT = {
   baseFuelBurnPerLap: 3.50,   // kg/lap baseline (NA); turbos multiply via engine.fuelBurnRate
   pitLaneTime:        18,     // seconds lost slowing, traversing, and rejoining — fixed for all cars
   baseTyreChangeTime: 7,      // seconds for tyre change at best crew (100); scales up with lower ratings
-  fuelRigRate:        0.52,   // seconds per kg of fuel added; same for all teams (hardware limit)
+  fuelRigRate:        0.12,   // seconds per kg of fuel added; 100kg full refuel ≈ 12s stationary
 
   sectors: [
     {

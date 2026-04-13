@@ -112,6 +112,11 @@ export function tick(rng) {
     if (!car.strategy) {
       car.strategy = planStrategy(car, rng);
       car.compound = car.strategy.stints[0].compound;
+      // Load only enough fuel to reach the first planned stop + 10% safety margin.
+      // Soft-starters begin much lighter than hard-tyre runners — a real strategic benefit.
+      const firstLaps  = car.strategy.stints[0].lapTarget;
+      const burnPerLap = CIRCUIT.baseFuelBurnPerLap * car.engine.fuelBurnRate;
+      car.fuel = Math.min(CIRCUIT.fuelCapacity, Math.ceil(firstLaps * burnPerLap * 1.10));
     }
 
     // 'pitted' is a display state set at end of previous lap; clear it now
@@ -576,15 +581,21 @@ function executePitStop(car) {
   const pitLaneTime    = CIRCUIT.pitLaneTime;
   const tyreChangeTime = CIRCUIT.baseTyreChangeTime * (1 + (1 - car.team.pitCrewRating / 100));
 
-  // Fuel: load enough to reach the next planned stop (or finish), plus 10% safety margin
-  const nextNextStint    = car.strategy.stints[car.strategy.currentStint + 1];
-  const lapsToNextStop   = nextNextStint
-    ? Math.max(1, nextNextStint.lapTarget - race.lap)
-    : CIRCUIT.totalLaps - race.lap;
+  // Fuel: load exactly enough to reach the next planned stop (or finish), plus 10% safety margin.
+  // fuelTarget is the total needed — fuelAdded is only the shortfall vs what's already on board.
+  // If the car already carries enough (e.g. emergency tyre stop with fuel still in tank), no fuel added.
+  //
+  // lapsToNextStop = how long the CURRENT stint will last before the next pit.
+  // Use stints[currentStint].lapTarget for all but the final stint (which runs to the flag).
+  const isLastStint    = car.strategy.currentStint >= car.strategy.stints.length - 1;
+  const currentStintPlan = car.strategy.stints[car.strategy.currentStint];
+  const lapsToNextStop = isLastStint
+    ? CIRCUIT.totalLaps - race.lap
+    : Math.max(1, currentStintPlan.lapTarget - race.lap);
   const effectiveBurnPerLap = CIRCUIT.baseFuelBurnPerLap * car.engine.fuelBurnRate;
   const fuelTarget = Math.min(
     CIRCUIT.fuelCapacity,
-    car.fuel + Math.ceil(lapsToNextStop * effectiveBurnPerLap * 1.10)
+    Math.ceil(lapsToNextStop * effectiveBurnPerLap * 1.10)
   );
   const fuelAdded = +(Math.max(0, fuelTarget - car.fuel)).toFixed(1);
 

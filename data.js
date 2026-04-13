@@ -13,7 +13,7 @@ export const ENGINES = {
   honda: {
     name: 'Honda RA168E',
     // Best turbo of the era; compressed from historical dominance for game balance
-    power:         88,
+    power:         86,
     reliability:   85,
     fuelBurnRate:  1.15,  // turbos drink ~15% more fuel than the NA baseline
   },
@@ -93,7 +93,7 @@ export const TEAMS = [
     engine:             'honda',
     tyres:              'goodyear',
     // Best car of the era; reduced from historical dominance for game balance
-    aero:               87,
+    aero:               85,
     chassisReliability: 92,
     pitCrewRating:      96,
     setupAbility:       93,
@@ -235,7 +235,7 @@ export const DRIVERS = [
     number:      12,
     team:        'mclaren',
     // Exceptional qualifier and racer; reduced from historical dominance for game balance
-    skill:       94,
+    skill:       92,
     consistency: 87,
     aggression:  82,
   },

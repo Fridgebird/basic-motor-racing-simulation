@@ -29,14 +29,13 @@ function getStints(driverName, log) {
   const stints  = [];
   let stintStart = 1;
 
-  // Detect actual starting compound from the first pit event's plannedStrategy field.
-  // plannedStrategy encodes all stints as "S@11→M@22→H@70", so the first char = start compound.
-  // Fallback to 'M' if no pit events (car never stopped, or retired before stopping).
+  // Detect starting compound from the strategy_init event logged at race start.
+  // Fallback to 'M' if not found (retired before first sector, etc.).
   let curCompound = 'M';
   for (const e of entries) {
-    const pit = e.events?.find(ev => ev.type === 'pit');
-    if (pit?.plannedStrategy) {
-      curCompound = pit.plannedStrategy[0]; // 'S', 'M', or 'H'
+    const init = e.events?.find(ev => ev.type === 'strategy_init');
+    if (init) {
+      curCompound = init.compound[0].toUpperCase();
       break;
     }
   }

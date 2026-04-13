@@ -97,6 +97,13 @@ export const TEAMS = [
     chassisReliability: 92,
     pitCrewRating:      96,
     setupAbility:       93,
+    // Reactive pit strategy parameters
+    strategy: {
+      wearTrigger:    0.85,           // pit when tyre wear exceeds this
+      fuelTrigger:    5,              // pit when fuel drops below this (kg)
+      fuelMarginLaps: 1,              // extra laps of fuel loaded as safety margin
+      tyreLifeModel:  'fuelCorrected', // accounts for fuel load effect on tyre stress
+    },
   },
   {
     id:                 'ferrari',
@@ -108,6 +115,12 @@ export const TEAMS = [
     chassisReliability: 80,
     pitCrewRating:      80,
     setupAbility:       82,
+    strategy: {
+      wearTrigger:    0.82,
+      fuelTrigger:    6,
+      fuelMarginLaps: 2,
+      tyreLifeModel:  'fuelCorrected',
+    },
   },
   {
     id:                 'lotus',
@@ -119,6 +132,12 @@ export const TEAMS = [
     chassisReliability: 72,
     pitCrewRating:      72,
     setupAbility:       74,
+    strategy: {
+      wearTrigger:    0.80,
+      fuelTrigger:    6,
+      fuelMarginLaps: 2,
+      tyreLifeModel:  'basic',
+    },
   },
   {
     id:                 'williams',
@@ -130,6 +149,12 @@ export const TEAMS = [
     chassisReliability: 85,
     pitCrewRating:      86,
     setupAbility:       88,
+    strategy: {
+      wearTrigger:    0.78,
+      fuelTrigger:    7,
+      fuelMarginLaps: 3,
+      tyreLifeModel:  'fuelCorrected',  // methodical team, good data
+    },
   },
   {
     id:                 'benetton',
@@ -141,6 +166,12 @@ export const TEAMS = [
     chassisReliability: 82,
     pitCrewRating:      78,
     setupAbility:       80,
+    strategy: {
+      wearTrigger:    0.78,
+      fuelTrigger:    7,
+      fuelMarginLaps: 2,
+      tyreLifeModel:  'basic',
+    },
   },
   {
     id:                 'arrows',
@@ -152,6 +183,12 @@ export const TEAMS = [
     chassisReliability: 70,
     pitCrewRating:      70,
     setupAbility:       72,
+    strategy: {
+      wearTrigger:    0.76,
+      fuelTrigger:    7,
+      fuelMarginLaps: 3,
+      tyreLifeModel:  'basic',
+    },
   },
   {
     id:                 'march',
@@ -163,6 +200,12 @@ export const TEAMS = [
     chassisReliability: 74,
     pitCrewRating:      68,
     setupAbility:       70,
+    strategy: {
+      wearTrigger:    0.78,
+      fuelTrigger:    7,
+      fuelMarginLaps: 3,
+      tyreLifeModel:  'basic',
+    },
   },
   {
     id:                 'tyrrell',
@@ -174,6 +217,12 @@ export const TEAMS = [
     chassisReliability: 76,
     pitCrewRating:      65,
     setupAbility:       67,
+    strategy: {
+      wearTrigger:    0.77,
+      fuelTrigger:    8,
+      fuelMarginLaps: 3,
+      tyreLifeModel:  'basic',
+    },
   },
   {
     id:                 'rial',
@@ -185,6 +234,12 @@ export const TEAMS = [
     chassisReliability: 66,
     pitCrewRating:      58,
     setupAbility:       55,
+    strategy: {
+      wearTrigger:    0.76,
+      fuelTrigger:    8,
+      fuelMarginLaps: 4,
+      tyreLifeModel:  'basic',
+    },
   },
   {
     id:                 'minardi',
@@ -196,6 +251,12 @@ export const TEAMS = [
     chassisReliability: 64,
     pitCrewRating:      55,
     setupAbility:       52,
+    strategy: {
+      wearTrigger:    0.75,
+      fuelTrigger:    9,
+      fuelMarginLaps: 4,
+      tyreLifeModel:  'basic',
+    },
   },
   {
     id:                 'dallara',
@@ -207,6 +268,12 @@ export const TEAMS = [
     chassisReliability: 63,
     pitCrewRating:      52,
     setupAbility:       50,
+    strategy: {
+      wearTrigger:    0.75,
+      fuelTrigger:    9,
+      fuelMarginLaps: 4,
+      tyreLifeModel:  'basic',
+    },
   },
   {
     id:                 'ligier',
@@ -218,6 +285,12 @@ export const TEAMS = [
     chassisReliability: 71,
     pitCrewRating:      62,
     setupAbility:       62,
+    strategy: {
+      wearTrigger:    0.77,
+      fuelTrigger:    8,
+      fuelMarginLaps: 3,
+      tyreLifeModel:  'basic',
+    },
   },
 ];
 

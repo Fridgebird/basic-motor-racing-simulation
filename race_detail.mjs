@@ -19,11 +19,11 @@ function buildStints(driverName) {
   let stintStart  = 1;
   let compound    = null; // set from first entry or pit events
 
-  // Detect starting compound from first pit event's plannedStrategy
+  // Detect starting compound from the strategy_init event logged at race start
   let startCompound = 'medium';
   for (const e of entries) {
-    const pit = e.events?.find(ev => ev.type === 'pit');
-    if (pit?.plannedStrategy) { startCompound = pit.plannedStrategy[0].toLowerCase(); break; }
+    const init = e.events?.find(ev => ev.type === 'strategy_init');
+    if (init) { startCompound = init.compound; break; }
   }
   compound = startCompound;
 
@@ -178,8 +178,8 @@ console.log('═'.repeat(88));
 for (const name of ['Senna', 'Prost']) {
   const rows = earlyFactors(name, 8);
   const startCompound = raceLog.entries.find(
-    e => e.car === name && e.events?.some(ev => ev.type === 'pit')
-  )?.events?.find(ev => ev.type === 'pit')?.plannedStrategy?.[0] ?? 'M';
+    e => e.car === name && e.events?.some(ev => ev.type === 'strategy_init')
+  )?.events?.find(ev => ev.type === 'strategy_init')?.compound?.[0]?.toUpperCase() ?? 'M';
 
   console.log(`\n${name}  (planned start: ${startCompound})`);
   console.log('  Lap  LapTime   Tyre    Fuel    Driver  Engine  Chassis Setup   Wear   FuelKg');

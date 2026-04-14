@@ -86,10 +86,29 @@
     th.gap-toggle:hover { color: #fff; }
     th.gap-toggle { user-select: none; }
 
+    #timing-table-scroll {
+      overflow-x: auto;
+    }
+
     #timing-table {
-      width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
+    }
+
+    /* Frozen columns — POS, #, DRIVER always visible */
+    .col-pos, .col-num, .col-driver {
+      position: sticky;
+    }
+    .col-pos    { left: 0; }
+    .col-num    { left: 38px; }
+    .col-driver { left: 70px; border-right: 1px solid #444; box-shadow: 3px 0 6px #000; }
+    th.col-pos, th.col-num, th.col-driver { z-index: 2; }
+    td.col-pos, td.col-num, td.col-driver { z-index: 1; }
+    /* Explicit background on sticky cells — high specificity so row flash animations
+       don't make them transparent and bleed scrolled content through */
+    #timing-table th.col-pos, #timing-table th.col-num, #timing-table th.col-driver,
+    #timing-table td.col-pos, #timing-table td.col-num, #timing-table td.col-driver {
+      background: #000;
     }
 
     #timing-table thead tr {
@@ -116,13 +135,14 @@
     /* Column widths — driver is auto; all others are trimmed to give it room */
     .col-pos    { width: 38px; }
     .col-num    { width: 32px; color: #aaa; }
-    .col-driver { width: auto; min-width: 90px; }
-    .col-team   { width: 88px; }
+    .col-driver { width: 90px; }
+    .col-team   { width: 130px; }
     .col-lastlap{ width: 80px; }
     .col-gap    { width: 70px; }
-    .col-tyre   { width: 80px; }
+    .col-tyre     { width: 80px; }
+    .col-tyre-mfr { width: 36px; }
     .col-wear   { width: 44px; }
-    .col-fuel   { width: 44px; }
+    .col-fuel   { width: 54px; }
     .col-stops  { width: 34px; }
     .col-health { width: 90px; }
 
@@ -406,6 +426,7 @@
     <!-- Timing sheet -->
     <div id="timing-panel">
       <div id="timing-status">PRE-RACE</div>
+      <div id="timing-table-scroll">
       <table id="timing-table">
         <thead>
           <tr>
@@ -413,9 +434,10 @@
             <th class="col-num">#</th>
             <th class="col-driver">DRIVER</th>
             <th class="col-team    hide-mobile">TEAM</th>
+            <th class="col-tyre-mfr hide-mobile">TYRE</th>
             <th class="col-lastlap hide-mobile">LAST LAP</th>
             <th class="col-gap gap-toggle" id="gap-toggle-header">INT ▾</th>
-            <th class="col-tyre">TYRE</th>
+            <th class="col-tyre">COMP</th>
             <th class="col-wear  hide-mobile">WEAR</th>
             <th class="col-fuel  hide-mobile">FUEL</th>
             <th class="col-stops hide-mobile">STP</th>
@@ -424,6 +446,7 @@
         </thead>
         <tbody id="timing-body"></tbody>
       </table>
+      </div>
     </div>
 
     <!-- Car spacing strip -->

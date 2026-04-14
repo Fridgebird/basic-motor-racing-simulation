@@ -290,8 +290,15 @@ export class Renderer {
       // DRIVER
       tr.appendChild(cell(car.driver.name.toUpperCase(), 'col-driver'));
 
-      // TEAM — hidden on mobile
-      tr.appendChild(cell(car.team.name.toUpperCase(), 'col-team hide-mobile'));
+      // TEAM — "MCLAREN-HONDA" style concat; if team and engine share a name
+      // (e.g. Ferrari) show it once rather than "FERRARI-FERRARI"; hidden on mobile
+      const teamName   = car.team.name.toUpperCase();
+      const engineName = car.team.engine.toUpperCase();
+      const teamEngineLabel = teamName === engineName ? teamName : `${teamName}-${engineName}`;
+      tr.appendChild(cell(teamEngineLabel, 'col-team hide-mobile'));
+
+      // TYRE MFR — single letter: G = Goodyear, P = Pirelli; hidden on mobile
+      tr.appendChild(cell(car.tyres.name[0].toUpperCase(), 'col-tyre-mfr hide-mobile'));
 
       // LAST LAP — hidden on mobile
       tr.appendChild(cell(

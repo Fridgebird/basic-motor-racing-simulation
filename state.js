@@ -103,9 +103,10 @@ export function initRace(seed) {
       tyres,    // full tyre object    { name, maxGrip, wearRate }
 
       // ── Tyre state ────────────────────────────────────────────────────────
-      compound:  'medium',  // all cars start on mediums; pit AI may change this
-      tyreWear:  0,         // 0.0 = new, 1.0 = worn out; drives tyreFactor
-      stintLap:  0,         // laps completed on current tyre set
+      compound:     'medium',  // all cars start on mediums; pit AI may change this
+      tyreWear:     0,         // 0.0 = new, 1.0 = worn out; drives tyreFactor
+      stintLap:     0,         // laps completed on current tyre set
+      tyreHistory:  [],        // compounds used so far e.g. ['S','H','M']
 
       // ── Fuel ──────────────────────────────────────────────────────────────
       fuel: CIRCUIT.fuelCapacity,   // kg; full tank at lights-out

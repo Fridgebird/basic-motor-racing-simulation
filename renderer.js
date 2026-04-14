@@ -99,6 +99,7 @@ export class Renderer {
         status:          c.status,
         lastLapTime:     c.lastLapTime,
         compound:        c.compound,
+        tyreHistory:     c.tyreHistory ? [...c.tyreHistory] : [],
         stintLap:        c.stintLap,
         tyreWear:        c.tyreWear,
         fuel:            c.fuel,
@@ -317,11 +318,29 @@ export class Renderer {
       }
       tr.appendChild(cell(gapStr, 'col-gap'));
 
-      // TYRE — compound initial + laps on current set
-      tr.appendChild(cell(
-        `${car.compound[0].toUpperCase()} (${car.stintLap})`,
-        'col-tyre',
-      ));
+      // TYRE — history of compounds used + laps on current set
+      // e.g. "SHM (7)" with previous compounds greyed, current in bold
+      {
+        const tyreTd = document.createElement('td');
+        tyreTd.className = 'col-tyre';
+        const history = car.tyreHistory ?? [];
+        const cur     = car.compound[0].toUpperCase();
+        if (history.length > 1) {
+          // Previous compounds greyed out
+          const prev = document.createElement('span');
+          prev.style.opacity = '0.45';
+          prev.textContent   = history.slice(0, -1).join('');
+          tyreTd.appendChild(prev);
+        }
+        // Current compound bold
+        const curSpan = document.createElement('span');
+        curSpan.style.fontWeight = 'bold';
+        curSpan.textContent      = cur;
+        tyreTd.appendChild(curSpan);
+        // Lap count
+        tyreTd.appendChild(document.createTextNode(` (${car.stintLap})`));
+        tr.appendChild(tyreTd);
+      }
 
       // WEAR — colour-coded; hidden on mobile
       const wearPct = Math.round(car.tyreWear * 100);
@@ -500,7 +519,7 @@ export class Renderer {
     if (ev.type === 'pit') {
       tag      = 'PIT';
       tagClass = 'tag-pit';
-      const estLaps = ev.aiEstimates?.estimates?.[ev.compound]?.estLaps;
+      const estLaps = ev.aiEstimates?.[ev.compound]?.estLaps;
       const estStr  = estLaps != null ? ` · est ${estLaps}L` : '';
       detail   = `${entry.car.toUpperCase()} — ${ev.compound[0].toUpperCase()} tyres +${ev.fuelAdded}kg (${ev.duration}s)${estStr}`;
 

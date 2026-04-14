@@ -124,6 +124,7 @@ export function tick(rng) {
       const fuelLapsTarget = estLaps + fuelMarginLaps;
       car.fuel     = Math.min(CIRCUIT.fuelCapacity, Math.ceil(fuelLapsTarget * burnPerLap));
       car.compound = startCompound;
+      car.tyreHistory.push(startCompound[0].toUpperCase());
       car.strategy = { initialized: true };
       events.push({
         type:      'strategy_init',
@@ -623,6 +624,7 @@ function executePitStop(car, rng) {
   car.cumulativeTime += duration;
   car.fuel      = fuelTarget;
   car.compound  = newCompound;
+  car.tyreHistory.push(newCompound[0].toUpperCase());
   car.tyreWear  = 0;
   car.stintLap  = 0;
   car.stopsMade++;

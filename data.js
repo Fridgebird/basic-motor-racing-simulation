@@ -318,7 +318,7 @@ export const DRIVERS = [
     team:        'mclaren',
     // The Professor — metronomic, devastatingly consistent; reduced for game balance
     skill:       92,
-    consistency: 96,
+    consistency: 89,
     aggression:  50,
   },
 

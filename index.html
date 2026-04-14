@@ -536,8 +536,26 @@
       btnNext.disabled = !steppable || !renderer.inReplay;
     }
 
-    // ── Initial blank render ───────────────────────────────────────────────
+    // ── Pre-race grid display ─────────────────────────────────────────────
+    // Initialise state from the default seed so the timing sheet shows the
+    // starting grid before the user hits Start Race. When Start Race is
+    // clicked it re-runs initRace with the same (or changed) seed, so race
+    // behaviour is unaffected.
+    {
+      const previewSeed = parseInt(seedInput.value, 10) || 198804;
+      const previewRng  = initRace(previewSeed);
+      initStrategies(previewRng);
+    }
     renderer.render();
+
+    // Update the grid preview whenever the seed input changes
+    seedInput.addEventListener('change', () => {
+      if (btnStart.disabled) return;  // race already running — ignore
+      const previewSeed = parseInt(seedInput.value, 10) || 198804;
+      const previewRng  = initRace(previewSeed);
+      initStrategies(previewRng);
+      renderer.render();
+    });
 
     // ── startRace ──────────────────────────────────────────────────────────
     function startRace() {

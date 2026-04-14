@@ -563,7 +563,7 @@ export const DRIVERS = [
 export const CIRCUIT = {
   name:               'Circuit de Vitesse',
   totalLaps:          70,
-  trackAbrasiveness:  0.80,   // 0–1; high = harder on tyres (like a rough street circuit)
+  trackAbrasiveness:  0.25,   // 0–1; high = harder on tyres (like a rough street circuit)
   fuelCapacity:       100,    // kg maximum fuel load
   baseFuelBurnPerLap: 1.30,   // kg/lap baseline (NA); turbos multiply via engine.fuelBurnRate
                                // At 1.30 kg/lap, worst-case turbo (×1.15) needs 104.7 kg for 70 laps —

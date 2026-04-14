@@ -70,6 +70,28 @@ const FAILURE_LABELS = [
 // ─── tick ──────────────────────────────────────────────────────────────────────
 // Advance every car through one sector. Must be called with the rng returned
 // by initRace() so the full sequence is contiguous and replayable.
+// initStrategies — call once after initRace() and before the first tick/render.
+// Sets each car's starting compound and fuel load so the pre-race grid display
+// shows the correct tyre choice rather than the 'medium' placeholder in state.js.
+// Consumes one rng() call per car (for compound selection), same as before
+// except the calls now happen here rather than inside the first tick.
+export function initStrategies(rng) {
+  for (const car of cars) {
+    if (car.strategy) continue;  // already initialised (shouldn't happen at race start)
+    const startCompound  = chooseStartingCompound(car, rng);
+    const estLaps        = estimateStintLaps(car, startCompound);
+    const burnPerLap     = CIRCUIT.baseFuelBurnPerLap * car.engine.fuelBurnRate;
+    const fuelMarginLaps = car.team.strategy.fuelMarginLaps;
+    const fuelLapsTarget = estLaps + fuelMarginLaps;
+    car.fuel        = Math.min(CIRCUIT.fuelCapacity, Math.ceil(fuelLapsTarget * burnPerLap));
+    car.compound    = startCompound;
+    car.tyreHistory = [startCompound[0].toUpperCase()];
+    car.strategy    = { initialized: true };
+    // strategy_init event will be pushed to the race log on the first sector tick
+    car._strategyInitPending = { compound: startCompound, estLaps, fuelLoaded: +car.fuel.toFixed(1) };
+  }
+}
+
 export function tick(rng) {
 
   // ── Advance race clock ──────────────────────────────────────────────────────
@@ -113,25 +135,12 @@ export function tick(rng) {
     const factors = {};
     const rolls   = {};
 
-    // Initialise reactive strategy on first sector — done here to keep state.js free of
-    // simulation imports. Chooses starting compound by probability (aggressive drivers
-    // lean soft, conservative drivers lean hard) and loads targeted fuel for that stint.
-    if (!car.strategy) {
-      const startCompound  = chooseStartingCompound(car, rng);
-      const estLaps        = estimateStintLaps(car, startCompound);
-      const burnPerLap     = CIRCUIT.baseFuelBurnPerLap * car.engine.fuelBurnRate;
-      const fuelMarginLaps = car.team.strategy.fuelMarginLaps;
-      const fuelLapsTarget = estLaps + fuelMarginLaps;
-      car.fuel     = Math.min(CIRCUIT.fuelCapacity, Math.ceil(fuelLapsTarget * burnPerLap));
-      car.compound = startCompound;
-      car.tyreHistory.push(startCompound[0].toUpperCase());
-      car.strategy = { initialized: true };
-      events.push({
-        type:      'strategy_init',
-        compound:  startCompound,
-        estLaps,
-        fuelLoaded: +car.fuel.toFixed(1),
-      });
+    // Log the strategy_init event on the first sector tick.
+    // The compound/fuel were already set by initStrategies() before the first render.
+    if (car._strategyInitPending) {
+      const p = car._strategyInitPending;
+      events.push({ type: 'strategy_init', compound: p.compound, estLaps: p.estLaps, fuelLoaded: p.fuelLoaded });
+      delete car._strategyInitPending;
     }
 
     // ── 1. Engine factor ────────────────────────────────────────────────────

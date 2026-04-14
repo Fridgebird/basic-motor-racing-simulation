@@ -565,7 +565,9 @@ export const CIRCUIT = {
   totalLaps:          70,
   trackAbrasiveness:  0.80,   // 0–1; high = harder on tyres (like a rough street circuit)
   fuelCapacity:       100,    // kg maximum fuel load
-  baseFuelBurnPerLap: 3.50,   // kg/lap baseline (NA); turbos multiply via engine.fuelBurnRate
+  baseFuelBurnPerLap: 1.30,   // kg/lap baseline (NA); turbos multiply via engine.fuelBurnRate
+                               // At 1.30 kg/lap, worst-case turbo (×1.15) needs 104.7 kg for 70 laps —
+                               // just over a full tank, so NA cars can fuel no-stop and turbos need one fuel top-up
   pitLaneTime:        18,     // seconds lost slowing, traversing, and rejoining — fixed for all cars
   baseTyreChangeTime: 7,      // seconds for tyre change at best crew (100); scales up with lower ratings
   fuelRigRate:        0.12,   // seconds per kg of fuel added; 100kg full refuel ≈ 12s stationary

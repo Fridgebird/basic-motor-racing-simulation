@@ -1,8 +1,8 @@
 // Strategy analysis — runs N full races and reports per-car strategy outcomes.
 // Run with: node strategy_analysis.mjs [numRaces]
 
-import { initRace, race, cars, raceLog } from './state.js';
-import { tick, isRaceOver }              from './simulation.js';
+import { initRace, race, cars, raceLog }          from './state.js';
+import { tick, isRaceOver, initStrategies }        from './simulation.js';
 
 const NUM_RACES = process.argv[2] ? parseInt(process.argv[2]) : 8;
 
@@ -14,6 +14,7 @@ function stopsLabel(n) { return `${n}-stop`; }
 
 function runRace(seed) {
   const rng = initRace(seed);
+  initStrategies(rng);
   while (!isRaceOver()) tick(rng);
 
   // Snapshot cars and log (they get reset on next initRace)

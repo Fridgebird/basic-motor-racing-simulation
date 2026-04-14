@@ -1,12 +1,13 @@
 // race_detail.mjs — Detailed per-stint breakdown for a single race.
 // Run with: node race_detail.mjs [seed]
 
-import { initRace, cars, raceLog } from './state.js';
-import { tick, isRaceOver }        from './simulation.js';
+import { initRace, cars, raceLog }            from './state.js';
+import { tick, isRaceOver, initStrategies }   from './simulation.js';
 
 const SEED = process.argv[2] ? parseInt(process.argv[2]) : 198804;
 
 const rng = initRace(SEED);
+initStrategies(rng);
 while (!isRaceOver()) tick(rng);
 
 // ── Build per-car stint data from the race log ────────────────────────────────

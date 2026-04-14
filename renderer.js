@@ -56,7 +56,7 @@ export class Renderer {
     this.animationsEnabled = true;
 
     // Gap column mode: 'gap' = gap to leader, 'interval' = gap to car ahead
-    this._gapMode = 'gap';
+    this._gapMode = 'interval';
     this._gapHeader = document.getElementById('gap-toggle-header');
     if (this._gapHeader) {
       this._gapHeader.style.cursor = 'pointer';

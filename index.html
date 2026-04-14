@@ -120,7 +120,7 @@
     .col-team   { width: 88px; }
     .col-lastlap{ width: 80px; }
     .col-gap    { width: 70px; }
-    .col-tyre   { width: 64px; }
+    .col-tyre   { width: 80px; }
     .col-wear   { width: 44px; }
     .col-fuel   { width: 44px; }
     .col-stops  { width: 34px; }
@@ -414,7 +414,7 @@
             <th class="col-driver">DRIVER</th>
             <th class="col-team    hide-mobile">TEAM</th>
             <th class="col-lastlap hide-mobile">LAST LAP</th>
-            <th class="col-gap gap-toggle" id="gap-toggle-header">GAP ▾</th>
+            <th class="col-gap gap-toggle" id="gap-toggle-header">INT ▾</th>
             <th class="col-tyre">TYRE</th>
             <th class="col-wear  hide-mobile">WEAR</th>
             <th class="col-fuel  hide-mobile">FUEL</th>
@@ -486,7 +486,7 @@
   <script type="module">
     import { Renderer }              from './renderer.js';
     import { initRace }              from './state.js';
-    import { tick, isRaceOver }      from './simulation.js';
+    import { tick, isRaceOver, initStrategies } from './simulation.js';
 
     // ── Renderer ───────────────────────────────────────────────────────────
     const renderer = new Renderer();
@@ -544,6 +544,7 @@
       const seed = parseInt(seedInput.value, 10) || 198804;
 
       rng    = initRace(seed);
+      initStrategies(rng);   // sets actual starting compounds before first render
       paused = false;
 
       btnStart.disabled  = true;

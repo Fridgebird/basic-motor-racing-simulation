@@ -93,45 +93,75 @@ Draws the Spectrum-style timing display onto Canvas:
 - **Mobile display** — the canvas timing sheet is designed for desktop. Need a strategy for mobile: either a responsive layout that stacks panels vertically, a simplified mobile view showing only top 6 or so, or a portrait-optimised alternative renderer. Consider touch interactions (tap a driver to highlight their line on the lap chart, etc.). The frozen-columns + horizontal-scroll item above is the first step.
 - Race log viewer / replay tool — filter by car, lap range, event type; inspect factor values and rolls to diagnose model behaviour
 - Practice session with lap time data
-- Qualifying session to set grid
-- **Per-team race strategy derived from practice data:**
-  - During practice each car runs laps and the AI observes its own empirical tyre wear rate (which naturally varies by driver aggression, tyre manufacturer, and compound)
-  - From observed wear rate each team calculates the lap at which wear will hit its trigger threshold, and therefore how many stops are needed
-  - This produces genuine strategy differentiation: a smooth Goodyear driver may emerge as a 2-stop car while an aggressive Pirelli driver plans 3 stops
-  - The pit threshold in the race is set per-car from the practice plan rather than being a shared reactive value
-  - Do not shortcut this with a pre-race calculation — the emergent quality of observing wear in practice is the point
+- **Qualifying session** — interesting to watch; will be added before championship mode. No practice sessions — dropped from scope.
 - Multiple circuits with different characteristics
-- Random circuit selection or full season series
 - Ambient temperature and weather effects
 - Tyre compound choice per stint
 
 ---
 
-### Future fork: Persistent Global World (design only — not started)
-A separate project built on top of this sim's core engine. Key decisions made in design discussion:
-- **Concept:** Zero-player, one race per day globally. Every visitor sees the same deterministic race. A soap opera the whole world watches together.
-- **Determinism:** Seed derived from calendar date (`parseInt(YYYYMMDD)`). Same date = same race for everyone.
-- **Season:** ~20 races, one per day (~3 weeks). Seasonal progression: drivers age +1/season, retire probabilistically above ~40, teams improve slightly each season, full reset after season 5 ("new technical era").
-- **Team convergence within a regulation era:** Each season within a 5-year era, teams gradually improve their stats (aero, reliability, setupAbility etc.) toward a theoretical ceiling, and the field converges — the gap from last to first shrinks as teams learn the regulations. A 3-lap deficit at the start of an era is plausible; by year 4–5 the backmarkers should be within 1–2 laps. The regulation reset (year 5→6) reopens the gaps: each team draws new baseline stats from a wider distribution, recreating the divergence. This mirrors real F1 — new regs create a fresh pecking order, teams spend years chasing the leaders, then the cycle resets. The convergence rate should be a tunable parameter per team (big teams converge faster).
-- **Tyre manufacturer drift across seasons:** Each season, Goodyear and Pirelli's characteristics (`maxGrip`, `wearRate`) drift randomly within defined bounds — so some years Goodyear is the durable, grippy tyre and some years it wears fast; Pirelli likewise. Drift should be gradual (e.g. ±5–10% per season, clamped to a min/max range per stat). This creates a genuine "tyre war" narrative where the balance of power shifts year to year and teams on the currently-favoured manufacturer gain a strategic advantage. Parameters to define: drift magnitude per season, absolute bounds for each stat. The analysis.html tests 2 and 2b are the reference benchmarks — any seasonal values should stay within the ranges those tests verify as sensible.
-- **State persistence (Option A — preferred for launch):** Pure client-side replay with localStorage caching of season-end snapshots. Returning visitors compute only today's race (~2ms). Cold-cache worst case at season 50 (~2.7 years in) is ~2s behind a loading screen. Migrate to Option B if needed.
-- **State persistence (Option B — upgrade path):** GitHub Actions daily cron writes canonical results JSON to repo; clients read it. Adds narrative/announcement possibilities.
-- **Driver names:** Pre-populated lookup table of ~500–600 profiles in shuffled order, pulled sequentially by ID. Nationality is a driver attribute (not team-based); both first and last name drawn from the same nationality's pool. Append-only extension never disturbs existing assignments. **Driver surnames must be ≤ 10 characters** — the timing sheet driver column is sized for exactly 10 chars at the display font; longer names will be clipped.
-- **Career stats:** Feasible at no extra cost — the standings replay loop already processes all results; stats are aggregations of the same data.
-- **Transparency:** With client-side arch, the entire future is computable by anyone in the browser console. Options: accept it (soap opera argument holds), obfuscation (theatrical only), or server-side computation (real protection, adds infrastructure). Decision deferred — experiment in dev phase.
-- **Tech stack:** No change from HTML+JS. Core sim files (`data.js`, `simulation.js`, `state.js`) need no changes. New file: `championship.js` for replay loop and standings.
+### Primary Direction: Zero-Player Persistent Global World
 
----
+This is the main target for the project going forward. Everything built from here should serve this vision.
 
-### Championship mode (major feature — build after UI work is complete)
-A multi-race season with persistent standings, fictional teams/drivers, and a path towards player team management. Key decisions already made:
-- **6–8 races** across circuits with distinct characteristics (power circuit, street circuit, tyre-destroyer, etc.)
-- **24 cars / 12 teams**, all fictional names to avoid licensing issues; keep 1988 turbo-era feel through aesthetics not real names
-- **Points system** — top 10 finishers score (e.g. 25-18-15-12-10-8-6-4-2-1); both driver and constructor standings
-- **Persistence via localStorage** — championship state (results, standings, current race) saved between browser sessions; RNG seed stored per race for full replayability
-- **Pure simulation first** — build the full championship as a spectator experience before adding any player control
-- **Player team management (later phase)** — player picks a team pre-season and controls pit strategy during each race; practice session data is the input for strategy planning
-- **Data export** — "Download CSV" button after practice exports per-lap data (lap time, compound, wear %, fuel kg, position) so the player can build their own strategy model in Excel or similar
+**Core concept:** A soap opera you watch, not a game you play. One deterministic race per day, globally shared. Every visitor sees the same race. The drama comes from following drivers and teams across seasons — rivalries, retirements, comeback stories, team politics.
+
+**Tone and emphasis:**
+- Personality and backstory are as important as stats. Every driver should feel like a character.
+- Drivers have distinct styles (aggressive, smooth, consistent, erratic) that play out visibly in races.
+- The human story is the product — results tables and lap charts are the medium, not the point.
+- Both male and female drivers populate the world in equal measure. This is fictional, so there are no historical constraints.
+- All teams, drivers, circuits and names are fictional.
+
+**Season structure:**
+- ~16–20 races per season across circuits with distinct characteristics (power track, street circuit, tyre-destroyer, high-altitude etc.)
+- One race per day in the global world; locally can be navigated freely
+- Points system: top 10 finishers score (25-18-15-12-10-8-6-4-2-1); driver and constructor standings both tracked
+- Qualifying session precedes each race to set the grid
+
+**Driver lifecycle:**
+- Drivers have an age attribute; age +1 each season
+- Retirement probability rises above ~35, near-certain by ~45 (varies by driver "longevity" trait)
+- Retiring drivers are replaced by rookies drawn from the fictional name pool
+- Driver transfers between teams happen at season end — triggered by performance, contract status, team budget changes; adds soap opera texture
+- Career stats accumulated across all seasons: wins, podiums, poles, fastest laps, championships, seasons active
+- Driver profile pages showing career arc, personality traits, notable races
+
+**Team lifecycle:**
+- Teams persist and evolve; stats (aero, reliability, setupAbility) improve gradually within a regulation era
+- Field convergence: 3-lap deficit plausible at era start; backmarkers within 1–2 laps by year 4–5
+- Regulation reset every 5 seasons: new baseline stats drawn from wider distribution, recreating divergence
+- Convergence rate is a per-team parameter (bigger/richer teams converge faster)
+- Tyre manufacturer characteristics drift slowly each season within defined bounds (see tyre drift note in backlog)
+
+**Determinism and replayability:**
+- Seed derived from calendar date (`parseInt(YYYYMMDD)`) for the daily global race
+- Same date = same race for every visitor worldwide
+- Full season history replayable from the initial seed chain
+
+**State persistence:**
+- Option A (preferred for launch): Pure client-side replay with localStorage caching of season-end snapshots. Returning visitors compute only today's race (~2ms). Cold-cache worst case at season 50 is ~2s.
+- Option B (upgrade path): GitHub Actions daily cron writes canonical results JSON to repo; enables narrative/announcement features.
+
+**Driver name pool:**
+- ~500–600 fictional profiles, diverse nationalities and genders in equal proportion
+- Pulled sequentially by ID; append-only so existing assignments never change
+- Surnames ≤ 10 characters (timing sheet column constraint)
+- Nationality drives name style (e.g. Scandinavian, Latin American, East Asian, African, etc.)
+
+**Views and screens needed (to be designed):**
+- Live race view (current timing sheet + driver tracker + lap chart + commentary)
+- Qualifying view
+- Season standings (driver and constructor)
+- Race results archive
+- Driver profile (career stats, personality, team history, notable moments)
+- Team profile (history, current lineup, season trajectory)
+- Championship history (past winners, era summaries)
+
+**What is explicitly NOT in scope:**
+- Player involvement / strategy control (pure spectator experience)
+- Practice sessions (dropped)
+- Single-player team management mode (separate future fork if ever)
 
 ---
 

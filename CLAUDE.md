@@ -229,6 +229,7 @@ renderer.js       ← canvas drawing, timing sheet, Spectrum style
 - Driver errors have three outcomes: crash/retirement, heavy sector penalty (spin, lock-up), or normal
 - Tyre wear can reduce effective consistency, increasing crash probability late in a stint
 - No player in v1 — pure simulation viewer
+- **Late-race double-stop by backmarkers is intentional emergent behaviour** — backmarker teams use `tyreLifeModel: 'basic'` (no fuel correction in wear estimate) and have tight `fuelMarginLaps`. Combined with `shouldPit`'s ±0.03 wear jitter, they occasionally pit late (e.g. lap 65) on softs, then get caught out on the very next lap when jitter pushes the wear trigger down just as the soft degrades. Better-run teams (McLaren, Williams) use `fuelCorrected` estimates and more conservative margins, so this mistake belongs to the midfield and backmarkers. Do not "fix" this — it is soap opera.
 
 ---
 

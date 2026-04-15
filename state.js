@@ -26,6 +26,13 @@ export const raceLog = {
   entries: [],
 };
 
+// ─── Lap Chart Data ───────────────────────────────────────────────────────────
+// Populated at the end of each lap (sector 3). One entry per lap.
+// Each entry maps driver name → { position, pitCompound }
+// pitCompound is null unless the car pitted this lap (then 'soft'/'medium'/'hard').
+// Reset by initRace().
+export const lapChartData = [];
+
 // ─── Race Progress ────────────────────────────────────────────────────────────
 export const race = {
   tick:   0,   // absolute tick counter, 1–210 during the race
@@ -73,6 +80,7 @@ export function initRace(seed) {
   // Reset shared state
   raceLog.seed    = seed;
   raceLog.entries = [];
+  lapChartData.length = 0;
   race.tick   = 0;
   race.lap    = 0;
   race.sector = 3;  // so first tick() produces lap=1, sector=1 (not a phantom lap 0)

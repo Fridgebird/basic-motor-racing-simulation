@@ -8,7 +8,7 @@
 //   r.render();   // call after each tick
 //   r.reset();    // call on race reset
 
-import { cars, race, raceLog } from './state.js';
+import { cars, race, raceLog, lapChartData } from './state.js';
 import { CIRCUIT } from './data.js';
 
 export class Renderer {
@@ -21,6 +21,7 @@ export class Renderer {
     this._stripCanvas    = document.getElementById('spacing-strip');
     this._stripScroll    = document.getElementById('strip-scroll');
     this._zoomLabel      = document.getElementById('strip-zoom-label');
+    this._lapChartCanvas = document.getElementById('lap-chart-canvas');
 
     // Commentary focus filter — 'all', 'top10', 'top5'
     this._commentaryFilter = 'all';
@@ -169,6 +170,7 @@ export class Renderer {
     }
 
     this._updateFooter();
+    this._drawLapChart();
 
     // Update prevPositions in live mode, and also after a forward step so the
     // next step has correct "before" positions to compare against.
@@ -654,6 +656,203 @@ export class Renderer {
     if (this._seedDisplay && raceLog.seed != null) {
       this._seedDisplay.textContent = `SEED: ${raceLog.seed}`;
     }
+  }
+
+  // ── _drawLapChart ─────────────────────────────────────────────────────────
+  // Draws a position-over-laps chart on the lap-chart-canvas element.
+  // One line per driver, coloured by team. Second driver per team uses a
+  // dashed line. Pit stops shown as coloured dots on the line:
+  //   soft = red (#ff4444), medium = yellow (#ffff00), hard = white (#eeeeee)
+  _drawLapChart() {
+    const canvas = this._lapChartCanvas;
+    if (!canvas) return;
+
+    const totalLaps = CIRCUIT.totalLaps;
+    const lapsRecorded = lapChartData.length;
+
+    // Size canvas to its CSS display width
+    const W = canvas.clientWidth || 900;
+    const H = 480;
+    if (canvas.width !== W || canvas.height !== H) {
+      canvas.width  = W;
+      canvas.height = H;
+    }
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+
+    // Layout constants
+    const PAD_LEFT   = 56;   // room for start driver labels
+    const PAD_RIGHT  = 64;   // room for driver name labels on the right
+    const PAD_TOP    = 24;   // room for top x-axis lap labels
+    const PAD_BOTTOM = 6;
+    const chartW = W - PAD_LEFT - PAD_RIGHT;
+    const chartH = H - PAD_TOP - PAD_BOTTOM;
+    const numCars = 24;
+
+    // Nothing to draw yet
+    if (lapsRecorded === 0) {
+      ctx.fillStyle = '#999';
+      ctx.font = '13px "Courier New", monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText('RACE NOT STARTED', PAD_LEFT + 4, PAD_TOP + 20);
+      return;
+    }
+
+    // Helper: lap index → x pixel
+    const lapX = lap => PAD_LEFT + (lap / totalLaps) * chartW;
+    // Helper: position → y pixel (position 1 at top)
+    const posY = pos => PAD_TOP + ((pos - 1) / (numCars - 1)) * chartH;
+
+    // ── Grid lines ────────────────────────────────────────────────────────
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth   = 1;
+
+    // Horizontal grid: one line per position (no labels — driver names serve as reference)
+    for (let p = 1; p <= numCars; p++) {
+      const y = posY(p);
+      ctx.strokeStyle = '#1a1a1a';
+      ctx.beginPath();
+      ctx.moveTo(PAD_LEFT, y);
+      ctx.lineTo(PAD_LEFT + chartW, y);
+      ctx.stroke();
+    }
+
+    // Vertical grid: every 10 laps, labelled at the top
+    ctx.font = '13px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    for (let l = 0; l <= totalLaps; l += 10) {
+      const x = lapX(l);
+      ctx.strokeStyle = l === 0 ? '#333' : '#1a1a1a';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, PAD_TOP);
+      ctx.lineTo(x, PAD_TOP + chartH);
+      ctx.stroke();
+      // Tick mark protruding above the chart
+      ctx.strokeStyle = '#999';
+      ctx.beginPath();
+      ctx.moveTo(x, PAD_TOP - 5);
+      ctx.lineTo(x, PAD_TOP);
+      ctx.stroke();
+      // Label above the tick
+      ctx.fillStyle = '#999';
+      ctx.fillText(l === 0 ? 'LAP' : String(l), x, PAD_TOP - 7);
+    }
+
+    // ── Determine driver order for right-side labels ──────────────────────
+    // Use the last recorded lap's positions, fall back to cars[] order
+    const lastEntry = lapChartData[lapsRecorded - 1];
+    const displayCars = this._displayCars;
+
+    // Build per-driver team lookup from live cars[]
+    const driverTeam = new Map();
+    for (const car of displayCars) {
+      driverTeam.set(car.driver.name, car.team);
+    }
+
+    // Identify second driver per team (higher gridPosition = second driver)
+    const teamDrivers = new Map(); // teamId → [car, car]
+    for (const car of displayCars) {
+      const list = teamDrivers.get(car.team.id) ?? [];
+      list.push(car);
+      teamDrivers.set(car.team.id, list);
+    }
+    const secondDrivers = new Set();
+    for (const [, drivers] of teamDrivers) {
+      if (drivers.length === 2) {
+        // Higher gridPosition = listed second in the team
+        const second = drivers[0].gridPosition > drivers[1].gridPosition
+          ? drivers[0] : drivers[1];
+        secondDrivers.add(second.driver.name);
+      }
+    }
+
+    // ── Draw one line per driver ──────────────────────────────────────────
+    const PIT_COLOURS = { soft: '#ff4444', medium: '#ffff00', hard: '#eeeeee' };
+
+    for (const car of displayCars) {
+      const name   = car.driver.name;
+      const colour = car.team.colour || '#00ffff';
+      const isDash = secondDrivers.has(name);
+      const label  = `${car.driver.number} ${name.replace(/\s+/g, '').toUpperCase().slice(0, 3)}`;
+
+      ctx.strokeStyle = colour;
+      ctx.lineWidth   = 1.5;
+      ctx.setLineDash(isDash ? [4, 3] : []);
+
+      let started  = false;
+      let firstX = 0, firstY = 0;
+      let lastX  = 0, lastY  = 0;
+      let startCompound = null;
+
+      // Collect pit dots to draw after the line (so they sit on top)
+      const pitDots = [];
+
+      for (let i = 0; i < lapsRecorded; i++) {
+        const entry = lapChartData[i];
+        const d     = entry[name];
+        if (!d || d.position === null) continue;
+
+        const x = lapX(i + 1);   // lap index is 0-based, lap number is 1-based
+        const y = posY(d.position);
+
+        if (!started) {
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          started = true;
+          firstX  = x;
+          firstY  = y;
+          // Starting compound: first letter of tyreHistory maps to compound name
+          const hist = car.tyreHistory ?? [];
+          const firstLetter = hist[0] ?? 'M';
+          startCompound = firstLetter === 'S' ? 'soft'
+                        : firstLetter === 'H' ? 'hard'
+                        : 'medium';
+        } else {
+          ctx.lineTo(x, y);
+        }
+
+        if (d.pitCompound) {
+          pitDots.push({ x, y, compound: d.pitCompound });
+        }
+
+        lastX = x;
+        lastY = y;
+      }
+
+      if (started) ctx.stroke();
+
+      // Start dot — compound colour of starting tyre
+      ctx.setLineDash([]);
+      if (started && startCompound) {
+        ctx.fillStyle = PIT_COLOURS[startCompound];
+        ctx.beginPath();
+        ctx.arc(firstX, firstY, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Pit dots on the line
+      for (const dot of pitDots) {
+        ctx.fillStyle = PIT_COLOURS[dot.compound] || '#fff';
+        ctx.beginPath();
+        ctx.arc(dot.x, dot.y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Labels — start (right-aligned before the line) and end (left of right edge)
+      if (started) {
+        ctx.font = '13px "Courier New", monospace';
+        ctx.fillStyle = colour;
+        ctx.textAlign = 'right';
+        ctx.fillText(label, firstX - 5, firstY + 4);
+        ctx.textAlign = 'left';
+        ctx.fillText(label, lastX + 4, lastY + 4);
+      }
+    }
+
+    // Reset dash
+    ctx.setLineDash([]);
   }
 }
 

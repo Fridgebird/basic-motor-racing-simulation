@@ -8,7 +8,7 @@
 //   while (!isRaceOver()) tick(rng);
 
 import { COMPOUNDS, CIRCUIT } from './data.js';
-import { cars, race, raceLog, updatePositions } from './state.js';
+import { cars, race, raceLog, lapChartData, updatePositions } from './state.js';
 
 // ─── Tuning Constants ─────────────────────────────────────────────────────────
 // These scale the raw probability formulas to produce realistic retirement rates.
@@ -454,6 +454,25 @@ export function tick(rng) {
   }
 
   updatePositions();
+
+  // ── Lap chart snapshot ────────────────────────────────────────────────────
+  // Record each car's position at end of every lap (sector 3 only).
+  // Also capture pit compound if the car stopped this lap, for pit dot rendering.
+  if (race.sector === 3) {
+    const entry = {};
+    for (const car of cars) {
+      // Find any pit event logged for this car on this tick
+      const logEntry = raceLog.entries.find(
+        e => e.tick === race.tick && e.car === car.driver.name
+      );
+      const pitEvent = logEntry?.events.find(e => e.type === 'pit');
+      entry[car.driver.name] = {
+        position:    car.status === 'retired' ? null : car.position,
+        pitCompound: pitEvent ? pitEvent.compound : null,
+      };
+    }
+    lapChartData.push(entry);
+  }
 }
 
 // ─── Overtaking helpers ───────────────────────────────────────────────────────

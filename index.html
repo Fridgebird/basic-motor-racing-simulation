@@ -297,6 +297,27 @@
     .tag-spin  { color: #ff8800; }
     .tag-pass  { color: #00ff00; }
 
+    /* ── Lap chart ────────────────────────────────────────────────────────── */
+    #lap-chart-panel {
+      width: 100%;
+      max-width: 1100px;
+      margin-top: 14px;
+      border-top: 1px solid #333;
+      padding-top: 8px;
+    }
+
+    #lap-chart-title {
+      color: #00ffff;
+      font-size: 11px;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    #lap-chart-canvas {
+      display: block;
+      width: 100%;
+    }
+
     /* ── Footer ───────────────────────────────────────────────────────────── */
     #race-footer {
       width: 100%;
@@ -472,6 +493,12 @@
       <div id="commentary-feed"></div>
     </div>
 
+  </div>
+
+  <!-- ── Lap chart ────────────────────────────────────────────────────────── -->
+  <div id="lap-chart-panel">
+    <div id="lap-chart-title">LAP CHART</div>
+    <canvas id="lap-chart-canvas"></canvas>
   </div>
 
   <!-- ── Footer ──────────────────────────────────────────────────────────── -->

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Race Sim — Analysis</title>
+  <style>
+    body        { background:#000; color:#ccc; font-family:"Courier New",Courier,monospace; font-size:13px; padding:24px 32px; max-width:980px; }
+    h1          { color:#00ffff; letter-spacing:2px; margin-bottom:2px; }
+    h1 + p      { color:#555; margin-top:2px; margin-bottom:0; }
+    h2          { color:#ffff00; letter-spacing:1px; margin-top:40px; margin-bottom:4px; padding-bottom:4px; border-bottom:1px solid #333; }
+    p.desc      { color:#888; margin:4px 0 12px; }
+    p.note      { color:#555; font-size:11px; margin:2px 0; }
+    table       { border-collapse:collapse; margin:6px 0 4px; }
+    th          { color:#00ffff; font-weight:normal; font-size:11px; letter-spacing:1px; text-align:left; padding:2px 20px 2px 0; border-bottom:1px solid #333; }
+    td          { padding:2px 20px 2px 0; }
+    .g          { color:#00ff00; }
+    .y          { color:#ffff00; }
+    .r          { color:#ff4444; }
+    .dim        { color:#555; }
+    .section-note { color:#555; font-size:11px; margin:6px 0 0; font-style:italic; }
+  </style>
+</head>
+<body>
+
+<h1>SIMULATION ANALYSIS</h1>
+<p>Parameter isolation tests — each test equalises all other variables to verify the model produces sensible outcomes.</p>
+
+<div id="output"></div>
+
+<script type="module">
+  import { DRIVERS, TEAMS, COMPOUNDS, CIRCUIT, TYRES } from './data.js';
+  import { cars, race, raceLog, initRace }              from './state.js';
+  import { tick, isRaceOver, initStrategies, tyreConfig } from './simulation.js';
+
+  const out  = document.getElementById('output');
+  const SEED = 198804;
+
+  // ── Constants matching simulation.js ────────────────────────────────────────
+  const AGGRESSION_WEAR_SCALE = 0.4;   // must match simulation.js
+
+  // ── Output helpers ───────────────────────────────────────────────────────────
+  const esc      = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const fmtTime  = s => { const m=Math.floor(s/60); return `${m}:${String((s%60).toFixed(3)).padStart(6,'0')}`; };
+  const fmtDelta = s => (s>=0?'+':'')+s.toFixed(3)+'s';
+
+  function section(title, desc) {
+    out.insertAdjacentHTML('beforeend',
+      `<h2>${esc(title)}</h2>${desc?`<p class="desc">${esc(desc)}</p>`:''}`);
+  }
+  function note(text) {
+    out.insertAdjacentHTML('beforeend', `<p class="section-note">↳ ${esc(text)}</p>`);
+  }
+  function tbl(headers, rows) {
+    const ths = headers.map(h=>`<th>${esc(h)}</th>`).join('');
+    const trs = rows.map(row =>
+      `<tr>${row.map(c =>
+        typeof c==='object' && c!==null
+          ? `<td class="${c.cls||''}">${esc(c.v)}</td>`
+          : `<td>${esc(c)}</td>`
+      ).join('')}</tr>`
+    ).join('');
+    out.insertAdjacentHTML('beforeend',
+      `<table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`);
+  }
+
+  // ── Data save / restore ───────────────────────────────────────────────────────
+  const saveTeams   = () => TEAMS.map(t => ({ ...t, strategy: { ...t.strategy } }));
+  const saveDrivers = () => DRIVERS.map(d => ({ ...d }));
+  function restoreTeams(s) {
+    TEAMS.forEach((t,i) => {
+      const sv = s[i];
+      for (const k in sv) k === 'strategy' ? Object.assign(t.strategy, sv.strategy) : (t[k] = sv[k]);
+    });
+  }
+  function restoreDrivers(s) { DRIVERS.forEach((d,i) => Object.assign(d, s[i])); }
+
+  // ── Baseline values ───────────────────────────────────────────────────────────
+  const BASE_TEAM     = { engine:'ford', tyres:'goodyear', aero:75, chassisReliability:80, pitCrewRating:80, setupAbility:70 };
+  const BASE_DRIVER   = { skill:80, consistency:80, aggression:65 };
+  const BASE_STRATEGY = { wearTrigger:0.80, fuelTrigger:6, fuelMarginLaps:2, tyreLifeModel:'basic' };
+
+  function equalise() {
+    TEAMS.forEach(t => { Object.assign(t, BASE_TEAM); Object.assign(t.strategy, BASE_STRATEGY); });
+    DRIVERS.forEach(d => Object.assign(d, BASE_DRIVER));
+  }
+
+  // Run full race. afterInit(rng) fires after initRace but before initStrategies.
+  // afterStrategies() fires after initStrategies but before first tick.
+  function runRace(seed, { afterInit, afterStrategies } = {}) {
+    const rng = initRace(seed);
+    afterInit?.(rng);
+    initStrategies(rng);
+    afterStrategies?.();
+    while (!isRaceOver()) tick(rng);
+  }
+
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // TEST 1 — SETUP
+  // ════════════════════════════════════════════════════════════════════════════
+  section('TEST 1 — SETUP',
+    'All drivers and teams identical. setupAbility ranges 10→100 across the 10 teams (2 drivers each). ' +
+    'Shows how much pre-race setup contributes to lap time. ' +
+    'Formula: setupFactor = 1.0 + (1 − setup/100) × 0.04  →  max 4% penalty at setup=0.');
+
+  {
+    const savedT = saveTeams(), savedD = saveDrivers();
+    equalise();
+
+    const abilities = [10,20,30,40,50,60,70,80,90,100,70,70]; // 12 teams; last two get baseline
+    TEAMS.forEach((t,i) => t.setupAbility = abilities[i]);
+    const teamAbility = Object.fromEntries(TEAMS.map(t => [t.id, t.setupAbility]));
+
+    runRace(SEED);
+
+    // Extract setup rolls from raceLog (tick 0, setup_roll events)
+    const setupByDriver = {};
+    for (const e of raceLog.entries) {
+      if (e.tick === 0) {
+        const ev = e.events.find(ev => ev.type === 'setup_roll');
+        if (ev) setupByDriver[e.car] = ev.result;
+      }
+    }
+
+    const active = cars.filter(c => c.status !== 'retired').sort((a,b) => a.cumulativeTime - b.cumulativeTime);
+    const fastest = active[0]?.cumulativeTime ?? 0;
+
+    const rows = [...cars]
+      .sort((a,b) => a.status==='retired' ? 1 : b.status==='retired' ? -1 : a.cumulativeTime - b.cumulativeTime)
+      .map(c => {
+        const ability = teamAbility[c.team.id];
+        const setup   = setupByDriver[c.driver.name] ?? '?';
+        const retired = c.status === 'retired';
+        const time    = retired ? `RET L${c.retiredLap??'?'}` : fmtTime(c.cumulativeTime);
+        const delta   = retired ? '—' : fmtDelta(c.cumulativeTime - fastest);
+        const factor  = typeof setup === 'number'
+          ? `${(1.0 + (1 - setup/100) * 0.04).toFixed(4)}`
+          : '?';
+        const dCls    = retired ? 'dim' : c.cumulativeTime - fastest < 60 ? 'g'
+                      : c.cumulativeTime - fastest < 150 ? 'y' : 'r';
+        return [c.driver.name, String(ability), String(setup), factor, time, {v:delta, cls:dCls}];
+      });
+
+    tbl(['DRIVER','SETUP_ABILITY','ROLLED_SETUP','SETUP_FACTOR','FINISH_TIME','DELTA'], rows);
+    restoreTeams(savedT); restoreDrivers(savedD);
+  }
+  note('Expected: a spread of ~60–90 across rolled setups; delta between best and worst setup should be <120s over 70 laps. ' +
+       'If spread is much larger, the setupFactor coefficient (0.04) may need tuning.');
+
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // TEST 2 — TYRE COMPOUND PERFORMANCE  (analytical, both manufacturers)
+  // ════════════════════════════════════════════════════════════════════════════
+  section('TEST 2 — TYRE COMPOUND FACTORS  (analytical)',
+    'tyreFactor = 1.0 + (1 − grip) × penaltyCoeff  where penaltyCoeff = ' + tyreConfig.penaltyCoeff + '. ' +
+    'grip = (min(100, tyreMaxGrip + gripModifier) / 100) × (1 − wear). ' +
+    'Base lap time ≈ 75s (sum of sector baseSectorTimes). ' +
+    'Goodyear maxGrip = ' + TYRES.goodyear.maxGrip + ', Pirelli maxGrip = ' + TYRES.pirelli.maxGrip + '.');
+
+  {
+    const baseLap    = CIRCUIT.sectors.reduce((s, sec) => s + sec.baseSectorTime, 0);
+    const wearLevels = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
+
+    for (const [tyreName, tyre] of [['GOODYEAR', TYRES.goodyear], ['PIRELLI', TYRES.pirelli]]) {
+      out.insertAdjacentHTML('beforeend', `<p class="desc">${tyreName} (maxGrip = ${tyre.maxGrip})</p>`);
+
+      const rows = wearLevels.map(w => {
+        const cols = [Math.round(w * 100) + '%'];
+        const factors = {};
+        for (const cname of ['soft', 'medium', 'hard']) {
+          const comp    = COMPOUNDS[cname];
+          const maxGrip = Math.min(100, tyre.maxGrip + comp.gripModifier);
+          const grip    = (maxGrip / 100) * (1 - w);
+          const factor  = 1.0 + (1 - grip) * tyreConfig.penaltyCoeff;
+          factors[cname] = factor;
+          const cls = factor < 1.010 ? 'g' : factor < 1.035 ? 'y' : 'r';
+          cols.push({ v: factor.toFixed(4), cls });
+          cols.push({ v: '+' + ((factor - 1.0) * baseLap).toFixed(2) + 's', cls });
+        }
+        // Hard minus soft delta in seconds at this wear level
+        const deltaSH = ((factors.hard - factors.soft) * baseLap).toFixed(2);
+        const dCls = parseFloat(deltaSH) < 0.5 ? 'g' : parseFloat(deltaSH) < 1.5 ? 'y' : 'r';
+        cols.push({ v: '+' + deltaSH + 's', cls: dCls });
+        return cols;
+      });
+
+      tbl(['WEAR',
+           'SOFT FACTOR', 'SOFT +s/lap',
+           'MED FACTOR',  'MED +s/lap',
+           'HARD FACTOR', 'HARD +s/lap',
+           'HARD−SOFT'], rows);
+    }
+  }
+  note('Target: new soft ≈1.000 (Goodyear) / ≈1.003 (Pirelli). Hard ~1.5–2.5s/lap slower than soft when new. ' +
+       'All compounds converge at high wear — the manufacturer maxGrip advantage shrinks to near-zero. ' +
+       'The hard−soft delta should be essentially the same for both manufacturers (it is driven by gripModifier spread, not maxGrip).');
+
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // TEST 2b — TYRE WEAR RATES  (analytical)
+  // ════════════════════════════════════════════════════════════════════════════
+  section('TEST 2b — TYRE WEAR RATES  (analytical)',
+    'wearPerSector = baseWearRate × wearMultiplier × sectorWearWeight × aggressionMult × trackAbrasiveness. ' +
+    'Summed over 3 sectors per lap. Baseline driver aggression = ' + BASE_DRIVER.aggression +
+    ', AGGRESSION_WEAR_SCALE = ' + AGGRESSION_WEAR_SCALE +
+    ', trackAbrasiveness = ' + CIRCUIT.trackAbrasiveness + '.');
+
+  {
+    const goodyear    = TYRES.goodyear;
+    const pirelli     = TYRES.pirelli;
+    const abrasive    = CIRCUIT.trackAbrasiveness;
+    const aggrMult    = 1.0 + (BASE_DRIVER.aggression / 100) * AGGRESSION_WEAR_SCALE;
+    const wearTrigger = BASE_STRATEGY.wearTrigger;
+    const sumWW       = CIRCUIT.sectors.reduce((s, sec) => s + sec.wearWeight, 0);
+
+    const rows = [];
+    for (const [tyreName, tyre] of [['Goodyear', goodyear], ['Pirelli', pirelli]]) {
+      for (const cname of ['soft','medium','hard']) {
+        const comp       = COMPOUNDS[cname];
+        const wearPerLap = tyre.wearRate * comp.wearMultiplier * sumWW * aggrMult * abrasive;
+        const laps       = Math.floor(wearTrigger / wearPerLap);
+        const cls        = laps < 20 ? 'r' : laps < 35 ? 'y' : 'g';
+        rows.push([
+          tyreName,
+          cname.toUpperCase(),
+          tyre.wearRate.toFixed(4),
+          comp.wearMultiplier.toFixed(2),
+          wearPerLap.toFixed(5),
+          { v: laps + ' laps', cls },
+        ]);
+      }
+    }
+
+    tbl(['TYRE MFR','COMPOUND','BASE_WEAR_RATE','WEAR_MULT','WEAR_PER_LAP','LAPS TO '+Math.round(wearTrigger*100)+'% TRIGGER'], rows);
+  }
+  note('Target at abrasiveness 0.25: Goodyear soft ≈15–25 laps, medium ≈25–40, hard ≈50–70. ' +
+       'Pirelli should wear ~20–25% faster than Goodyear across all compounds. ' +
+       'If hard lasts the whole race on a single set, hard is too durable for 1-stop racing to be realistic.');
+
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // TEST 3 — FUEL LOAD EFFECT  (analytical)
+  // ════════════════════════════════════════════════════════════════════════════
+  section('TEST 3 — FUEL LOAD EFFECT  (analytical)',
+    'fuelFactor = 1.0 + (currentFuel / fuelCapacity) × 0.03. ' +
+    'fuelCapacity = ' + CIRCUIT.fuelCapacity + 'kg, baseFuelBurnPerLap = ' + CIRCUIT.baseFuelBurnPerLap + 'kg/lap. ' +
+    'Base lap time ≈ 75s.');
+
+  {
+    const maxFuel  = CIRCUIT.fuelCapacity;
+    const burnLap  = CIRCUIT.baseFuelBurnPerLap;
+    const baseLap  = CIRCUIT.sectors.reduce((s, sec) => s + sec.baseSectorTime, 0);
+
+    const rows = [];
+    for (let pct = 100; pct >= 0; pct -= 10) {
+      const fuel      = maxFuel * pct / 100;
+      const factor    = 1.0 + (fuel / maxFuel) * 0.03;
+      const penalty   = (factor - 1.0) * baseLap;
+      const approxLap = Math.round((maxFuel - fuel) / burnLap);
+      const cls       = penalty > 1.5 ? 'r' : penalty > 0.8 ? 'y' : 'g';
+      rows.push([pct+'%', fuel.toFixed(1)+'kg', factor.toFixed(4),
+        { v: '+'+penalty.toFixed(2)+'s/lap vs empty', cls },
+        'around lap ' + approxLap]);
+    }
+
+    tbl(['FUEL_%','FUEL_KG','FUEL_FACTOR','PENALTY vs EMPTY','APPROX RACE LAP'], rows);
+  }
+  note('Target: full tank should be ~2.0–2.5s/lap slower than empty on a 75s base lap. ' +
+       'This is the realistic range for 1988-era fuel sensitivity. ' +
+       'If it feels negligible in races, consider raising the 0.03 coefficient slightly. ' +
+       'NA cars (Ford, burnRate×1.0) can in theory run no-stop on fuel; turbos (Honda ×1.15) cannot.');
+
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // TEST 4 — ENGINE POWER SPREAD  (simulation)
+  // ════════════════════════════════════════════════════════════════════════════
+  section('TEST 4 — ENGINE POWER SPREAD',
+    'All cars identical except engine power, which ranges 50→100 across teams (steps of ~4). ' +
+    'Varies power only — reliability and fuel burn held constant. ' +
+    'engineFactor = 1.0 + (1 − power/100) × sectorPowerWeight. ' +
+    'Weighted to S2 (powerWeight=0.06); S1=0.02, S3=0.03.');
+
+  {
+    const savedT = saveTeams(), savedD = saveDrivers();
+    equalise();
+
+    // Spread power 50→100 across 12 teams
+    const powers = [50,55,60,65,70,75,80,85,90,93,96,100];
+    const teamPower = Object.fromEntries(TEAMS.map((t,i) => [t.id, powers[i]]));
+
+    runRace(SEED, {
+      afterStrategies() {
+        // Override car.engine with a fresh object so shared ENGINES objects are not mutated
+        cars.forEach(c => { c.engine = { ...c.engine, power: teamPower[c.team.id] }; });
+      }
+    });
+
+    const active  = cars.filter(c => c.status !== 'retired').sort((a,b) => a.cumulativeTime - b.cumulativeTime);
+    const fastest = active[0]?.cumulativeTime ?? 0;
+
+    // Theoretical lap time delta: full race impact of power difference
+    // engineFactor for power=P: avg sectorPowerWeight ≈ (0.02+0.06+0.03)/3 = 0.037
+    // delta per lap between P=50 and P=100: (50/100 × 0.037) × baseLap × 3sectors
+    const rows = [...cars]
+      .sort((a,b) => a.status==='retired'?1:b.status==='retired'?-1:a.cumulativeTime-b.cumulativeTime)
+      .map(c => {
+        const power   = teamPower[c.team.id];
+        const retired = c.status === 'retired';
+        const time    = retired ? `RET L${c.retiredLap??'?'}` : fmtTime(c.cumulativeTime);
+        const delta   = retired ? '—' : fmtDelta(c.cumulativeTime - fastest);
+        const dCls    = retired ? 'dim' : c.cumulativeTime-fastest < 60 ? 'g'
+                      : c.cumulativeTime-fastest < 200 ? 'y' : 'r';
+        return [c.driver.name, String(power), time, {v:delta, cls:dCls}];
+      });
+
+    tbl(['DRIVER','ENGINE_POWER','FINISH_TIME','DELTA FROM LEADER'], rows);
+
+    // Also show theoretical per-lap impact
+    const baseLap = CIRCUIT.sectors.reduce((s, sec) => s + sec.baseSectorTime, 0);
+    const theoryRows = [[50,100],[68,100],[80,100],[86,100]].map(([p, ref]) => {
+      const avgPW   = CIRCUIT.sectors.reduce((s,sec)=>s+sec.powerWeight,0) / CIRCUIT.sectors.length;
+      const factorP   = 1.0 + (1 - p/100)   * avgPW;
+      const factorRef = 1.0 + (1 - ref/100)  * avgPW;
+      const delta     = (factorP - factorRef) * baseLap * 3; // ×3 sectors per lap
+      return [`Power ${p} vs ${ref}`, factorP.toFixed(4), `+${delta.toFixed(2)}s/lap`, `+${(delta*70).toFixed(0)}s race`];
+    });
+    tbl(['COMPARISON','ENGINE_FACTOR','DELTA/LAP (avg)','DELTA FULL RACE'], theoryRows);
+
+    restoreTeams(savedT); restoreDrivers(savedD);
+  }
+  note('Real values: Honda=86 (best), Ferrari=84, Megatron=79, Ford=68. ' +
+       'Expected: Honda should be ~40–70s faster than Ford over a full race distance. ' +
+       'If the gap is smaller, powerWeights need raising; if larger, they need reducing.');
+
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // TEST 5 — RELIABILITY RATES  (simulation, 10 runs each)
+  // ════════════════════════════════════════════════════════════════════════════
+  section('TEST 5 — RELIABILITY RATES',
+    'All cars identical. Three reliability tiers tested over ' + 10 + ' races each. ' +
+    'failureThreshold = (1 − engineRel/100 × chassisRel/100) × FAILURE_SCALE. ' +
+    'Reports mechanical retirements only (not crashes).');
+
+  {
+    const RUNS = 10;
+    const savedT = saveTeams(), savedD = saveDrivers();
+    equalise();
+
+    const tiers = [
+      { label:'LOW',    engine:50, chassis:50 },
+      { label:'MEDIUM', engine:75, chassis:75 },
+      { label:'HIGH',   engine:90, chassis:90 },
+    ];
+
+    const summaryRows = [];
+
+    for (const tier of tiers) {
+      let totalMechRetirements = 0;
+      let totalCrashes         = 0;
+      let retireLapSum         = 0;
+      let racesWithRetirement  = 0;
+
+      for (let run = 0; run < RUNS; run++) {
+        // Set chassis reliability directly on team objects (restoreTeams will undo this)
+        TEAMS.forEach(t => t.chassisReliability = tier.chassis);
+
+        runRace(SEED + run, {
+          afterStrategies() {
+            // Override each car's engine with a fresh copy so ENGINES objects aren't mutated
+            cars.forEach(c => { c.engine = { ...c.engine, reliability: tier.engine }; });
+          }
+        });
+
+        const mechRet = cars.filter(c => c.status==='retired' && c.retiredReason==='mechanical');
+        const crashes = cars.filter(c => c.status==='retired' && c.retiredReason==='crash');
+        totalMechRetirements += mechRet.length;
+        totalCrashes         += crashes.length;
+        if (mechRet.length > 0) {
+          racesWithRetirement++;
+          retireLapSum += Math.min(...mechRet.map(c => c.retiredLap ?? 70));
+        }
+      }
+
+      const avgMech     = (totalMechRetirements / RUNS).toFixed(1);
+      const avgCrash    = (totalCrashes / RUNS).toFixed(1);
+      const avgFirstLap = racesWithRetirement > 0
+        ? 'lap ' + (retireLapSum / racesWithRetirement).toFixed(1)
+        : 'none';
+      const cls = tier.label==='LOW' ? 'r' : tier.label==='MEDIUM' ? 'y' : 'g';
+
+      summaryRows.push([
+        {v: tier.label, cls},
+        String(tier.engine) + '%',
+        String(tier.chassis) + '%',
+        {v: avgMech + '/race', cls},
+        avgCrash + '/race (crashes)',
+        avgFirstLap,
+        String(totalMechRetirements) + ' / ' + (RUNS * 24) + ' starts',
+      ]);
+    }
+
+    tbl(['TIER','ENGINE REL','CHASSIS REL','MECH RETIREMENTS','CRASHES','AVG FIRST RETIRE LAP','TOTAL'], summaryRows);
+
+    restoreTeams(savedT); restoreDrivers(savedD);
+  }
+  note('NOTE: chassisReliability lives on team objects; the override above modifies the shared team. ' +
+       'Restore is handled by restoreTeams. Results may show slight bias if RNG sequence differs between tiers.');
+  note('Target: HIGH ≈ 0–1 mech retirement per race; LOW ≈ 4–8 per race. ' +
+       'Real values: Honda 85%, Ford 92% engine; chassis varies 63–92% by team. ' +
+       'A 24-car race with avg engine=85, chassis=80 should see ~1–2 mech retirements per race typically.');
+
+  // ── done ────────────────────────────────────────────────────────────────────
+  out.insertAdjacentHTML('beforeend',
+    '<p style="color:#333;font-size:11px;margin-top:32px;">— END OF ANALYSIS —</p>');
+
+</script>
+</body>
+</html>

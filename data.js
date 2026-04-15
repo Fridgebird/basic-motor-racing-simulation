@@ -90,6 +90,7 @@ export const TEAMS = [
   {
     id:                 'mclaren',
     name:               'McLaren',
+    colour:             '#fc3b3e',   // Marlboro red
     engine:             'honda',
     tyres:              'goodyear',
     // Best car of the era; reduced from historical dominance for game balance
@@ -108,6 +109,7 @@ export const TEAMS = [
   {
     id:                 'ferrari',
     name:               'Ferrari',
+    colour:             '#de0803',   // Scuderia red
     engine:             'ferrari',
     tyres:              'goodyear',
     // F1/87-88C: Berger won the last two races but was well off McLaren's pace
@@ -125,6 +127,7 @@ export const TEAMS = [
   {
     id:                 'lotus',
     name:               'Lotus',
+    colour:             '#ffdd00',   // Camel yellow
     engine:             'honda',
     tyres:              'goodyear',
     // 100T: Honda power in a much less refined chassis; shadow of the great Lotus teams
@@ -142,6 +145,7 @@ export const TEAMS = [
   {
     id:                 'williams',
     name:               'Williams',
+    colour:             '#003da5',   // Canon blue
     engine:             'ford',
     tyres:              'goodyear',
     // FW12: excellent chassis but Ford NA engine left them short of turbo pace
@@ -159,6 +163,7 @@ export const TEAMS = [
   {
     id:                 'benetton',
     name:               'Benetton',
+    colour:             '#00a550',   // Benetton green
     engine:             'ford',
     tyres:              'pirelli',
     // B188: best of the NA runners; Nannini and Boutsen regularly points-scoring
@@ -176,6 +181,7 @@ export const TEAMS = [
   {
     id:                 'arrows',
     name:               'Arrows',
+    colour:             '#ff8c00',   // Arrows amber
     engine:             'megatron',
     tyres:              'goodyear',
     // A10B: Megatron power with a solid chassis; turbo reliability a constant concern
@@ -193,6 +199,7 @@ export const TEAMS = [
   {
     id:                 'march',
     name:               'March',
+    colour:             '#009688',   // March teal
     engine:             'ford',
     tyres:              'pirelli',
     // 881: Capelli gave Senna a genuine scare at Portugal; good aerodynamics for budget team
@@ -210,6 +217,7 @@ export const TEAMS = [
   {
     id:                 'tyrrell',
     name:               'Tyrrell',
+    colour:             '#cccccc',   // Tyrrell white/silver (black would vanish on dark bg)
     engine:             'ford',
     tyres:              'goodyear',
     // 017: reliable midfield points-scorer; Palmer and Bailey rarely threatened top six
@@ -227,6 +235,7 @@ export const TEAMS = [
   {
     id:                 'rial',
     name:               'Rial',
+    colour:             '#aaaaaa',   // Rial silver-grey
     engine:             'ford',
     tyres:              'pirelli',
     // ARC1: small new team; de Cesaris carried it to some surprise results
@@ -244,6 +253,7 @@ export const TEAMS = [
   {
     id:                 'minardi',
     name:               'Minardi',
+    colour:             '#1a3a8a',   // Minardi navy
     engine:             'ford',
     tyres:              'goodyear',
     // M188: passionate Italian team, perpetually at the back; Martini showed flashes of pace
@@ -261,6 +271,7 @@ export const TEAMS = [
   {
     id:                 'dallara',
     name:               'Dallara',
+    colour:             '#cc4422',   // Dallara brick red
     engine:             'ford',
     tyres:              'goodyear',
     // BMS 188: Caffi occasionally punched above weight; car limited by budget
@@ -278,6 +289,7 @@ export const TEAMS = [
   {
     id:                 'ligier',
     name:               'Ligier',
+    colour:             '#0044cc',   // Ligier French blue
     engine:             'ford',
     tyres:              'pirelli',
     // JS31: experienced French team in decline; Arnoux a wily veteran

@@ -636,8 +636,10 @@ export class Renderer {
       const isLeader = car.position === 1;
       const isPitted = car.status === 'pitted';
 
-      // Dot colour
-      ctx.fillStyle = isLeader ? '#ffff00' : isPitted ? '#555' : '#00ffff';
+      // Dot colour — team colour; pitted cars dimmed to grey
+      // Leader dot uses team colour too; only the label goes yellow
+      const teamColour = car.team.colour || '#00ffff';
+      ctx.fillStyle = isPitted ? '#444' : teamColour;
       ctx.fillRect(4, y - 3, 5, 5);
 
       // Label: "12 SEN"

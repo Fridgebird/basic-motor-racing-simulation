@@ -600,8 +600,98 @@ function chooseNextCompound(car, rng) {
   return { compound: chosen, estimates, minViable };
 }
 
+// Returns true if switching to a fresh viable compound now yields a net time
+// benefit over running on the current worn compound.
+//
+// Two conditions must BOTH hold:
+//
+//   MARGINAL CONDITION — timing
+//     The lap time on the current worn compound THIS lap is at least as slow as
+//     the lap time the car would have on the very LAST lap of a fresh new-compound
+//     stint. This is the derivative condition for the optimal one-stop pit lap:
+//     no pit-stop cost appears here because in the "stop now vs stop later" case
+//     both options share exactly one stop and the cost cancels out.
+//
+//   COST-BENEFIT GATE — elective stop guard
+//     The total estimated time saving over the remaining laps exceeds the pit
+//     stop cost. This prevents an elective stop late in the race when there are
+//     too few laps left to claw back the pit-lane time loss.
+//
+// Only fires when a viable compound exists (one that reaches the flag).
+// Multi-stop situations — where no compound can reach the flag — are left to
+// the normal wear trigger.
+function crossoverPitBenefits(car) {
+  const lapsRemaining  = CIRCUIT.totalLaps - race.lap;
+  const aggressionMult = 1.0 + (car.driver.aggression / 100) * AGGRESSION_WEAR_SCALE;
+  const sumWearWeights = CIRCUIT.sectors.reduce((s, sec) => s + sec.wearWeight, 0);
+
+  // Precompute the fuelCorrected multiplier once (same model as estimateStintLaps)
+  let fuelWearMult = 1.0;
+  if (car.team.strategy.tyreLifeModel === 'fuelCorrected') {
+    const estAvgFuel = CIRCUIT.fuelCapacity * 0.35;
+    fuelWearMult = 1.0 + (estAvgFuel / CIRCUIT.fuelCapacity) * FUEL_WEAR_COEFF;
+  }
+
+  // Wear per lap for any compound, using the same model as estimateStintLaps
+  function wearPerLapFor(compound) {
+    return car.tyres.wearRate
+      * COMPOUNDS[compound].wearMultiplier
+      * sumWearWeights
+      * aggressionMult
+      * fuelWearMult
+      * CIRCUIT.trackAbrasiveness;
+  }
+
+  // tyreFactor at a given wear level — same formula as the main simulation tick
+  function tyreFactorAt(wear, compound) {
+    const effectiveMaxGrip = Math.min(100, car.tyres.maxGrip + COMPOUNDS[compound].gripModifier);
+    const grip = (effectiveMaxGrip / 100) * Math.max(0, 1 - wear);
+    return 1.0 + (1 - grip) * tyreConfig.penaltyCoeff;
+  }
+
+  // ── 1. Find softest viable compound ──────────────────────────────────────
+  let viableCompound = null;
+  let wpl_new        = 0;
+  for (const c of ['soft', 'medium', 'hard']) {
+    const wpl     = wearPerLapFor(c);
+    const estLaps = Math.max(5, Math.floor(car.team.strategy.wearTrigger / wpl));
+    if (estLaps >= lapsRemaining) {
+      viableCompound = c;
+      wpl_new        = wpl;
+      break;
+    }
+  }
+  if (!viableCompound) return false;  // multi-stop territory — leave to wear trigger
+
+  // ── 2. Marginal condition ─────────────────────────────────────────────────
+  // Pit if: current worn lap time >= last lap time on fresh new compound
+  const tf_current    = tyreFactorAt(car.tyreWear, car.compound);
+  const wearEndNew    = Math.min(1.0, lapsRemaining * wpl_new);
+  const tf_newLastLap = tyreFactorAt(wearEndNew, viableCompound);
+
+  if (tf_current < tf_newLastLap) return false;  // not yet at the crossover
+
+  // ── 3. Cost-benefit gate ──────────────────────────────────────────────────
+  // Verify total gain over remaining stint exceeds pit stop cost.
+  // Uses midpoint-of-stint average wear for both compounds.
+  const wpl_current     = wearPerLapFor(car.compound);
+  const wearEndCurrent  = Math.min(1.0, car.tyreWear + lapsRemaining * wpl_current);
+  const tf_currentAvg   = tyreFactorAt((car.tyreWear + wearEndCurrent) / 2, car.compound);
+  const tf_newAvg       = tyreFactorAt(wearEndNew / 2, viableCompound);
+
+  const baseLapTime   = CIRCUIT.sectors.reduce((s, sec) => s + sec.baseSectorTime, 0);
+  const avgGainPerLap = (tf_currentAvg - tf_newAvg) * baseLapTime;
+  if (avgGainPerLap <= 0) return false;  // new compound not faster on average
+
+  const tyreChangeTime = CIRCUIT.baseTyreChangeTime * (1 + (1 - car.team.pitCrewRating / 100));
+  const pitStopCost    = CIRCUIT.pitLaneTime + tyreChangeTime;
+
+  return (lapsRemaining * avgGainPerLap) > pitStopCost;
+}
+
 // Returns true if this car should pit at the end of the current lap.
-// Triggers: fuel below team threshold OR tyre wear above team threshold.
+// Triggers: fuel below team threshold OR wear above team threshold OR
+//           crossover point reached (see crossoverPitBenefits above).
 // One rng() call is always consumed (for wear-trigger jitter) to keep the
 // RNG sequence stable regardless of whether we pit.
 function shouldPit(car, rng) {
@@ -628,7 +718,11 @@ function shouldPit(car, rng) {
   // would pit unnecessarily just because fuel dipped below the team threshold.
   const fuelShort = car.fuel <= fuelTrigger && car.fuel < lapsRemaining * burnPerLap;
 
-  return fuelShort || car.tyreWear >= effectiveWearTrigger;
+  // Crossover trigger: pit when running on a fresh compound is worth it overall.
+  // Minimum 5-lap stint guard prevents re-triggering immediately after a stop.
+  const crossover = car.stintLap >= 5 && crossoverPitBenefits(car);
+
+  return fuelShort || car.tyreWear >= effectiveWearTrigger || crossover;
 }
 
 // Executes the pit stop: chooses compound reactively, refuels for estimated stint,

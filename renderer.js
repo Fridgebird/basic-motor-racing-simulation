@@ -90,9 +90,13 @@ export class Renderer {
     this._snapshots.push({
       race: { lap: race.lap, sector: race.sector, tick: race.tick },
       cars: cars.map(c => ({
-        // static refs — driver/team never change during a race
+        // static refs — driver/team/tyres/engine never change during a race
         driver:          c.driver,
         team:            c.team,
+        tyres:           c.tyres,
+        engine:          c.engine,
+        // set once at race start, never changes
+        gridPosition:    c.gridPosition,
         // mutable simulation state — copy by value
         position:        c.position,
         gap:             c.gap,
@@ -668,7 +672,14 @@ export class Renderer {
     if (!canvas) return;
 
     const totalLaps = CIRCUIT.totalLaps;
-    const lapsRecorded = lapChartData.length;
+    // In replay mode, only show laps up to the snapshot's position.
+    // lapChartData is populated at end of sector 3, so a mid-lap snapshot
+    // (sector 1 or 2) only has data through the previous completed lap.
+    const displayRace = this._displayRace;
+    const lapLimit = this.inReplay
+      ? (displayRace.sector === 3 ? displayRace.lap : displayRace.lap - 1)
+      : lapChartData.length;
+    const lapsRecorded = Math.min(lapChartData.length, lapLimit);
 
     // Size canvas to its CSS display width
     const W = canvas.clientWidth || 900;

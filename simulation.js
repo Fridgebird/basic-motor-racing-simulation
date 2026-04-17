@@ -620,7 +620,23 @@ function shouldPit(car, rng) {
 
   // Normal triggers: fuel at/below threshold OR wear at/above threshold (with jitter)
   const effectiveWearTrigger = Math.max(0.60, Math.min(0.95, wearTrigger + wearJitter));
-  return car.fuel <= fuelTrigger || car.tyreWear >= effectiveWearTrigger;
+
+  const lapsRemaining = CIRCUIT.totalLaps - race.lap;
+
+  // Fuel trigger: only fire if the car genuinely cannot reach the flag on current fuel.
+  // Without this check, cars with e.g. 6.7 kg and only 4 laps left (needing 5.2 kg)
+  // would pit unnecessarily just because fuel dipped below the team threshold.
+  const fuelShort = car.fuel <= fuelTrigger && car.fuel < lapsRemaining * burnPerLap;
+
+  // Proactive tyre trigger: if the current set cannot reach the flag, pit now rather
+  // than running them to destruction and arriving at the end of the stint with a
+  // much weaker position. Requires a minimum stint of 5 laps to avoid re-triggering
+  // immediately after a stop where the estimate is tight.
+  // e.g. 20 laps remaining, tyres good for 15 more → pit now and run 20 on a fresh set.
+  const lapsLeftOnTyres = estimateStintLaps(car, car.compound) - car.stintLap;
+  const tyresWontReach  = lapsLeftOnTyres < lapsRemaining && car.stintLap >= 5;
+
+  return fuelShort || car.tyreWear >= effectiveWearTrigger || tyresWontReach;
 }
 
 // Executes the pit stop: chooses compound reactively, refuels for estimated stint,

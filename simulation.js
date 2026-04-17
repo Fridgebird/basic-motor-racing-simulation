@@ -562,7 +562,11 @@ function chooseStartingCompound(car, rng) {
 // An aggressive driver may always choose a softer compound (accepting an extra stop).
 // A harder-than-necessary compound is never chosen — if medium makes the flag, hard won't be.
 // One rng() call always consumed so the sequence stays deterministic.
-function chooseNextCompound(car, rng) {
+//
+// forceViable: when true (proactive pit — current tyres can't reach the flag), the driver
+// must take the minimum viable compound. Aggressive gamblers are not allowed to pick a
+// shorter compound that can't reach, which would cause an infinite pit loop.
+function chooseNextCompound(car, rng, forceViable = false) {
   const lapsRemaining = CIRCUIT.totalLaps - race.lap;
   const estimates     = {};
 
@@ -587,14 +591,18 @@ function chooseNextCompound(car, rng) {
     chosen = 'soft';
 
   } else if (minViable === 'medium') {
-    // Medium is softest viable — soft (extra stop) or medium by aggression; never hard
-    chosen = roll < pSoft ? 'soft' : 'medium';
+    // Medium is softest viable.
+    // Normal stop: aggressive drivers may gamble on soft (accepting one more stop).
+    // Proactive stop: must take medium — picking soft again would cause a pit loop.
+    chosen = (!forceViable && roll < pSoft) ? 'soft' : 'medium';
 
   } else {
-    // Only hard makes the flag, or nothing does — full aggression distribution
-    if      (roll < pSoft)       chosen = 'soft';
-    else if (roll < 1 - pHard)  chosen = 'medium';
-    else                         chosen = 'hard';
+    // Only hard makes the flag, or nothing does.
+    // Normal stop: full aggression distribution (soft/medium accepted as deliberate extra stop).
+    // Proactive stop: must take the minimum viable compound (hard, or best available).
+    if (!forceViable && roll < pSoft)      chosen = 'soft';
+    else if (!forceViable && roll < 1 - pHard) chosen = 'medium';
+    else                                   chosen = minViable ?? 'hard';
   }
 
   return { compound: chosen, estimates, minViable };
@@ -644,7 +652,12 @@ function shouldPit(car, rng) {
 function executePitStop(car, rng) {
   // ── Reactive compound choice ─────────────────────────────────────────────────
   // Apply softest-viable rule then aggressiveness; log all estimates for inspection.
-  const { compound: newCompound, estimates, minViable } = chooseNextCompound(car, rng);
+  // If pitting proactively (current tyres can't reach the flag), force the choice
+  // to a compound that actually reaches — prevents aggressive drivers from picking
+  // soft again and triggering another proactive stop 5 laps later.
+  const lapsLeftOnCurrent = estimateStintLaps(car, car.compound) - car.stintLap;
+  const isProactivePit    = lapsLeftOnCurrent < (CIRCUIT.totalLaps - race.lap);
+  const { compound: newCompound, estimates, minViable } = chooseNextCompound(car, rng, isProactivePit);
   const lapsRemaining = CIRCUIT.totalLaps - race.lap;
   const isLastStint   = estimates[newCompound].canReach;  // chosen compound reaches flag
 

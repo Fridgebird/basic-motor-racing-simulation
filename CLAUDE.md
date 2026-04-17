@@ -102,6 +102,7 @@ Draws the Spectrum-style timing display onto Canvas:
 - **Fuel obfuscation** — in the 1980s, fuel gauges were imprecise. Each team has a per-season "fuel sensor accuracy" rating. The displayed fuel level and the AI pit trigger are based on the team's estimated fuel reading (noisy); real fuel level is used only for actual pace calculation and detecting true fuel-out. Creates drama when a team miscalculates and pits unnecessarily (or worse, runs dry thinking they have more than they do).
 - **Era car images** — in the multi-season world, every 5-year regulation era uses a different vector-art template for car silhouettes (progressively more modern from era 1 onward). Used on team/driver profile screens. Templates are SVG, recoloured per team livery.
 - Ambient temperature and weather effects (separate from rain — affects tyre behaviour, engine cooling etc.)
+- **Branding and visual restyle** — the game is called "Simple Motor Racing" (sister game: "Simple Football"). A shared modern visual identity replaces the Sinclair Spectrum aesthetic now that multi-season mode removes the 1988 tie-in. Reference design is in `all-square.html`; two custom fonts (Square.ttf, Squareo.ttf) are checked in and used across both games. Apply the new branding to index.html in the next session — discuss scope and approach first.
 
 ---
 

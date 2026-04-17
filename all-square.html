@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple — All Square</title>
+<style>
+@font-face {
+  font-family: 'Square';
+  src: url('data:font/truetype;base64,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iooD8f4TAWz+lAHt/p0FnP0yAs764nsBorF7/l+yAAAAAwBk//0FlAWcAAMADQAZAAApAQEhAREzETMRMxEjEQE1IREhNSE1ITUhNQG0/uwDqgEU/kmK4oGB+1EB7f4TAWz+lAFsBZz7jgGh/tQBLP0yAS0D93v9MnuydbEAAAAAAgBkAAAEPgWcAAkADQAAAREhESEVIREhPQERIREEPv0pAtf8JgLGARQEJ/4y/p32A0PkcwEC/v4AAAD//wBkAAAEPgaTACIAJAAAAAMAQwFdAAD//wBkAAAEPgaTACIAJAAAAAMAdAGTAAD//wBkAAAEPgaUACIAJAAAAAMAwQEUAAD//wBkAAAEPga2ACIAJAAAAAMAyADYAAD//wBkAAAEPgarACIAJAAAAAMAaQCiAAD//wBkAAAEPgafACIAJAAAAAMAxgFXAAAAAgBkAAAHDwWcAA8AEwAAASERIREhFSERIRUhESEVIRkBIREDNf5D/uwGq/06Asb9OgLG/Cb+QwJZ/acFnPb+ner+nfYDQwFj/p0A//8AZP7IBD4FnAAiACYAAAADAHgBewAA//8AZAAABD4GkwAiACgAAAADAEMBbwAA//8AZAAABD4GkwAiACgAAAADAHQBkwAA//8AZAAABD4GlAAiACgAAAADAMEBIAAA//8AZAAABD4GqwAiACgAAAADAGkAnAAA//8AZAAAAXgGkwAiACwAAAACAEMAAAAA//8AZAAAAX8GkwAiACwAAAACAHQeAAAA//8AZAAAAgkGlAAiACxCAAACAMEAAAAA//8AZAAAAxEGqwAjACwAxgAAAAIAaQAAAAIAZAAABMIFnAAHABEAAAERIREhETMVJREhFxEHIREjNQH8AcP+PYP+aQNyaGf8jYQCWf6dA7D+nerqAll++2B+AlnqAAAA//8AZAAABD4GtgAiADEAAAADAMgA6gAA//8AZAAABD4GkwAiADIAAAADAEMBPwAA//8AZAAABD4GkwAiADIAAAADAHQBhwAA//8AZAAABD4GlAAiADIAAAADAMEBGgAA//8AZAAABD4GtgAiADIAAAADAMgAzAAA//8AZAAABD4GqwAiADIAAAADAGkAkAAAAAEAZAHsAxMEjAALAAABFwcnByc3JzcXNxcCX7Sms7GlsJ2mnaClA0a0prSwpbGdpZ2hpgADAGT/QATI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') format('truetype');
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg:      #0d1117;
+  --bg-deep: #080c12;
+  --bg-mid:  #0a0f18;
+  --border:  #1e2f44;
+  --hi:      #ffffff;
+  --mid:     #8ab4d4;
+  --lo:      #4a6a88;
+  --dim:     #2a4055;
+  --accent:  #cc2233;
+}
+
+body {
+  background: #060810;
+  font-family: 'Square', monospace;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+}
+
+.section-label {
+  font-size: 8px;
+  letter-spacing: 3px;
+  color: var(--dim);
+  text-transform: uppercase;
+  text-align: center;
+  width: 100%;
+  max-width: 820px;
+  padding: 8px 0 6px;
+  margin-top: 24px;
+  border-top: 1px solid #111d2a;
+}
+
+.section-label:first-child { margin-top: 0; border-top: none; }
+
+.pair {
+  width: 100%;
+  max-width: 820px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+}
+
+/* ── Shared shell ── */
+.topbar {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  padding: 13px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.topbar-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.topbar-item {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--lo);
+  text-transform: uppercase;
+}
+
+.topbar-item span { color: var(--mid); }
+
+.live-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(204,34,51,0.1);
+  border: 1px solid rgba(204,34,51,0.3);
+  padding: 3px 10px;
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.live-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+/* ── Scoreboard ── */
+.scoreboard {
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--accent);
+  border-bottom: none;
+  padding: 18px 24px;
+}
+
+.competition-line {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--lo);
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.score-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+}
+
+.team-name {
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--hi);
+  text-transform: uppercase;
+}
+
+.team-name.away { text-align: right; }
+
+.score-block { text-align: center; }
+
+.score-digits {
+  font-size: 40px;
+  color: var(--hi);
+  letter-spacing: 6px;
+  line-height: 1;
+}
+
+.score-sep { color: var(--lo); }
+
+.match-clock {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--mid);
+  margin-top: 6px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* ── Timing sheet ── */
+.timing {
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--accent);
+  border-bottom: none;
+}
+
+.t-header {
+  background: var(--bg-deep);
+  border-bottom: 1px solid var(--border);
+  padding: 7px 16px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.t-meta { font-size: 8px; letter-spacing: 1px; color: var(--lo); }
+.t-meta strong { color: var(--mid); }
+
+.t-cols {
+  display: grid;
+  grid-template-columns: 24px 14px 110px 70px 72px 60px 55px 48px;
+  padding: 5px 16px;
+  background: var(--bg-deep);
+  border-bottom: 1px solid #111d2a;
+}
+
+.t-col { font-size: 7px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; }
+
+.t-row {
+  display: grid;
+  grid-template-columns: 24px 14px 110px 70px 72px 60px 55px 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid #0d1828;
+  min-height: 32px;
+  align-items: center;
+}
+
+.t-pos { font-size: 11px; color: var(--dim); }
+.t-pos.p1 { color: var(--hi); }
+.t-pos.p2 { color: var(--mid); }
+
+.team-dot { display: inline-block; width: 3px; height: 20px; border-radius: 1px; }
+
+.t-driver { font-size: 10px; color: #ddeeff; letter-spacing: 1px; }
+.t-team-tag { font-size: 7px; color: var(--dim); letter-spacing: 1px; }
+.t-gap { font-size: 9px; color: var(--lo); }
+.t-gap.lead { color: var(--mid); }
+.t-lap { font-size: 9px; color: var(--lo); }
+.t-lap.fast { color: #cc44ff; }
+.t-tyre { font-size: 8px; color: var(--dim); display: flex; align-items: center; gap: 3px; }
+.t-status { font-size: 8px; color: #ffaa00; letter-spacing: 1px; }
+.t-stops { font-size: 9px; color: var(--lo); }
+
+.pip { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+.pip-s { background: #ff3333; }
+.pip-m { background: #e8c400; }
+.pip-h { background: #888888; }
+
+.footer-strip {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-top: none;
+  padding: 7px 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.f-item { font-size: 7px; letter-spacing: 2px; color: var(--lo); text-transform: uppercase; }
+
+/* ══════════════════════════════════
+   BRAND TREATMENTS — all in Square
+══════════════════════════════════ */
+
+/* 1. Flat — same size, same weight, space between */
+.b-flat {
+  font-size: 14px;
+  letter-spacing: 4px;
+  color: var(--hi);
+  text-transform: uppercase;
+}
+.b-flat em {
+  font-style: normal;
+  color: var(--mid);
+  margin-left: 10px;
+}
+
+/* 2. Stacked — two lines */
+.b-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.b-stacked .line1 {
+  font-size: 14px;
+  letter-spacing: 5px;
+  color: var(--hi);
+  text-transform: uppercase;
+  line-height: 1;
+}
+.b-stacked .line2 {
+  font-size: 9px;
+  letter-spacing: 4px;
+  color: var(--mid);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* 3. Size contrast — large SIMPLE, small subtitle */
+.b-sized {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.b-sized .big {
+  font-size: 18px;
+  letter-spacing: 3px;
+  color: var(--hi);
+  text-transform: uppercase;
+  line-height: 1;
+}
+.b-sized .small {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--mid);
+  text-transform: uppercase;
+}
+
+/* 4. Accent dot separator */
+.b-dot {
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: var(--hi);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.b-dot .dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.b-dot .sub {
+  color: var(--mid);
+  letter-spacing: 3px;
+}
+
+/* 5. Slash separator */
+.b-slash {
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: var(--hi);
+  text-transform: uppercase;
+}
+.b-slash .sep {
+  color: var(--accent);
+  margin: 0 6px;
+  font-size: 16px;
+}
+.b-slash .sub { color: var(--mid); }
+
+/* 6. Red SIMPLE, white subtitle */
+.b-red {
+  font-size: 14px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+.b-red .brand-word { color: var(--accent); }
+.b-red .sub {
+  color: var(--hi);
+  margin-left: 10px;
+}
+
+</style>
+</head>
+<body>
+
+<!-- helper macro as repeated HTML -->
+
+<!-- ══ 1. FLAT ══ -->
+<div class="section-label">1 · Flat — same size, colour contrast</div>
+<div class="pair">
+  <div>
+    <div class="topbar">
+      <div class="b-flat">Simple <em>Football</em></div>
+      <div class="topbar-meta">
+        <div class="topbar-item">Season <span>1988–89</span></div>
+        <div class="topbar-item">Matchday <span>32</span></div>
+        <div class="live-pill"><div class="live-dot"></div>Live</div>
+      </div>
+    </div>
+    <div class="scoreboard">
+      <div class="competition-line">First Division · 15 April 1989</div>
+      <div class="score-row">
+        <div class="team-name">Liverpool</div>
+        <div class="score-block">
+          <div class="score-digits">2<span class="score-sep"> · </span>1</div>
+          <div class="match-clock">67' · Second Half</div>
+        </div>
+        <div class="team-name away">Arsenal</div>
+      </div>
+    </div>
+    <div class="footer-strip">
+      <div class="f-item">Simple Football · 1988–89</div>
+      <div class="f-item">6 matches live</div>
+    </div>
+  </div>
+  <div>
+    <div class="topbar">
+      <div class="b-flat">Simple <em>Motor Racing</em></div>
+      <div class="topbar-meta">
+        <div class="topbar-item">Lap <span>34/70</span></div>
+        <div class="topbar-item">S<span>2</span></div>
+        <div class="live-pill"><div class="live-dot"></div>Live</div>
+      </div>
+    </div>
+    <div class="timing">
+      <div class="t-header">
+        <div class="t-meta">Circuit de Vitesse · 1988</div>
+        <div class="t-meta">Fastest <strong style="color:#cc44ff">1:15.442</strong> Prost</div>
+      </div>
+      <div class="t-cols">
+        <div class="t-col">P</div><div class="t-col"></div><div class="t-col">Driver</div>
+        <div class="t-col">Team</div><div class="t-col">Gap</div>
+        <div class="t-col">Lap</div><div class="t-col">Tyre</div><div class="t-col">Stops</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos p1">1</div><div><span class="team-dot" style="background:#ff4400"></span></div>
+        <div><div class="t-driver">Senna</div><div class="t-team-tag">McLaren</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Michelin</div>
+        <div class="t-gap lead">Leader</div><div class="t-lap">1:15.883</div>
+        <div class="t-tyre"><span class="pip pip-m"></span>M·12</div><div class="t-stops">1</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos p2">2</div><div><span class="team-dot" style="background:#ff4400"></span></div>
+        <div><div class="t-driver">Prost</div><div class="t-team-tag">McLaren</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Michelin</div>
+        <div class="t-gap">+4.221</div><div class="t-lap fast">1:15.442</div>
+        <div class="t-tyre"><span class="pip pip-h"></span>H·22</div><div class="t-stops">1</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos">3</div><div><span class="team-dot" style="background:#cc0000"></span></div>
+        <div><div class="t-driver">Berger</div><div class="t-team-tag">Ferrari</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Goodyear</div>
+        <div class="t-gap">+18.773</div><div class="t-lap">1:17.109</div>
+        <div class="t-tyre"><span class="pip pip-s"></span>S·4</div><div class="t-status">Pit</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos">4</div><div><span class="team-dot" style="background:#005fdf"></span></div>
+        <div><div class="t-driver">Mansell</div><div class="t-team-tag">Williams</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Michelin</div>
+        <div class="t-gap">+24.115</div><div class="t-lap">1:17.882</div>
+        <div class="t-tyre"><span class="pip pip-m"></span>M·18</div><div class="t-stops">1</div>
+      </div>
+    </div>
+    <div class="footer-strip">
+      <div class="f-item">Simple Motor Racing · 1988</div>
+      <div class="f-item">36 laps remaining</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 2. STACKED ══ -->
+<div class="section-label">2 · Stacked — two lines, size contrast</div>
+<div class="pair">
+  <div>
+    <div class="topbar">
+      <div class="b-stacked"><div class="line1">Simple</div><div class="line2">Football</div></div>
+      <div class="topbar-meta">
+        <div class="topbar-item">Season <span>1988–89</span></div>
+        <div class="topbar-item">Matchday <span>32</span></div>
+        <div class="live-pill"><div class="live-dot"></div>Live</div>
+      </div>
+    </div>
+    <div class="scoreboard">
+      <div class="competition-line">First Division · 15 April 1989</div>
+      <div class="score-row">
+        <div class="team-name">Liverpool</div>
+        <div class="score-block">
+          <div class="score-digits">2<span class="score-sep"> · </span>1</div>
+          <div class="match-clock">67' · Second Half</div>
+        </div>
+        <div class="team-name away">Arsenal</div>
+      </div>
+    </div>
+    <div class="footer-strip">
+      <div class="f-item">Simple Football · 1988–89</div>
+      <div class="f-item">6 matches live</div>
+    </div>
+  </div>
+  <div>
+    <div class="topbar">
+      <div class="b-stacked"><div class="line1">Simple</div><div class="line2">Motor Racing</div></div>
+      <div class="topbar-meta">
+        <div class="topbar-item">Lap <span>34/70</span></div>
+        <div class="topbar-item">S<span>2</span></div>
+        <div class="live-pill"><div class="live-dot"></div>Live</div>
+      </div>
+    </div>
+    <div class="timing">
+      <div class="t-header">
+        <div class="t-meta">Circuit de Vitesse · 1988</div>
+        <div class="t-meta">Fastest <strong style="color:#cc44ff">1:15.442</strong> Prost</div>
+      </div>
+      <div class="t-cols">
+        <div class="t-col">P</div><div class="t-col"></div><div class="t-col">Driver</div>
+        <div class="t-col">Team</div><div class="t-col">Gap</div>
+        <div class="t-col">Lap</div><div class="t-col">Tyre</div><div class="t-col">Stops</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos p1">1</div><div><span class="team-dot" style="background:#ff4400"></span></div>
+        <div><div class="t-driver">Senna</div><div class="t-team-tag">McLaren</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Michelin</div>
+        <div class="t-gap lead">Leader</div><div class="t-lap">1:15.883</div>
+        <div class="t-tyre"><span class="pip pip-m"></span>M·12</div><div class="t-stops">1</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos p2">2</div><div><span class="team-dot" style="background:#ff4400"></span></div>
+        <div><div class="t-driver">Prost</div><div class="t-team-tag">McLaren</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Michelin</div>
+        <div class="t-gap">+4.221</div><div class="t-lap fast">1:15.442</div>
+        <div class="t-tyre"><span class="pip pip-h"></span>H·22</div><div class="t-stops">1</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos">3</div><div><span class="team-dot" style="background:#cc0000"></span></div>
+        <div><div class="t-driver">Berger</div><div class="t-team-tag">Ferrari</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Goodyear</div>
+        <div class="t-gap">+18.773</div><div class="t-lap">1:17.109</div>
+        <div class="t-tyre"><span class="pip pip-s"></span>S·4</div><div class="t-status">Pit</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos">4</div><div><span class="team-dot" style="background:#005fdf"></span></div>
+        <div><div class="t-driver">Mansell</div><div class="t-team-tag">Williams</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Michelin</div>
+        <div class="t-gap">+24.115</div><div class="t-lap">1:17.882</div>
+        <div class="t-tyre"><span class="pip pip-m"></span>M·18</div><div class="t-stops">1</div>
+      </div>
+    </div>
+    <div class="footer-strip">
+      <div class="f-item">Simple Motor Racing · 1988</div>
+      <div class="f-item">36 laps remaining</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 3. SIZE CONTRAST ══ -->
+<div class="section-label">3 · Size contrast — large brand word, small subtitle</div>
+<div class="pair">
+  <div>
+    <div class="topbar">
+      <div class="b-sized"><span class="big">Simple</span><span class="small">Football</span></div>
+      <div class="topbar-meta">
+        <div class="topbar-item">Season <span>1988–89</span></div>
+        <div class="topbar-item">Matchday <span>32</span></div>
+        <div class="live-pill"><div class="live-dot"></div>Live</div>
+      </div>
+    </div>
+    <div class="scoreboard">
+      <div class="competition-line">First Division · 15 April 1989</div>
+      <div class="score-row">
+        <div class="team-name">Liverpool</div>
+        <div class="score-block">
+          <div class="score-digits">2<span class="score-sep"> · </span>1</div>
+          <div class="match-clock">67' · Second Half</div>
+        </div>
+        <div class="team-name away">Arsenal</div>
+      </div>
+    </div>
+    <div class="footer-strip">
+      <div class="f-item">Simple Football · 1988–89</div>
+      <div class="f-item">6 matches live</div>
+    </div>
+  </div>
+  <div>
+    <div class="topbar">
+      <div class="b-sized"><span class="big">Simple</span><span class="small">Motor Racing</span></div>
+      <div class="topbar-meta">
+        <div class="topbar-item">Lap <span>34/70</span></div>
+        <div class="topbar-item">S<span>2</span></div>
+        <div class="live-pill"><div class="live-dot"></div>Live</div>
+      </div>
+    </div>
+    <div class="timing">
+      <div class="t-header">
+        <div class="t-meta">Circuit de Vitesse · 1988</div>
+        <div class="t-meta">Fastest <strong style="color:#cc44ff">1:15.442</strong> Prost</div>
+      </div>
+      <div class="t-cols">
+        <div class="t-col">P</div><div class="t-col"></div><div class="t-col">Driver</div>
+        <div class="t-col">Team</div><div class="t-col">Gap</div>
+        <div class="t-col">Lap</div><div class="t-col">Tyre</div><div class="t-col">Stops</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos p1">1</div><div><span class="team-dot" style="background:#ff4400"></span></div>
+        <div><div class="t-driver">Senna</div><div class="t-team-tag">McLaren</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Michelin</div>
+        <div class="t-gap lead">Leader</div><div class="t-lap">1:15.883</div>
+        <div class="t-tyre"><span class="pip pip-m"></span>M·12</div><div class="t-stops">1</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos p2">2</div><div><span class="team-dot" style="background:#ff4400"></span></div>
+        <div><div class="t-driver">Prost</div><div class="t-team-tag">McLaren</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Michelin</div>
+        <div class="t-gap">+4.221</div><div class="t-lap fast">1:15.442</div>
+        <div class="t-tyre"><span class="pip pip-h"></span>H·22</div><div class="t-stops">1</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos">3</div><div><span class="team-dot" style="background:#cc0000"></span></div>
+        <div><div class="t-driver">Berger</div><div class="t-team-tag">Ferrari</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Goodyear</div>
+        <div class="t-gap">+18.773</div><div class="t-lap">1:17.109</div>
+        <div class="t-tyre"><span class="pip pip-s"></span>S·4</div><div class="t-status">Pit</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos">4</div><div><span class="team-dot" style="background:#005fdf"></span></div>
+        <div><div class="t-driver">Mansell</div><div class="t-team-tag">Williams</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Michelin</div>
+        <div class="t-gap">+24.115</div><div class="t-lap">1:17.882</div>
+        <div class="t-tyre"><span class="pip pip-m"></span>M·18</div><div class="t-stops">1</div>
+      </div>
+    </div>
+    <div class="footer-strip">
+      <div class="f-item">Simple Motor Racing · 1988</div>
+      <div class="f-item">36 laps remaining</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 4. DOT SEPARATOR ══ -->
+<div class="section-label">4 · Accent dot separator</div>
+<div class="pair">
+  <div>
+    <div class="topbar">
+      <div class="b-dot">Simple<div class="dot"></div><span class="sub">Football</span></div>
+      <div class="topbar-meta">
+        <div class="topbar-item">Season <span>1988–89</span></div>
+        <div class="topbar-item">Matchday <span>32</span></div>
+        <div class="live-pill"><div class="live-dot"></div>Live</div>
+      </div>
+    </div>
+    <div class="scoreboard">
+      <div class="competition-line">First Division · 15 April 1989</div>
+      <div class="score-row">
+        <div class="team-name">Liverpool</div>
+        <div class="score-block">
+          <div class="score-digits">2<span class="score-sep"> · </span>1</div>
+          <div class="match-clock">67' · Second Half</div>
+        </div>
+        <div class="team-name away">Arsenal</div>
+      </div>
+    </div>
+    <div class="footer-strip">
+      <div class="f-item">Simple Football · 1988–89</div>
+      <div class="f-item">6 matches live</div>
+    </div>
+  </div>
+  <div>
+    <div class="topbar">
+      <div class="b-dot">Simple<div class="dot"></div><span class="sub">Motor Racing</span></div>
+      <div class="topbar-meta">
+        <div class="topbar-item">Lap <span>34/70</span></div>
+        <div class="topbar-item">S<span>2</span></div>
+        <div class="live-pill"><div class="live-dot"></div>Live</div>
+      </div>
+    </div>
+    <div class="timing">
+      <div class="t-header">
+        <div class="t-meta">Circuit de Vitesse · 1988</div>
+        <div class="t-meta">Fastest <strong style="color:#cc44ff">1:15.442</strong> Prost</div>
+      </div>
+      <div class="t-cols">
+        <div class="t-col">P</div><div class="t-col"></div><div class="t-col">Driver</div>
+        <div class="t-col">Team</div><div class="t-col">Gap</div>
+        <div class="t-col">Lap</div><div class="t-col">Tyre</div><div class="t-col">Stops</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos p1">1</div><div><span class="team-dot" style="background:#ff4400"></span></div>
+        <div><div class="t-driver">Senna</div><div class="t-team-tag">McLaren</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Michelin</div>
+        <div class="t-gap lead">Leader</div><div class="t-lap">1:15.883</div>
+        <div class="t-tyre"><span class="pip pip-m"></span>M·12</div><div class="t-stops">1</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos p2">2</div><div><span class="team-dot" style="background:#ff4400"></span></div>
+        <div><div class="t-driver">Prost</div><div class="t-team-tag">McLaren</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Michelin</div>
+        <div class="t-gap">+4.221</div><div class="t-lap fast">1:15.442</div>
+        <div class="t-tyre"><span class="pip pip-h"></span>H·22</div><div class="t-stops">1</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos">3</div><div><span class="team-dot" style="background:#cc0000"></span></div>
+        <div><div class="t-driver">Berger</div><div class="t-team-tag">Ferrari</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Goodyear</div>
+        <div class="t-gap">+18.773</div><div class="t-lap">1:17.109</div>
+        <div class="t-tyre"><span class="pip pip-s"></span>S·4</div><div class="t-status">Pit</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos">4</div><div><span class="team-dot" style="background:#005fdf"></span></div>
+        <div><div class="t-driver">Mansell</div><div class="t-team-tag">Williams</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Michelin</div>
+        <div class="t-gap">+24.115</div><div class="t-lap">1:17.882</div>
+        <div class="t-tyre"><span class="pip pip-m"></span>M·18</div><div class="t-stops">1</div>
+      </div>
+    </div>
+    <div class="footer-strip">
+      <div class="f-item">Simple Motor Racing · 1988</div>
+      <div class="f-item">36 laps remaining</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 5. RED SIMPLE ══ -->
+<div class="section-label">5 · Red accent on "Simple" · white subtitle</div>
+<div class="pair">
+  <div>
+    <div class="topbar">
+      <div class="b-red"><span class="brand-word">Simple</span><span class="sub">Football</span></div>
+      <div class="topbar-meta">
+        <div class="topbar-item">Season <span>1988–89</span></div>
+        <div class="topbar-item">Matchday <span>32</span></div>
+        <div class="live-pill"><div class="live-dot"></div>Live</div>
+      </div>
+    </div>
+    <div class="scoreboard">
+      <div class="competition-line">First Division · 15 April 1989</div>
+      <div class="score-row">
+        <div class="team-name">Liverpool</div>
+        <div class="score-block">
+          <div class="score-digits">2<span class="score-sep"> · </span>1</div>
+          <div class="match-clock">67' · Second Half</div>
+        </div>
+        <div class="team-name away">Arsenal</div>
+      </div>
+    </div>
+    <div class="footer-strip">
+      <div class="f-item">Simple Football · 1988–89</div>
+      <div class="f-item">6 matches live</div>
+    </div>
+  </div>
+  <div>
+    <div class="topbar">
+      <div class="b-red"><span class="brand-word">Simple</span><span class="sub">Motor Racing</span></div>
+      <div class="topbar-meta">
+        <div class="topbar-item">Lap <span>34/70</span></div>
+        <div class="topbar-item">S<span>2</span></div>
+        <div class="live-pill"><div class="live-dot"></div>Live</div>
+      </div>
+    </div>
+    <div class="timing">
+      <div class="t-header">
+        <div class="t-meta">Circuit de Vitesse · 1988</div>
+        <div class="t-meta">Fastest <strong style="color:#cc44ff">1:15.442</strong> Prost</div>
+      </div>
+      <div class="t-cols">
+        <div class="t-col">P</div><div class="t-col"></div><div class="t-col">Driver</div>
+        <div class="t-col">Team</div><div class="t-col">Gap</div>
+        <div class="t-col">Lap</div><div class="t-col">Tyre</div><div class="t-col">Stops</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos p1">1</div><div><span class="team-dot" style="background:#ff4400"></span></div>
+        <div><div class="t-driver">Senna</div><div class="t-team-tag">McLaren</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Michelin</div>
+        <div class="t-gap lead">Leader</div><div class="t-lap">1:15.883</div>
+        <div class="t-tyre"><span class="pip pip-m"></span>M·12</div><div class="t-stops">1</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos p2">2</div><div><span class="team-dot" style="background:#ff4400"></span></div>
+        <div><div class="t-driver">Prost</div><div class="t-team-tag">McLaren</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Michelin</div>
+        <div class="t-gap">+4.221</div><div class="t-lap fast">1:15.442</div>
+        <div class="t-tyre"><span class="pip pip-h"></span>H·22</div><div class="t-stops">1</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos">3</div><div><span class="team-dot" style="background:#cc0000"></span></div>
+        <div><div class="t-driver">Berger</div><div class="t-team-tag">Ferrari</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Goodyear</div>
+        <div class="t-gap">+18.773</div><div class="t-lap">1:17.109</div>
+        <div class="t-tyre"><span class="pip pip-s"></span>S·4</div><div class="t-status">Pit</div>
+      </div>
+      <div class="t-row">
+        <div class="t-pos">4</div><div><span class="team-dot" style="background:#005fdf"></span></div>
+        <div><div class="t-driver">Mansell</div><div class="t-team-tag">Williams</div></div>
+        <div class="t-team-tag" style="color:#2a4055">Michelin</div>
+        <div class="t-gap">+24.115</div><div class="t-lap">1:17.882</div>
+        <div class="t-tyre"><span class="pip pip-m"></span>M·18</div><div class="t-stops">1</div>
+      </div>
+    </div>
+    <div class="footer-strip">
+      <div class="f-item">Simple Motor Racing · 1988</div>
+      <div class="f-item">36 laps remaining</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

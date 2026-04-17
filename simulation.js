@@ -562,11 +562,7 @@ function chooseStartingCompound(car, rng) {
 // An aggressive driver may always choose a softer compound (accepting an extra stop).
 // A harder-than-necessary compound is never chosen — if medium makes the flag, hard won't be.
 // One rng() call always consumed so the sequence stays deterministic.
-//
-// forceViable: when true (proactive pit — current tyres can't reach the flag), the driver
-// must take the minimum viable compound. Aggressive gamblers are not allowed to pick a
-// shorter compound that can't reach, which would cause an infinite pit loop.
-function chooseNextCompound(car, rng, forceViable = false) {
+function chooseNextCompound(car, rng) {
   const lapsRemaining = CIRCUIT.totalLaps - race.lap;
   const estimates     = {};
 
@@ -591,18 +587,14 @@ function chooseNextCompound(car, rng, forceViable = false) {
     chosen = 'soft';
 
   } else if (minViable === 'medium') {
-    // Medium is softest viable.
-    // Normal stop: aggressive drivers may gamble on soft (accepting one more stop).
-    // Proactive stop: must take medium — picking soft again would cause a pit loop.
-    chosen = (!forceViable && roll < pSoft) ? 'soft' : 'medium';
+    // Medium is softest viable — soft (extra stop) or medium by aggression; never hard
+    chosen = roll < pSoft ? 'soft' : 'medium';
 
   } else {
-    // Only hard makes the flag, or nothing does.
-    // Normal stop: full aggression distribution (soft/medium accepted as deliberate extra stop).
-    // Proactive stop: must take the minimum viable compound (hard, or best available).
-    if (!forceViable && roll < pSoft)      chosen = 'soft';
-    else if (!forceViable && roll < 1 - pHard) chosen = 'medium';
-    else                                   chosen = minViable ?? 'hard';
+    // Only hard makes the flag, or nothing does — full aggression distribution
+    if      (roll < pSoft)       chosen = 'soft';
+    else if (roll < 1 - pHard)  chosen = 'medium';
+    else                         chosen = 'hard';
   }
 
   return { compound: chosen, estimates, minViable };
@@ -636,15 +628,7 @@ function shouldPit(car, rng) {
   // would pit unnecessarily just because fuel dipped below the team threshold.
   const fuelShort = car.fuel <= fuelTrigger && car.fuel < lapsRemaining * burnPerLap;
 
-  // Proactive tyre trigger: if the current set cannot reach the flag, pit now rather
-  // than running them to destruction and arriving at the end of the stint with a
-  // much weaker position. Requires a minimum stint of 5 laps to avoid re-triggering
-  // immediately after a stop where the estimate is tight.
-  // e.g. 20 laps remaining, tyres good for 15 more → pit now and run 20 on a fresh set.
-  const lapsLeftOnTyres = estimateStintLaps(car, car.compound) - car.stintLap;
-  const tyresWontReach  = lapsLeftOnTyres < lapsRemaining && car.stintLap >= 5;
-
-  return fuelShort || car.tyreWear >= effectiveWearTrigger || tyresWontReach;
+  return fuelShort || car.tyreWear >= effectiveWearTrigger;
 }
 
 // Executes the pit stop: chooses compound reactively, refuels for estimated stint,
@@ -652,12 +636,7 @@ function shouldPit(car, rng) {
 function executePitStop(car, rng) {
   // ── Reactive compound choice ─────────────────────────────────────────────────
   // Apply softest-viable rule then aggressiveness; log all estimates for inspection.
-  // If pitting proactively (current tyres can't reach the flag), force the choice
-  // to a compound that actually reaches — prevents aggressive drivers from picking
-  // soft again and triggering another proactive stop 5 laps later.
-  const lapsLeftOnCurrent = estimateStintLaps(car, car.compound) - car.stintLap;
-  const isProactivePit    = lapsLeftOnCurrent < (CIRCUIT.totalLaps - race.lap);
-  const { compound: newCompound, estimates, minViable } = chooseNextCompound(car, rng, isProactivePit);
+  const { compound: newCompound, estimates, minViable } = chooseNextCompound(car, rng);
   const lapsRemaining = CIRCUIT.totalLaps - race.lap;
   const isLastStint   = estimates[newCompound].canReach;  // chosen compound reaches flag
 

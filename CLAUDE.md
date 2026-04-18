@@ -88,8 +88,8 @@ Draws the Spectrum-style timing display onto Canvas:
   1. ~~**Team+engine concat in team column**~~ ✓ Done — "MCLAREN-HONDA" style; Ferrari deduped to "FERRARI"; column widened to 130px.
   2. ~~**Tyre manufacturer column**~~ ✓ Done — single letter "G"/"P" in "TYRE" column after team; compound history column renamed "COMP".
   3. ~~**Frozen columns + horizontal scroll**~~ ✓ Done — POS, #, DRIVER sticky with `position: sticky`; table wrapped in `overflow-x: auto` div; driver column has separator border + shadow.
-  4. **Team colours** — colour-code each team's row/name; prerequisite for the lap chart where colours are essential. Consider small team logo next to driver name eventually.
-  5. **Grand Prix name in header** — e.g. "1988 Season · Race 1 · Swedish Grand Prix · Anderstorp". Requires circuit/race metadata to be defined in data.js.
+  4. ~~**Team colours**~~ ✓ Done — team colour dot (3×20px strip) next to each driver name; colours defined in data.js and used in lap chart lines.
+  5. **Grand Prix name in header** — e.g. "Season 1 · Race 1 · Swedish Grand Prix · Anderstorp". Requires circuit/race metadata to be defined in data.js.
   6. **Freeze controls at top** — hold until screen layout is designed (multi-screen navigation will reshape the header area entirely).
   7. **Hide wear/fuel columns** — user toggle to hide the WEAR and FUEL columns, to increase the mystery of what teams are doing; choice saved in localStorage.
 - **Mobile display** — the canvas timing sheet is designed for desktop. Need a strategy for mobile: either a responsive layout that stacks panels vertically, a simplified mobile view showing only top 6 or so, or a portrait-optimised alternative renderer. Consider touch interactions (tap a driver to highlight their line on the lap chart, etc.). The frozen-columns + horizontal-scroll item above is the first step.
@@ -102,7 +102,7 @@ Draws the Spectrum-style timing display onto Canvas:
 - **Fuel obfuscation** — in the 1980s, fuel gauges were imprecise. Each team has a per-season "fuel sensor accuracy" rating. The displayed fuel level and the AI pit trigger are based on the team's estimated fuel reading (noisy); real fuel level is used only for actual pace calculation and detecting true fuel-out. Creates drama when a team miscalculates and pits unnecessarily (or worse, runs dry thinking they have more than they do).
 - **Era car images** — in the multi-season world, every 5-year regulation era uses a different vector-art template for car silhouettes (progressively more modern from era 1 onward). Used on team/driver profile screens. Templates are SVG, recoloured per team livery.
 - Ambient temperature and weather effects (separate from rain — affects tyre behaviour, engine cooling etc.)
-- **Branding and visual restyle** — the game is called "Simple Motor Racing" (sister game: "Simple Football"). A shared modern visual identity replaces the Sinclair Spectrum aesthetic now that multi-season mode removes the 1988 tie-in. Reference design is in `all-square.html`; two custom fonts (Square.ttf, Squareo.ttf) are checked in and used across both games. Apply the new branding to index.html in the next session — discuss scope and approach first.
+- ~~**Branding and visual restyle**~~ ✓ Done — full rebrand applied to index.html. Dark theme with CSS design tokens (--bg, --mid, --lo, --dim, --accent). Square/Squareo fonts. Topbar with "Simple Motor Racing" brand, live pill, lap/sector counter in info bar. Team colour dot + stacked driver/team-engine name. Pip dots for tyre compounds (red/yellow/grey). Fastest lap tracked and shown in purple. Full-row position-swap flash animation. analysis.html left in original Spectrum style.
 
 ---
 

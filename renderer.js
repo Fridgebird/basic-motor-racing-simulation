@@ -337,7 +337,9 @@ export class Renderer {
 
         const tagDiv = document.createElement('div');
         tagDiv.className = 't-team-tag';
-        tagDiv.textContent = car.team.name.toUpperCase();
+        const tName = car.team.name.toUpperCase();
+        const eName = car.team.engine.toUpperCase();
+        tagDiv.textContent = tName === eName ? tName : `${tName}-${eName}`;
 
         info.appendChild(nameDiv);
         info.appendChild(tagDiv);

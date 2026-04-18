@@ -54,7 +54,7 @@
       max-width: 1100px;
       background: var(--bg-deep);
       border: 1px solid var(--border);
-      border-top: 2px solid var(--accent);
+      border-bottom: 2px solid var(--accent);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -70,7 +70,6 @@
       line-height: 1;
     }
     .b-flat em {
-      font-style: oblique;
       color: var(--mid);
     }
 
@@ -214,7 +213,7 @@
     .col-pos     { width: 38px; }
     .col-num     { width: 32px; color: var(--lo); }
     .col-driver  { width: 105px; }
-    .col-team    { width: 130px; color: var(--lo); }
+    .col-team    { width: 130px; color: var(--lo); display: none; /* hidden — restore by removing display:none */ }
     .col-lastlap { width: 80px; color: var(--mid); }
     .col-gap     { width: 70px; color: var(--mid); }
     .col-tyre    { width: 76px; }
@@ -283,27 +282,37 @@
     /* Fastest lap */
     td.lap-fast { color: #cc44ff; }
 
-    /* Row states */
-    tr.gained  { color: #00cc77; }
-    tr.lost    { color: #ff4444; }
+    /* Row text states — high-specificity selectors override per-column colour rules.
+       .t-driver / .t-team-tag are on child divs so need explicit targeting. */
+    #timing-table tr.gained td,
+    #timing-table tr.gained .t-driver,
+    #timing-table tr.gained .t-team-tag { color: #00cc77; }
+
+    #timing-table tr.lost td,
+    #timing-table tr.lost .t-driver,
+    #timing-table tr.lost .t-team-tag   { color: #ff4444; }
+
+    /* Pitted / retired — lower specificity is fine; just dims column text */
     tr.pitted  { color: var(--lo); }
     tr.retired { color: var(--dim); }
 
     tr.first-retired td { border-top: 1px solid var(--border); padding-top: 5px; }
 
-    /* FLIP animations */
+    /* FLIP position-swap animation */
     #timing-body tr { will-change: transform; }
 
     @keyframes pass-flash {
-      0%   { background-color: rgba(0, 200, 100, 0.18); }
+      0%   { background-color: rgba(0, 200, 100, 0.30); }
       100% { background-color: transparent; }
     }
     @keyframes drop-flash {
-      0%   { background-color: rgba(255, 60, 60, 0.12); }
+      0%   { background-color: rgba(255, 60, 60, 0.22); }
       100% { background-color: transparent; }
     }
-    tr.anim-pass { animation: pass-flash 600ms ease-out forwards; }
-    tr.anim-drop { animation: drop-flash 600ms ease-out forwards; }
+    /* Apply to TDs so the flash is visible on all columns including sticky ones
+       (CSS animations override normal background declarations). */
+    #timing-table tr.anim-pass td { animation: pass-flash 600ms ease-out forwards; }
+    #timing-table tr.anim-drop td { animation: drop-flash 600ms ease-out forwards; }
 
     /* Wear / fuel colour coding */
     td.warn-red    { color: #ff4444; }

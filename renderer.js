@@ -22,6 +22,8 @@ export class Renderer {
     this._stripScroll    = document.getElementById('strip-scroll');
     this._zoomLabel      = document.getElementById('strip-zoom-label');
     this._lapChartCanvas = document.getElementById('lap-chart-canvas');
+    this._livePill       = document.getElementById('live-pill');
+    this._fastestLap     = null;   // { time, driver } — tracks race fastest lap
 
     // Commentary focus filter — 'all', 'top10', 'top5'
     this._commentaryFilter = 'all';
@@ -83,6 +85,11 @@ export class Renderer {
   get _displayRace() { return this._viewIdx >= 0 ? this._snapshots[this._viewIdx].race : race; }
   get inReplay()     { return this._viewIdx >= 0; }
   get canStepBack()  { return this._viewIdx >= 0 ? this._viewIdx > 0 : this._snapshots.length >= 2; }
+
+  // Show/hide the Live pill — called from the game loop on start/pause/finish/reset.
+  set isLive(v) {
+    if (this._livePill) this._livePill.style.display = v ? 'flex' : 'none';
+  }
 
   // ── Snapshot API ───────────────────────────────────────────────────────────
   // Called by the game loop after each tick() to save state for stepping.
@@ -161,6 +168,7 @@ export class Renderer {
 
   // ── render ────────────────────────────────────────────────────────────────
   render() {
+    this._checkFastestLap(this._displayCars);  // must run before _updateTimingTable
     this._updateHeader();
     this._updateTimingTable();
     this._updateSpacingStrip();
@@ -191,6 +199,9 @@ export class Renderer {
     this.clearSnapshots();
     this.prevPositions.clear();
     this._lastCommentaryTick = -1;
+    this._fastestLap = null;
+    const flDisplay = document.getElementById('fastest-lap-display');
+    if (flDisplay) flDisplay.style.visibility = 'hidden';
     this._commentaryFilter = 'all';
     const filterBtn = document.getElementById('commentary-filter-btn');
     if (filterBtn) filterBtn.textContent = 'ALL';
@@ -287,17 +298,56 @@ export class Renderer {
       else if (prev !== undefined && car.position < prev)      tr.classList.add('gained');
       else if (prev !== undefined && car.position > prev)      tr.classList.add('lost');
 
-      // POS
-      tr.appendChild(cell(retired ? 'RET' : `P${car.position}`, 'col-pos'));
+      // POS — with p1/p2 accent classes
+      {
+        const posTd = document.createElement('td');
+        posTd.className = 'col-pos pos-cell';
+        if (retired) {
+          posTd.textContent = 'RET';
+          posTd.classList.add('ret');
+        } else {
+          posTd.textContent = `P${car.position}`;
+          if (car.position === 1)      posTd.classList.add('p1');
+          else if (car.position === 2) posTd.classList.add('p2');
+        }
+        tr.appendChild(posTd);
+      }
 
       // # — driver number
       tr.appendChild(cell(String(car.driver.number ?? ''), 'col-num'));
 
-      // DRIVER
-      tr.appendChild(cell(car.driver.name.toUpperCase(), 'col-driver'));
+      // DRIVER — team colour dot + stacked name / team-tag
+      {
+        const driverTd = document.createElement('td');
+        driverTd.className = 'col-driver';
 
-      // TEAM — "MCLAREN-HONDA" style concat; if team and engine share a name
-      // (e.g. Ferrari) show it once rather than "FERRARI-FERRARI"; hidden on mobile
+        const wrap = document.createElement('div');
+        wrap.className = 'driver-cell';
+
+        const dot = document.createElement('span');
+        dot.className = 'team-dot';
+        dot.style.background = retired ? 'var(--dim)' : (car.team.colour || '#888');
+
+        const info = document.createElement('div');
+        info.className = 'driver-info';
+
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 't-driver';
+        nameDiv.textContent = car.driver.name.toUpperCase();
+
+        const tagDiv = document.createElement('div');
+        tagDiv.className = 't-team-tag';
+        tagDiv.textContent = car.team.name.toUpperCase();
+
+        info.appendChild(nameDiv);
+        info.appendChild(tagDiv);
+        wrap.appendChild(dot);
+        wrap.appendChild(info);
+        driverTd.appendChild(wrap);
+        tr.appendChild(driverTd);
+      }
+
+      // TEAM — full "MCLAREN-HONDA" concat; hidden on mobile
       const teamName   = car.team.name.toUpperCase();
       const engineName = car.team.engine.toUpperCase();
       const teamEngineLabel = teamName === engineName ? teamName : `${teamName}-${engineName}`;
@@ -306,11 +356,18 @@ export class Renderer {
       // TYRE MFR — single letter: G = Goodyear, P = Pirelli; hidden on mobile
       tr.appendChild(cell(car.tyres.name[0].toUpperCase(), 'col-tyre-mfr hide-mobile'));
 
-      // LAST LAP — hidden on mobile
-      tr.appendChild(cell(
-        car.lastLapTime != null ? formatLapTime(car.lastLapTime) : '---',
-        'col-lastlap hide-mobile',
-      ));
+      // LAST LAP — hidden on mobile; purple if this driver holds the fastest lap
+      {
+        const lapTd = document.createElement('td');
+        lapTd.className = 'col-lastlap hide-mobile';
+        lapTd.textContent = car.lastLapTime != null ? formatLapTime(car.lastLapTime) : '—';
+        if (this._fastestLap && car.lastLapTime != null
+            && car.lastLapTime === this._fastestLap.time
+            && car.driver.name === this._fastestLap.driver) {
+          lapTd.classList.add('lap-fast');
+        }
+        tr.appendChild(lapTd);
+      }
 
       // GAP / INTERVAL
       let gapStr;
@@ -331,27 +388,37 @@ export class Renderer {
       }
       tr.appendChild(cell(gapStr, 'col-gap'));
 
-      // TYRE — history of compounds used + laps on current set
-      // e.g. "SHM (7)" with previous compounds greyed, current in bold
+      // COMP — pip dots for compound history + lap count on current stint
+      // Previous stints shown as small dimmed pips; current as full-brightness pip
       {
         const tyreTd = document.createElement('td');
         tyreTd.className = 'col-tyre';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'tyre-cell';
+
         const history = car.tyreHistory ?? [];
-        const cur     = car.compound[0].toUpperCase();
-        if (history.length > 1) {
-          // Previous compounds greyed out
-          const prev = document.createElement('span');
-          prev.style.opacity = '0.45';
-          prev.textContent   = history.slice(0, -1).join('');
-          tyreTd.appendChild(prev);
+
+        // Previous compounds: dimmed pip dots
+        for (const c of history.slice(0, -1)) {
+          const pip = document.createElement('span');
+          pip.className = `pip pip-${c.toLowerCase()}`;
+          pip.style.opacity = '0.35';
+          wrap.appendChild(pip);
         }
-        // Current compound bold
-        const curSpan = document.createElement('span');
-        curSpan.style.fontWeight = 'bold';
-        curSpan.textContent      = cur;
-        tyreTd.appendChild(curSpan);
-        // Lap count
-        tyreTd.appendChild(document.createTextNode(` (${car.stintLap})`));
+
+        // Current compound: full-brightness pip
+        const curPip = document.createElement('span');
+        curPip.className = `pip pip-${car.compound[0].toLowerCase()}`;
+        wrap.appendChild(curPip);
+
+        // Stint lap count
+        const lapCount = document.createElement('span');
+        lapCount.className = 'tyre-laps';
+        lapCount.textContent = `(${car.stintLap})`;
+        wrap.appendChild(lapCount);
+
+        tyreTd.appendChild(wrap);
         tr.appendChild(tyreTd);
       }
 
@@ -592,6 +659,29 @@ export class Renderer {
     this._updateSpacingStrip();
   }
 
+  // ── _checkFastestLap ───────────────────────────────────────────────────────
+  // Scans the current display state and updates the all-race fastest lap record.
+  // Only ever lowers the time (never increases it), so stepping back in replay
+  // won't remove a previously seen fastest lap. Updates the race info bar.
+  _checkFastestLap(displayCars) {
+    for (const car of displayCars) {
+      if (car.lastLapTime != null) {
+        if (!this._fastestLap || car.lastLapTime < this._fastestLap.time) {
+          this._fastestLap = { time: car.lastLapTime, driver: car.driver.name };
+        }
+      }
+    }
+
+    if (!this._fastestLap) return;
+
+    const flTimeEl   = document.getElementById('fastest-lap-time');
+    const flDriverEl = document.getElementById('fastest-lap-driver');
+    const flDisplay  = document.getElementById('fastest-lap-display');
+    if (flTimeEl)   flTimeEl.textContent   = formatLapTime(this._fastestLap.time);
+    if (flDriverEl) flDriverEl.textContent = this._fastestLap.driver.toUpperCase();
+    if (flDisplay)  flDisplay.style.visibility = 'visible';
+  }
+
   // ── _updateSpacingStrip ────────────────────────────────────────────────────
   // Draws one dot + label per active car at a y-position proportional to their
   // real gap from the leader. Min spacing prevents overlap; zoom in to separate
@@ -617,13 +707,13 @@ export class Renderer {
     ctx.clearRect(0, 0, W, H);
 
     // Subtle left-edge guide line
-    ctx.fillStyle = '#1a1a1a';
+    ctx.fillStyle = '#1e2f44';
     ctx.fillRect(0, 0, 1, H);
 
     const active = this._displayCars.filter(c => c.status !== 'retired' && c.gap != null);
     if (active.length === 0) return;
 
-    ctx.font = '10px "Courier New", monospace';
+    ctx.font = '10px Square, "Courier New", monospace';
     ctx.textBaseline = 'middle';
 
     // Small top padding so the leader dot isn't clipped at the canvas edge
@@ -644,13 +734,13 @@ export class Renderer {
 
       // Dot colour — team colour; pitted cars dimmed to grey
       // Leader dot uses team colour too; only the label goes yellow
-      const teamColour = car.team.colour || '#00ffff';
-      ctx.fillStyle = isPitted ? '#444' : teamColour;
+      const teamColour = car.team.colour || '#4a6a88';
+      ctx.fillStyle = isPitted ? '#2a4055' : teamColour;
       ctx.fillRect(4, y - 3, 5, 5);
 
       // Label: "12 SEN"
       const abbr = car.driver.name.replace(/\s+/g, '').toUpperCase().slice(0, 3);
-      ctx.fillStyle = isLeader ? '#ffff00' : isPitted ? '#666' : '#ccc';
+      ctx.fillStyle = isLeader ? '#ffffff' : isPitted ? '#2a4055' : '#4a6a88';
       ctx.fillText(`${car.driver.number} ${abbr}`, 13, y);
     }
   }
@@ -703,8 +793,8 @@ export class Renderer {
 
     // Nothing to draw yet
     if (lapsRecorded === 0) {
-      ctx.fillStyle = '#999';
-      ctx.font = '13px "Courier New", monospace';
+      ctx.fillStyle = '#4a6a88';
+      ctx.font = '13px Square, "Courier New", monospace';
       ctx.textAlign = 'left';
       ctx.fillText('RACE NOT STARTED', PAD_LEFT + 4, PAD_TOP + 20);
       return;
@@ -716,13 +806,13 @@ export class Renderer {
     const posY = pos => PAD_TOP + ((pos - 1) / (numCars - 1)) * chartH;
 
     // ── Grid lines ────────────────────────────────────────────────────────
-    ctx.strokeStyle = '#1a1a1a';
+    ctx.strokeStyle = '#1e2f44';
     ctx.lineWidth   = 1;
 
     // Horizontal grid: one line per position (no labels — driver names serve as reference)
     for (let p = 1; p <= numCars; p++) {
       const y = posY(p);
-      ctx.strokeStyle = '#1a1a1a';
+      ctx.strokeStyle = '#1e2f44';
       ctx.beginPath();
       ctx.moveTo(PAD_LEFT, y);
       ctx.lineTo(PAD_LEFT + chartW, y);
@@ -730,24 +820,24 @@ export class Renderer {
     }
 
     // Vertical grid: every 10 laps, labelled at the top
-    ctx.font = '13px "Courier New", monospace';
+    ctx.font = '13px Square, "Courier New", monospace';
     ctx.textAlign = 'center';
     for (let l = 0; l <= totalLaps; l += 10) {
       const x = lapX(l);
-      ctx.strokeStyle = l === 0 ? '#333' : '#1a1a1a';
+      ctx.strokeStyle = l === 0 ? '#1e2f44' : '#14202e';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(x, PAD_TOP);
       ctx.lineTo(x, PAD_TOP + chartH);
       ctx.stroke();
       // Tick mark protruding above the chart
-      ctx.strokeStyle = '#999';
+      ctx.strokeStyle = '#2a4055';
       ctx.beginPath();
       ctx.moveTo(x, PAD_TOP - 5);
       ctx.lineTo(x, PAD_TOP);
       ctx.stroke();
       // Label above the tick
-      ctx.fillStyle = '#999';
+      ctx.fillStyle = '#4a6a88';
       ctx.fillText(l === 0 ? 'LAP' : String(l), x, PAD_TOP - 7);
     }
 
@@ -853,7 +943,7 @@ export class Renderer {
 
       // Labels — start (right-aligned before the line) and end (left of right edge)
       if (started) {
-        ctx.font = '13px "Courier New", monospace';
+        ctx.font = '13px Square, "Courier New", monospace';
         ctx.fillStyle = colour;
         ctx.textAlign = 'right';
         ctx.fillText(label, firstX - 5, firstY + 4);

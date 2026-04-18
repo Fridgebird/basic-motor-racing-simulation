@@ -3,44 +3,137 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Motor Racing Simulation</title>
+  <title>Simple Motor Racing</title>
   <style>
-    /* ── Reset ────────────────────────────────────────────────────────────── */
+    /* ── Fonts ───────────────────────────────────────────────────────────────── */
+    @font-face {
+      font-family: 'Square';
+      src: url('Square.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Square';
+      src: url('Squareo.ttf') format('truetype');
+      font-weight: normal;
+      font-style: oblique;
+    }
+
+    /* ── Design tokens ────────────────────────────────────────────────────────── */
+    :root {
+      --bg:      #0d1117;
+      --bg-deep: #080c12;
+      --bg-mid:  #0a0f18;
+      --border:  #1e2f44;
+      --hi:      #ffffff;
+      --mid:     #8ab4d4;
+      --lo:      #4a6a88;
+      --dim:     #2a4055;
+      --accent:  #cc2233;
+    }
+
+    /* ── Reset ───────────────────────────────────────────────────────────────── */
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    /* ── Base ─────────────────────────────────────────────────────────────── */
+    /* ── Base ────────────────────────────────────────────────────────────────── */
     body {
-      background: #000;
-      color: #fff;
-      font-family: "Courier New", Courier, monospace;
+      background: var(--bg);
+      color: var(--hi);
+      font-family: 'Square', 'Courier New', monospace;
       font-size: 13px;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 12px 8px 24px;
+      padding: 0 8px 24px;
     }
 
-    /* ── Race header ──────────────────────────────────────────────────────── */
-    #race-header {
+    /* ── Topbar ──────────────────────────────────────────────────────────────── */
+    #topbar {
+      width: 100%;
+      max-width: 1100px;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      margin-bottom: 8px;
+    }
+
+    .b-flat {
+      font-size: 14px;
+      letter-spacing: 3px;
+      color: var(--hi);
+      text-transform: uppercase;
+      line-height: 1;
+    }
+    .b-flat em {
+      font-style: oblique;
+      color: var(--mid);
+    }
+
+    .topbar-meta {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    #timing-status {
+      font-size: 9px;
+      letter-spacing: 1px;
+      color: var(--mid);
+      text-transform: uppercase;
+    }
+
+    .live-pill {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 2px;
+      padding: 2px 6px;
+    }
+    .live-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+    /* ── Race info bar ────────────────────────────────────────────────────────── */
+    #race-info-bar {
       width: 100%;
       max-width: 1100px;
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
-      padding: 0 4px 8px;
-      border-bottom: 1px solid #333;
+      align-items: center;
+      padding: 0 4px 6px;
+      border-bottom: 1px solid var(--border);
       margin-bottom: 10px;
     }
 
     #circuit-name {
-      color: #00ffff;
-      font-size: 15px;
+      font-size: 9px;
       letter-spacing: 2px;
+      color: var(--lo);
       text-transform: uppercase;
     }
 
-    /* ── Tab bar (mobile only) ────────────────────────────────────────────── */
+    #fastest-lap-display {
+      font-size: 9px;
+      letter-spacing: 1px;
+      color: var(--lo);
+    }
+
+    /* ── Tab bar (mobile only) ────────────────────────────────────────────────── */
     #tab-bar {
       display: none;
       width: 100%;
@@ -48,23 +141,21 @@
       margin-bottom: 8px;
       gap: 4px;
     }
-
     .tab-btn {
       flex: 1;
-      background: #000;
-      color: #555;
-      border: 1px solid #333;
-      font-family: "Courier New", Courier, monospace;
-      font-size: 13px;
+      background: var(--bg-deep);
+      color: var(--lo);
+      border: 1px solid var(--border);
+      font-family: 'Square', 'Courier New', monospace;
+      font-size: 12px;
       padding: 6px;
       cursor: pointer;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
+    .tab-btn.active { color: var(--mid); border-color: var(--border); }
 
-    .tab-btn.active { color: #00ffff; border-color: #00ffff; }
-
-    /* ── Main content ─────────────────────────────────────────────────────── */
+    /* ── Main content ─────────────────────────────────────────────────────────── */
     #main-content {
       width: 100%;
       max-width: 1100px;
@@ -73,22 +164,13 @@
       align-items: flex-start;
     }
 
-    /* ── Timing panel ─────────────────────────────────────────────────────── */
+    /* ── Timing panel ─────────────────────────────────────────────────────────── */
     #timing-panel { flex: 1 1 600px; min-width: 0; }
 
-    #timing-status {
-      color: #ffff00;
-      font-size: 12px;
-      letter-spacing: 1px;
-      padding: 0 4px 6px;
-    }
-
-    th.gap-toggle:hover { color: #fff; }
+    th.gap-toggle:hover { color: var(--hi); }
     th.gap-toggle { user-select: none; }
 
-    #timing-table-scroll {
-      overflow-x: auto;
-    }
+    #timing-table-scroll { overflow-x: auto; }
 
     #timing-table {
       border-collapse: collapse;
@@ -96,33 +178,27 @@
     }
 
     /* Frozen columns — POS, #, DRIVER always visible */
-    .col-pos, .col-num, .col-driver {
-      position: sticky;
-    }
+    .col-pos, .col-num, .col-driver { position: sticky; }
     .col-pos    { left: 0; }
     .col-num    { left: 38px; }
-    .col-driver { left: 70px; border-right: 1px solid #444; box-shadow: 4px 0 8px #000; }
+    .col-driver { left: 70px; border-right: 1px solid var(--border); box-shadow: 4px 0 8px #000; }
     #timing-table th.col-team,
     #timing-table td.col-team { padding-left: 10px; }
     th.col-pos, th.col-num, th.col-driver { z-index: 2; }
     td.col-pos, td.col-num, td.col-driver { z-index: 1; }
-    /* Explicit background on sticky cells — high specificity so row flash animations
-       don't make them transparent and bleed scrolled content through */
     #timing-table th.col-pos, #timing-table th.col-num, #timing-table th.col-driver,
     #timing-table td.col-pos, #timing-table td.col-num, #timing-table td.col-driver {
-      background: #000;
+      background: var(--bg-deep);
     }
 
-    #timing-table thead tr {
-      border-bottom: 1px solid #333;
-    }
+    #timing-table thead tr { border-bottom: 1px solid var(--border); }
 
     #timing-table th {
-      color: #00ffff;
+      color: var(--mid);
       text-align: left;
       padding: 3px 5px;
       font-weight: normal;
-      font-size: 11px;
+      font-size: 10px;
       letter-spacing: 1px;
       text-transform: uppercase;
     }
@@ -134,38 +210,96 @@
       text-overflow: ellipsis;
     }
 
-    /* Column widths — driver is auto; all others are trimmed to give it room */
-    .col-pos    { width: 38px; }
-    .col-num    { width: 32px; color: #aaa; }
-    .col-driver { width: 90px; }
-    .col-team   { width: 130px; }
-    .col-lastlap{ width: 80px; }
-    .col-gap    { width: 70px; }
-    .col-tyre     { width: 80px; }
-    .col-tyre-mfr { width: 36px; }
-    .col-wear   { width: 44px; }
-    .col-fuel   { width: 54px; }
-    .col-stops  { width: 34px; }
-    .col-health { width: 90px; }
+    /* Column widths */
+    .col-pos     { width: 38px; }
+    .col-num     { width: 32px; color: var(--lo); }
+    .col-driver  { width: 105px; }
+    .col-team    { width: 130px; color: var(--lo); }
+    .col-lastlap { width: 80px; color: var(--mid); }
+    .col-gap     { width: 70px; color: var(--mid); }
+    .col-tyre    { width: 76px; }
+    .col-tyre-mfr { width: 30px; color: var(--lo); }
+    .col-wear    { width: 44px; }
+    .col-fuel    { width: 54px; }
+    .col-stops   { width: 34px; color: var(--lo); }
+    .col-health  { width: 90px; }
+
+    /* Driver cell internals */
+    .driver-cell {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      max-width: 100%;
+    }
+    .team-dot {
+      display: inline-block;
+      width: 3px;
+      min-height: 20px;
+      border-radius: 1px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+    .driver-info { overflow: hidden; }
+    .t-driver {
+      font-size: 11px;
+      color: var(--hi);
+      letter-spacing: 1px;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .t-team-tag {
+      font-size: 8px;
+      color: var(--lo);
+      letter-spacing: 1px;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Position cell */
+    .pos-cell     { font-size: 11px; color: var(--lo); }
+    .pos-cell.p1  { color: var(--hi); }
+    .pos-cell.p2  { color: var(--mid); }
+    .pos-cell.ret { color: var(--dim); font-size: 10px; }
+
+    /* Tyre compound pips */
+    .pip {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+    .pip-s { background: #ff3333; }
+    .pip-m { background: #e8c400; }
+    .pip-h { background: #888888; }
+    .tyre-cell { display: flex; align-items: center; gap: 2px; }
+    .tyre-laps { font-size: 10px; color: var(--lo); margin-left: 1px; }
+
+    /* Fastest lap */
+    td.lap-fast { color: #cc44ff; }
 
     /* Row states */
-    tr.leader   { color: #ffff00; }
-    tr.gained   { color: #00ff00; }
-    tr.lost     { color: #ff4444; }
-    tr.pitted   { color: #888; }
-    tr.retired  { color: #999; }
+    tr.gained  { color: #00cc77; }
+    tr.lost    { color: #ff4444; }
+    tr.pitted  { color: var(--lo); }
+    tr.retired { color: var(--dim); }
 
-    tr.first-retired td { border-top: 1px solid #333; padding-top: 5px; }
+    tr.first-retired td { border-top: 1px solid var(--border); padding-top: 5px; }
 
-    /* Position swap animation — FLIP technique */
+    /* FLIP animations */
     #timing-body tr { will-change: transform; }
 
     @keyframes pass-flash {
-      0%   { background-color: rgba(0, 255, 0, 0.30); }
+      0%   { background-color: rgba(0, 200, 100, 0.18); }
       100% { background-color: transparent; }
     }
     @keyframes drop-flash {
-      0%   { background-color: rgba(255, 60, 60, 0.20); }
+      0%   { background-color: rgba(255, 60, 60, 0.12); }
       100% { background-color: transparent; }
     }
     tr.anim-pass { animation: pass-flash 600ms ease-out forwards; }
@@ -173,152 +307,137 @@
 
     /* Wear / fuel colour coding */
     td.warn-red    { color: #ff4444; }
-    td.warn-yellow { color: #ffff00; }
+    td.warn-yellow { color: #e8c400; }
 
     /* Health cell */
     td.health-out { color: #ff4444; }
     td.health-dmg { color: #ff8800; }
 
-    /* ── Spacing strip ────────────────────────────────────────────────────── */
+    /* ── Spacing strip ────────────────────────────────────────────────────────── */
     #strip-panel {
       flex: 0 0 70px;
       display: flex;
       flex-direction: column;
       align-items: stretch;
     }
-
     #strip-controls {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 20px;          /* matches #timing-status height */
+      height: 20px;
       margin-bottom: 6px;
       gap: 2px;
     }
-
     #strip-controls button {
       flex: 0 0 18px;
       height: 18px;
       padding: 0;
       font-size: 14px;
       line-height: 1;
-      border: 1px solid #555;
-      color: #aaa;
+      border: 1px solid var(--border);
+      color: var(--lo);
       min-width: unset;
       letter-spacing: 0;
     }
-
-    #strip-controls button:hover { background: #333; color: #fff; }
+    #strip-controls button:hover { background: var(--bg-mid); color: var(--mid); }
 
     #strip-zoom-label {
       flex: 1;
       text-align: center;
       font-size: 9px;
-      color: #aaa;
+      color: var(--lo);
       letter-spacing: 0;
     }
-
     #strip-scroll {
       overflow-y: auto;
       overflow-x: hidden;
       max-height: 560px;
       scrollbar-width: thin;
-      scrollbar-color: #333 #000;
+      scrollbar-color: var(--border) var(--bg-deep);
     }
-
     #strip-scroll::-webkit-scrollbar       { width: 4px; }
-    #strip-scroll::-webkit-scrollbar-track { background: #000; }
-    #strip-scroll::-webkit-scrollbar-thumb { background: #333; }
-
+    #strip-scroll::-webkit-scrollbar-track { background: var(--bg-deep); }
+    #strip-scroll::-webkit-scrollbar-thumb { background: var(--border); }
     #spacing-strip { display: block; }
 
-    /* ── Commentary panel ─────────────────────────────────────────────────── */
+    /* ── Commentary panel ─────────────────────────────────────────────────────── */
     #commentary-panel {
       flex: 0 0 280px;
       min-width: 0;
       max-height: 600px;
       display: flex;
       flex-direction: column;
-      border-left: 1px solid #333;
+      border-left: 1px solid var(--border);
       padding-left: 10px;
     }
-
     #commentary-title {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      color: #00ffff;
-      font-size: 11px;
+      color: var(--mid);
+      font-size: 10px;
       letter-spacing: 2px;
       text-transform: uppercase;
       padding-bottom: 6px;
-      border-bottom: 1px solid #333;
+      border-bottom: 1px solid var(--border);
       margin-bottom: 6px;
       flex-shrink: 0;
     }
-
     #commentary-filter-btn {
       font-size: 9px;
       padding: 2px 6px;
-      border: 1px solid #555;
-      color: #aaa;
+      border: 1px solid var(--border);
+      color: var(--lo);
       letter-spacing: 0;
       height: auto;
       text-transform: uppercase;
     }
-    #commentary-filter-btn:hover { background: #333; color: #fff; }
+    #commentary-filter-btn:hover { border-color: var(--mid); color: var(--mid); }
 
     #commentary-feed {
       overflow-y: auto;
       flex: 1;
       scrollbar-width: thin;
-      scrollbar-color: #333 #000;
+      scrollbar-color: var(--border) var(--bg-deep);
     }
-
-    #commentary-feed::-webkit-scrollbar { width: 5px; }
-    #commentary-feed::-webkit-scrollbar-track { background: #000; }
-    #commentary-feed::-webkit-scrollbar-thumb { background: #333; }
+    #commentary-feed::-webkit-scrollbar       { width: 5px; }
+    #commentary-feed::-webkit-scrollbar-track { background: var(--bg-deep); }
+    #commentary-feed::-webkit-scrollbar-thumb { background: var(--border); }
 
     .c-entry {
       padding: 3px 0;
-      border-bottom: 1px solid #111;
+      border-bottom: 1px solid var(--bg-mid);
       line-height: 1.4;
-      font-size: 12px;
+      font-size: 11px;
     }
-
-    .c-lap    { color: #aaa; }
+    .c-lap    { color: var(--lo); }
     .c-tag    { font-weight: bold; }
-    .c-detail { color: #ccc; }
+    .c-detail { color: var(--mid); }
 
-    .tag-pit   { color: #ffff00; }
-    .tag-out   { color: #ff44ff; }
-    .tag-crash { color: #ff44ff; }
+    .tag-pit   { color: #e8c400; }
+    .tag-out   { color: #cc44ff; }
+    .tag-crash { color: #cc44ff; }
     .tag-dmg   { color: #ff8800; }
     .tag-spin  { color: #ff8800; }
-    .tag-pass  { color: #00ff00; }
+    .tag-pass  { color: #00cc77; }
 
-    /* ── Lap chart ────────────────────────────────────────────────────────── */
+    /* ── Lap chart ───────────────────────────────────────────────────────────── */
     #lap-chart-panel {
       width: 100%;
       max-width: 1100px;
       margin-top: 14px;
-      border-top: 1px solid #333;
+      border-top: 1px solid var(--border);
       padding-top: 8px;
     }
-
     #lap-chart-title {
-      color: #00ffff;
-      font-size: 11px;
+      color: var(--mid);
+      font-size: 10px;
       letter-spacing: 1px;
       margin-bottom: 6px;
     }
+    #lap-chart-canvas { display: block; width: 100%; }
 
-    #lap-chart-canvas {
-      display: block;
-      width: 100%;
-    }
-
-    /* ── Footer ───────────────────────────────────────────────────────────── */
+    /* ── Footer ──────────────────────────────────────────────────────────────── */
     #race-footer {
       width: 100%;
       max-width: 1100px;
@@ -327,26 +446,23 @@
       align-items: center;
       margin-top: 10px;
       padding-top: 8px;
-      border-top: 1px solid #333;
+      border-top: 1px solid var(--border);
     }
-
-    #seed-display { color: #555; font-size: 11px; }
+    #seed-display { color: var(--dim); font-size: 10px; }
 
     #legend {
       display: flex;
       gap: 12px;
-      font-size: 11px;
+      font-size: 10px;
     }
-
-    .leg-item { color: #555; }
+    .leg-item { color: var(--lo); }
     .leg-item span { margin-right: 3px; }
-    .leg-lead  { color: #ffff00; }
-    .leg-gain  { color: #00ff00; }
-    .leg-lose  { color: #ff4444; }
-    .leg-pit   { color: #888; }
-    .leg-ret   { color: #444; }
+    .leg-gain { color: #00cc77; }
+    .leg-lose { color: #ff4444; }
+    .leg-pit  { color: var(--lo); }
+    .leg-ret  { color: var(--dim); }
 
-    /* ── Controls ─────────────────────────────────────────────────────────── */
+    /* ── Controls ────────────────────────────────────────────────────────────── */
     #controls {
       margin-top: 14px;
       display: flex;
@@ -357,52 +473,51 @@
     }
 
     button {
-      background: #000;
-      color: #00ffff;
-      border: 1px solid #00ffff;
-      font-family: "Courier New", Courier, monospace;
-      font-size: 13px;
+      background: var(--bg-deep);
+      color: var(--mid);
+      border: 1px solid var(--border);
+      font-family: 'Square', 'Courier New', monospace;
+      font-size: 12px;
       padding: 5px 14px;
       cursor: pointer;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
-
-    button:hover  { background: #00ffff; color: #000; }
-    button:active { background: #00aaaa; color: #000; }
+    button:hover  { border-color: var(--mid); color: var(--hi); background: var(--bg-mid); }
+    button:active { background: var(--bg-mid); }
     button:disabled {
-      border-color: #333;
-      color: #333;
+      border-color: var(--dim);
+      color: var(--dim);
       cursor: default;
-      background: #000;
+      background: var(--bg-deep);
     }
 
-    #speed-label, #seed-label { color: #00ffff; font-size: 13px; }
+    #speed-label, #seed-label { color: var(--mid); font-size: 12px; }
 
     select {
-      background: #000;
-      color: #00ffff;
-      border: 1px solid #00ffff;
-      font-family: "Courier New", Courier, monospace;
-      font-size: 13px;
+      background: var(--bg-deep);
+      color: var(--mid);
+      border: 1px solid var(--border);
+      font-family: 'Square', 'Courier New', monospace;
+      font-size: 12px;
       padding: 4px 8px;
     }
 
     #seed-input {
-      background: #000;
-      color: #ffff00;
-      border: 1px solid #ffff00;
-      font-family: "Courier New", Courier, monospace;
-      font-size: 13px;
+      background: var(--bg-deep);
+      color: var(--hi);
+      border: 1px solid var(--border);
+      font-family: 'Square', 'Courier New', monospace;
+      font-size: 12px;
       padding: 4px 8px;
       width: 100px;
     }
 
-    /* ── Mobile ───────────────────────────────────────────────────────────── */
+    /* ── Mobile ──────────────────────────────────────────────────────────────── */
     @media (max-width: 767px) {
-      body { padding: 8px 4px 16px; font-size: 12px; }
+      body { padding: 0 4px 16px; font-size: 12px; }
 
-      #race-header { flex-direction: column; gap: 4px; }
+      #race-info-bar { flex-direction: column; gap: 4px; align-items: flex-start; }
 
       #tab-bar { display: flex; }
 
@@ -415,7 +530,7 @@
         width: 100%;
         max-height: 300px;
         border-left: none;
-        border-top: 1px solid #333;
+        border-top: 1px solid var(--border);
         padding-left: 0;
         padding-top: 8px;
       }
@@ -424,7 +539,6 @@
 
       #legend { display: none; }
 
-      /* Hide the panel that isn't active on mobile */
       #timing-panel.tab-hidden,
       #commentary-panel.tab-hidden { display: none; }
     }
@@ -432,23 +546,37 @@
 </head>
 <body>
 
-  <!-- ── Race header ─────────────────────────────────────────────────────── -->
-  <div id="race-header">
-    <span id="circuit-name">1988 SEASON — RACE 1</span>
+  <!-- ── Topbar ──────────────────────────────────────────────────────────────── -->
+  <div id="topbar">
+    <div class="b-flat">Simple <em>Motor Racing</em></div>
+    <div class="topbar-meta">
+      <div id="timing-status">PRE-RACE</div>
+      <div class="live-pill" id="live-pill" style="display:none">
+        <div class="live-dot"></div>Live
+      </div>
+    </div>
   </div>
 
-  <!-- ── Tab bar (mobile only) ──────────────────────────────────────────── -->
+  <!-- ── Race info bar ───────────────────────────────────────────────────────── -->
+  <div id="race-info-bar">
+    <span id="circuit-name">RACE 1</span>
+    <span id="fastest-lap-display" style="visibility:hidden">
+      Fastest <strong id="fastest-lap-time" style="color:#cc44ff">–</strong>
+      <span id="fastest-lap-driver" style="color:#8ab4d4"></span>
+    </span>
+  </div>
+
+  <!-- ── Tab bar (mobile only) ───────────────────────────────────────────────── -->
   <div id="tab-bar">
     <button class="tab-btn active" data-panel="timing">TIMING</button>
     <button class="tab-btn"        data-panel="commentary">COMMENTARY</button>
   </div>
 
-  <!-- ── Main content ────────────────────────────────────────────────────── -->
+  <!-- ── Main content ────────────────────────────────────────────────────────── -->
   <div id="main-content">
 
     <!-- Timing sheet -->
     <div id="timing-panel">
-      <div id="timing-status">PRE-RACE</div>
       <div id="timing-table-scroll">
       <table id="timing-table">
         <thead>
@@ -457,7 +585,7 @@
             <th class="col-num">#</th>
             <th class="col-driver">DRIVER</th>
             <th class="col-team    hide-mobile">TEAM</th>
-            <th class="col-tyre-mfr hide-mobile">TYRE</th>
+            <th class="col-tyre-mfr hide-mobile">TYR</th>
             <th class="col-lastlap hide-mobile">LAST LAP</th>
             <th class="col-gap gap-toggle" id="gap-toggle-header">INT ▾</th>
             <th class="col-tyre">COMP</th>
@@ -495,17 +623,16 @@
 
   </div>
 
-  <!-- ── Lap chart ────────────────────────────────────────────────────────── -->
+  <!-- ── Lap chart ────────────────────────────────────────────────────────────── -->
   <div id="lap-chart-panel">
     <div id="lap-chart-title">LAP CHART</div>
     <canvas id="lap-chart-canvas"></canvas>
   </div>
 
-  <!-- ── Footer ──────────────────────────────────────────────────────────── -->
+  <!-- ── Footer ──────────────────────────────────────────────────────────────── -->
   <div id="race-footer">
     <span id="seed-display"></span>
     <div id="legend">
-      <span class="leg-item"><span class="leg-lead">■</span>LEADER</span>
       <span class="leg-item"><span class="leg-gain">■</span>GAINED</span>
       <span class="leg-item"><span class="leg-lose">■</span>LOST</span>
       <span class="leg-item"><span class="leg-pit">■</span>PIT</span>
@@ -513,7 +640,7 @@
     </div>
   </div>
 
-  <!-- ── Controls ────────────────────────────────────────────────────────── -->
+  <!-- ── Controls ─────────────────────────────────────────────────────────────── -->
   <div id="controls">
     <button id="btn-start">START RACE</button>
     <button id="btn-pause" disabled>PAUSE</button>
@@ -540,15 +667,15 @@
     import { initRace }              from './state.js';
     import { tick, isRaceOver, initStrategies } from './simulation.js';
 
-    // ── Renderer ───────────────────────────────────────────────────────────
+    // ── Renderer ───────────────────────────────────────────────────────────────
     const renderer = new Renderer();
 
-    // ── State ──────────────────────────────────────────────────────────────
+    // ── State ──────────────────────────────────────────────────────────────────
     let rng    = null;
     let loopId = null;
     let paused = false;
 
-    // ── Controls ───────────────────────────────────────────────────────────
+    // ── Controls ───────────────────────────────────────────────────────────────
     const btnStart  = document.getElementById('btn-start');
     const btnPause  = document.getElementById('btn-pause');
     const btnPrev   = document.getElementById('btn-prev');
@@ -570,7 +697,7 @@
       updateStepButtons();
     });
 
-    // ── Mobile tab switching ───────────────────────────────────────────────
+    // ── Mobile tab switching ───────────────────────────────────────────────────
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -581,18 +708,14 @@
       });
     });
 
-    // ── Step button state ──────────────────────────────────────────────────
+    // ── Step button state ──────────────────────────────────────────────────────
     function updateStepButtons() {
       const steppable = paused || isRaceOver();
       btnPrev.disabled = !steppable || !renderer.canStepBack;
       btnNext.disabled = !steppable || !renderer.inReplay;
     }
 
-    // ── Pre-race grid display ─────────────────────────────────────────────
-    // Initialise state from the default seed so the timing sheet shows the
-    // starting grid before the user hits Start Race. When Start Race is
-    // clicked it re-runs initRace with the same (or changed) seed, so race
-    // behaviour is unaffected.
+    // ── Pre-race grid display ──────────────────────────────────────────────────
     {
       const previewSeed = parseInt(seedInput.value, 10) || 198804;
       const previewRng  = initRace(previewSeed);
@@ -600,21 +723,20 @@
     }
     renderer.render();
 
-    // Update the grid preview whenever the seed input changes
     seedInput.addEventListener('change', () => {
-      if (btnStart.disabled) return;  // race already running — ignore
+      if (btnStart.disabled) return;
       const previewSeed = parseInt(seedInput.value, 10) || 198804;
       const previewRng  = initRace(previewSeed);
       initStrategies(previewRng);
       renderer.render();
     });
 
-    // ── startRace ──────────────────────────────────────────────────────────
+    // ── startRace ──────────────────────────────────────────────────────────────
     function startRace() {
       const seed = parseInt(seedInput.value, 10) || 198804;
 
       rng    = initRace(seed);
-      initStrategies(rng);   // sets actual starting compounds before first render
+      initStrategies(rng);
       paused = false;
 
       btnStart.disabled  = true;
@@ -622,16 +744,17 @@
       btnReset.disabled  = false;
       seedInput.disabled = true;
 
+      renderer.isLive = true;
       renderer.render();
       scheduleNextSector();
     }
 
-    // ── Game loop ──────────────────────────────────────────────────────────
+    // ── Game loop ──────────────────────────────────────────────────────────────
     function advanceSector() {
       if (paused || isRaceOver()) return;
 
       const delay = Math.round(parseInt(speedSel.value, 10) / 3);
-      renderer.animationsEnabled = delay >= 1000;  // off at Very Fast and Instant
+      renderer.animationsEnabled = delay >= 1000;
 
       tick(rng);
       renderer.pushSnapshot();
@@ -649,19 +772,19 @@
       loopId = setTimeout(advanceSector, delay);
     }
 
-    // ── togglePause ────────────────────────────────────────────────────────
+    // ── togglePause ────────────────────────────────────────────────────────────
     function togglePause() {
       paused = !paused;
       btnPause.textContent = paused ? 'RESUME' : 'PAUSE';
+      renderer.isLive = !paused;
       if (!paused) {
-        // Exit replay when resuming so the live display takes over
         if (renderer.inReplay) renderer.exitReplay();
         if (!isRaceOver()) scheduleNextSector();
       }
       updateStepButtons();
     }
 
-    // ── resetRace ──────────────────────────────────────────────────────────
+    // ── resetRace ──────────────────────────────────────────────────────────────
     function resetRace() {
       clearTimeout(loopId);
       paused = false;
@@ -673,19 +796,20 @@
       btnReset.disabled    = true;
       seedInput.disabled   = false;
 
+      renderer.isLive = false;
       renderer.reset();
       updateStepButtons();
     }
 
-    // ── onRaceFinished ─────────────────────────────────────────────────────
+    // ── onRaceFinished ─────────────────────────────────────────────────────────
     function onRaceFinished() {
       btnPause.disabled = true;
+      renderer.isLive = false;
       renderer.render();
       updateStepButtons();
       console.log('Race complete. Full log available at: window.raceLog');
     }
 
-    // Expose race log to browser console for debugging
     import('./state.js').then(m => { window.raceLog = m.raceLog; });
   </script>
 

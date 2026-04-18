@@ -23,6 +23,7 @@ export class Renderer {
     this._zoomLabel      = document.getElementById('strip-zoom-label');
     this._lapChartCanvas = document.getElementById('lap-chart-canvas');
     this._livePill       = document.getElementById('live-pill');
+    this._metaLapSector  = document.getElementById('meta-lap-sector');
     this._fastestLap     = null;   // { time, driver } — tracks race fastest lap
 
     // Commentary focus filter — 'all', 'top10', 'top5'
@@ -206,7 +207,7 @@ export class Renderer {
     const filterBtn = document.getElementById('commentary-filter-btn');
     if (filterBtn) filterBtn.textContent = 'ALL';
     this._zoomIdx = 0;
-    if (this._zoomLabel) this._zoomLabel.textContent = `${this._zoomLevels[0]}s`;
+    if (this._zoomLabel) this._zoomLabel.textContent = `${this._zoomLevels[0]} s`;
     if (this._stripCanvas) {
       this._stripCanvas.getContext('2d')
         .clearRect(0, 0, this._stripCanvas.width, this._stripCanvas.height);
@@ -228,19 +229,33 @@ export class Renderer {
     const sector  = displayRace.sector || 0;
     const running = displayCars.filter(c => c.status !== 'retired').length;
 
+    // Topbar status — concise: running count, replay info, pre/finished state
     let status;
+    // Info bar lap/sector — shown alongside "Race 1" in the sub-header
+    let lapSector = '';
+
     if (this.inReplay) {
       const total = this._snapshots.length;
       const idx   = this._viewIdx + 1;
-      status = `◀ REPLAY  L${String(lap).padStart(2)} S${sector}  (${idx}/${total}) ▶`;
+      status    = `◀ REPLAY (${idx}/${total}) ▶`;
+      lapSector = lap > 0 ? `LAP ${lap} / ${CIRCUIT.totalLaps}   S${sector}` : '';
     } else if (displayCars.length === 0 || lap === 0) {
-      status = 'PRE-RACE';
+      status    = 'PRE-RACE';
+      lapSector = '';
     } else if (lap >= CIRCUIT.totalLaps && sector >= 3) {
-      status = `FINISHED — ${running} CLASSIFIED`;
+      status    = `FINISHED · ${running} CLASSIFIED`;
+      lapSector = `LAP ${CIRCUIT.totalLaps} / ${CIRCUIT.totalLaps}`;
     } else {
-      status = `LAP ${String(lap).padStart(2)} / ${CIRCUIT.totalLaps}   S${sector}   ${running} RUNNING`;
+      status    = `${running} RUNNING`;
+      lapSector = `LAP ${lap} / ${CIRCUIT.totalLaps}   S${sector}`;
     }
+
     this._statusEl.textContent = status;
+
+    if (this._metaLapSector) {
+      this._metaLapSector.textContent  = lapSector;
+      this._metaLapSector.style.visibility = lapSector ? 'visible' : 'hidden';
+    }
   }
 
   // ── _updateTimingTable ─────────────────────────────────────────────────────
@@ -656,7 +671,7 @@ export class Renderer {
   _changeZoom(dir) {
     this._zoomIdx = Math.max(0, Math.min(this._zoomLevels.length - 1, this._zoomIdx + dir));
     if (this._zoomLabel) {
-      this._zoomLabel.textContent = `${this._zoomLevels[this._zoomIdx]}s`;
+      this._zoomLabel.textContent = `${this._zoomLevels[this._zoomIdx]} s`;
     }
     this._updateSpacingStrip();
   }

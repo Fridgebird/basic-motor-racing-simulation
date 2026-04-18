@@ -70,6 +70,7 @@
       line-height: 1;
     }
     .b-flat em {
+      font-style: normal;   /* override browser default italic on <em> */
       color: var(--mid);
     }
 
@@ -211,16 +212,16 @@
 
     /* Column widths */
     .col-pos     { width: 38px; }
-    .col-num     { width: 32px; color: var(--lo); }
+    .col-num     { width: 32px; color: var(--mid); }
     .col-driver  { width: 105px; }
     .col-team    { width: 130px; color: var(--lo); display: none; /* hidden — restore by removing display:none */ }
     .col-lastlap { width: 80px; color: var(--mid); }
     .col-gap     { width: 70px; color: var(--mid); }
     .col-tyre    { width: 76px; }
-    .col-tyre-mfr { width: 30px; color: var(--lo); }
+    .col-tyre-mfr { width: 30px; color: var(--mid); }
     .col-wear    { width: 44px; }
     .col-fuel    { width: 54px; }
-    .col-stops   { width: 34px; color: var(--lo); }
+    .col-stops   { width: 34px; color: var(--mid); }
     .col-health  { width: 90px; }
 
     /* Driver cell internals */
@@ -259,7 +260,7 @@
     }
 
     /* Position cell */
-    .pos-cell     { font-size: 11px; color: var(--lo); }
+    .pos-cell     { font-size: 11px; color: var(--mid); }
     .pos-cell.p1  { color: var(--hi); }
     .pos-cell.p2  { color: var(--mid); }
     .pos-cell.ret { color: var(--dim); font-size: 10px; }
@@ -277,7 +278,7 @@
     .pip-m { background: #e8c400; }
     .pip-h { background: #888888; }
     .tyre-cell { display: flex; align-items: center; gap: 2px; }
-    .tyre-laps { font-size: 10px; color: var(--lo); margin-left: 1px; }
+    .tyre-laps { font-size: 10px; color: var(--mid); margin-left: 1px; }
 
     /* Fastest lap */
     td.lap-fast { color: #cc44ff; }

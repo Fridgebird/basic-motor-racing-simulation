@@ -230,7 +230,7 @@
     .col-team    { width: 130px; color: var(--lo); display: none; /* hidden — restore by removing display:none */ }
     .col-lastlap { width: 80px; color: var(--mid); }
     .col-gap     { width: 70px; color: var(--mid); }
-    .col-tyre    { width: 76px; }
+    .col-tyre    { width: 82px; }
     .col-tyre-mfr { width: 30px; color: var(--mid); }
     .col-wear    { width: 44px; }
     .col-fuel    { width: 54px; }
@@ -275,8 +275,6 @@
     /* Position cell */
     .pos-cell     { font-size: 11px; color: var(--mid); }
     .pos-cell.p1  { color: var(--hi); }
-    .pos-cell.p2  { color: var(--mid); }
-    .pos-cell.ret { color: var(--dim); font-size: 10px; }
 
     /* Tyre compound pips */
     .pip {
@@ -291,7 +289,7 @@
     .pip-m { background: #e8c400; }
     .pip-h { background: #888888; }
     .tyre-cell { display: flex; align-items: center; gap: 2px; }
-    .tyre-laps { font-size: 10px; color: var(--mid); margin-left: 1px; }
+    .tyre-laps { color: var(--mid); margin-left: 2px; }
 
     /* Fastest lap */
     td.lap-fast { color: #cc44ff; }
@@ -614,7 +612,7 @@
             <th class="col-tyre-mfr hide-mobile">TYR</th>
             <th class="col-lastlap hide-mobile">LAST LAP</th>
             <th class="col-gap gap-toggle" id="gap-toggle-header">INT ▾</th>
-            <th class="col-tyre">COMP</th>
+            <th class="col-tyre">COMP/AGE</th>
             <th class="col-wear  hide-mobile">WEAR</th>
             <th class="col-fuel  hide-mobile">FUEL</th>
             <th class="col-stops hide-mobile">STP</th>

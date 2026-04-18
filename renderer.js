@@ -432,7 +432,7 @@ export class Renderer {
         // Stint lap count
         const lapCount = document.createElement('span');
         lapCount.className = 'tyre-laps';
-        lapCount.textContent = `(${car.stintLap})`;
+        lapCount.textContent = String(car.stintLap);
         wrap.appendChild(lapCount);
 
         tyreTd.appendChild(wrap);

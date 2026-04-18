@@ -7,7 +7,16 @@
 //   const rng = initRace(seed);
 //   while (!isRaceOver()) tick(rng);
 
-import { COMPOUNDS, CIRCUIT } from './data.js';
+import { COMPOUNDS, CIRCUIT as DEFAULT_CIRCUIT } from './data.js';
+
+// Active circuit — set once before running qualifying or a race.
+// Defaults to the backwards-compat CIRCUIT alias (Montjuïc) until explicitly changed.
+let currentCircuit = DEFAULT_CIRCUIT;
+
+/** Set the circuit for the upcoming qualifying session or race. */
+export function setCurrentCircuit(circuit) {
+  currentCircuit = circuit;
+}
 import { cars, race, raceLog, lapChartData, updatePositions } from './state.js';
 
 // ─── Tuning Constants ─────────────────────────────────────────────────────────
@@ -80,10 +89,10 @@ export function initStrategies(rng) {
     if (car.strategy) continue;  // already initialised (shouldn't happen at race start)
     const startCompound  = chooseStartingCompound(car, rng);
     const estLaps        = estimateStintLaps(car, startCompound);
-    const burnPerLap     = CIRCUIT.baseFuelBurnPerLap * car.engine.fuelBurnRate;
+    const burnPerLap     = currentCircuit.baseFuelBurnPerLap * car.engine.fuelBurnRate;
     const fuelMarginLaps = car.team.strategy.fuelMarginLaps;
     const fuelLapsTarget = estLaps + fuelMarginLaps;
-    car.fuel        = Math.min(CIRCUIT.fuelCapacity, Math.ceil(fuelLapsTarget * burnPerLap));
+    car.fuel        = Math.min(currentCircuit.fuelCapacity, Math.ceil(fuelLapsTarget * burnPerLap));
     car.compound    = startCompound;
     car.tyreHistory = [startCompound[0].toUpperCase()];
     car.strategy    = { initialized: true };
@@ -102,7 +111,7 @@ export function tick(rng) {
   }
   race.tick += 1;
 
-  const sectorDef  = CIRCUIT.sectors[race.sector - 1];
+  const sectorDef  = currentCircuit.sectors[race.sector - 1];
   const isEndOfLap = race.sector === 3;
 
   // ── Snapshot positions before this tick for silent-pass detection ─────────
@@ -169,7 +178,7 @@ export function tick(rng) {
     // ── 4. Fuel factor ──────────────────────────────────────────────────────
     // Formula: 1.0 + (currentFuel / maxFuel) × 0.03
     // Full tank = 3% slower than empty
-    const fuelFactor = 1.0 + (car.fuel / CIRCUIT.fuelCapacity) * 0.03;
+    const fuelFactor = 1.0 + (car.fuel / currentCircuit.fuelCapacity) * 0.03;
     factors.fuel = +fuelFactor.toFixed(4);
 
     // ── 5. Tyre factor ──────────────────────────────────────────────────────
@@ -248,21 +257,21 @@ export function tick(rng) {
     // Formula: wear += baseWearRate × compoundMult × sectorWearWeight × aggressionMult × fuelWearMult × trackAbrasiveness × dirtyAirMult
     // dirtyAirMult: following in turbulent air increases tyre stress.
     const aggressionMult  = 1.0 + (car.driver.aggression / 100) * AGGRESSION_WEAR_SCALE;
-    const fuelWearMult    = 1.0 + (car.fuel / CIRCUIT.fuelCapacity) * FUEL_WEAR_COEFF;
+    const fuelWearMult    = 1.0 + (car.fuel / currentCircuit.fuelCapacity) * FUEL_WEAR_COEFF;
     const dirtyAirWearMult = 1.0 + proximity * DIRTY_AIR_WEAR_MULT;
     const wearDelta = car.tyres.wearRate
       * compound.wearMultiplier
       * sectorDef.wearWeight
       * aggressionMult
       * fuelWearMult
-      * CIRCUIT.trackAbrasiveness
+      * currentCircuit.trackAbrasiveness
       * dirtyAirWearMult;
     car.tyreWear = Math.min(1, car.tyreWear + wearDelta);
 
     // ── Fuel burn ────────────────────────────────────────────────────────────
     // Base rate × engine's thirst multiplier × sector throttle demand
     // Average fuelWeight across 3 sectors = 1.0, so per-lap total stays consistent
-    const fuelBurnPerSector = (CIRCUIT.baseFuelBurnPerLap / 3)
+    const fuelBurnPerSector = (currentCircuit.baseFuelBurnPerLap / 3)
       * car.engine.fuelBurnRate
       * sectorDef.fuelWeight;
     car.fuel = Math.max(0, car.fuel - fuelBurnPerSector);
@@ -310,7 +319,7 @@ export function tick(rng) {
       }
 
       // Ran out of fuel — retirement (shouldn't happen with good AI, but guard against it)
-      if (car.fuel <= 0 && race.lap < CIRCUIT.totalLaps) {
+      if (car.fuel <= 0 && race.lap < currentCircuit.totalLaps) {
         if (car.status !== 'retired') {
           events.push({ type: 'mechanical', severity: 'retirement', label: 'Fuel' });
           car.status        = 'retired';
@@ -485,7 +494,7 @@ function paceDelta(behind, ahead) {
     const effectiveMaxGrip = Math.min(100, car.tyres.maxGrip + compound.gripModifier);
     const grip             = (effectiveMaxGrip / 100) * (1 - car.tyreWear);
     return (1.0 + (1 - grip) * tyreConfig.penaltyCoeff)   // tyreFactor
-         + (1.0 + (car.fuel / CIRCUIT.fuelCapacity) * 0.03); // fuelFactor
+         + (1.0 + (car.fuel / currentCircuit.fuelCapacity) * 0.03); // fuelFactor
   }
   return tyrePlusFuel(ahead) - tyrePlusFuel(behind); // positive = behind is faster
 }
@@ -516,14 +525,14 @@ export const tyreConfig = { penaltyCoeff: 0.06 };
 //                    (heavier car wears tyres faster — front runners model this).
 function estimateStintLaps(car, compound) {
   const aggressionMult = 1.0 + (car.driver.aggression / 100) * AGGRESSION_WEAR_SCALE;
-  const sumWearWeights = CIRCUIT.sectors.reduce((s, sec) => s + sec.wearWeight, 0);
+  const sumWearWeights = currentCircuit.sectors.reduce((s, sec) => s + sec.wearWeight, 0);
   const wearTrigger    = car.team.strategy.wearTrigger;
 
   let fuelWearMult = 1.0;
   if (car.team.strategy.tyreLifeModel === 'fuelCorrected') {
     // Estimate average fuel during a typical stint: ~35% of capacity (mid-range)
-    const estAvgFuel = CIRCUIT.fuelCapacity * 0.35;
-    fuelWearMult = 1.0 + (estAvgFuel / CIRCUIT.fuelCapacity) * FUEL_WEAR_COEFF;
+    const estAvgFuel = currentCircuit.fuelCapacity * 0.35;
+    fuelWearMult = 1.0 + (estAvgFuel / currentCircuit.fuelCapacity) * FUEL_WEAR_COEFF;
   }
 
   const wearPerLap = car.tyres.wearRate
@@ -531,7 +540,7 @@ function estimateStintLaps(car, compound) {
     * sumWearWeights
     * aggressionMult
     * fuelWearMult
-    * CIRCUIT.trackAbrasiveness;
+    * currentCircuit.trackAbrasiveness;
 
   return Math.max(5, Math.floor(wearTrigger / wearPerLap));
 }
@@ -563,7 +572,7 @@ function chooseStartingCompound(car, rng) {
 // A harder-than-necessary compound is never chosen — if medium makes the flag, hard won't be.
 // One rng() call always consumed so the sequence stays deterministic.
 function chooseNextCompound(car, rng) {
-  const lapsRemaining = CIRCUIT.totalLaps - race.lap;
+  const lapsRemaining = currentCircuit.totalLaps - race.lap;
   const estimates     = {};
 
   // Find the softest compound that can reach the flag
@@ -621,15 +630,15 @@ function chooseNextCompound(car, rng) {
 // Multi-stop situations — where no compound can reach the flag — are left to
 // the normal wear trigger.
 function crossoverPitBenefits(car) {
-  const lapsRemaining  = CIRCUIT.totalLaps - race.lap;
+  const lapsRemaining  = currentCircuit.totalLaps - race.lap;
   const aggressionMult = 1.0 + (car.driver.aggression / 100) * AGGRESSION_WEAR_SCALE;
-  const sumWearWeights = CIRCUIT.sectors.reduce((s, sec) => s + sec.wearWeight, 0);
+  const sumWearWeights = currentCircuit.sectors.reduce((s, sec) => s + sec.wearWeight, 0);
 
   // Precompute the fuelCorrected multiplier once (same model as estimateStintLaps)
   let fuelWearMult = 1.0;
   if (car.team.strategy.tyreLifeModel === 'fuelCorrected') {
-    const estAvgFuel = CIRCUIT.fuelCapacity * 0.35;
-    fuelWearMult = 1.0 + (estAvgFuel / CIRCUIT.fuelCapacity) * FUEL_WEAR_COEFF;
+    const estAvgFuel = currentCircuit.fuelCapacity * 0.35;
+    fuelWearMult = 1.0 + (estAvgFuel / currentCircuit.fuelCapacity) * FUEL_WEAR_COEFF;
   }
 
   // Wear per lap for any compound, using the same model as estimateStintLaps
@@ -639,7 +648,7 @@ function crossoverPitBenefits(car) {
       * sumWearWeights
       * aggressionMult
       * fuelWearMult
-      * CIRCUIT.trackAbrasiveness;
+      * currentCircuit.trackAbrasiveness;
   }
 
   // tyreFactor at a given wear level — same formula as the main simulation tick
@@ -679,12 +688,12 @@ function crossoverPitBenefits(car) {
   const tf_currentAvg   = tyreFactorAt((car.tyreWear + wearEndCurrent) / 2, car.compound);
   const tf_newAvg       = tyreFactorAt(wearEndNew / 2, viableCompound);
 
-  const baseLapTime   = CIRCUIT.sectors.reduce((s, sec) => s + sec.baseSectorTime, 0);
+  const baseLapTime   = currentCircuit.sectors.reduce((s, sec) => s + sec.baseSectorTime, 0);
   const avgGainPerLap = (tf_currentAvg - tf_newAvg) * baseLapTime;
   if (avgGainPerLap <= 0) return false;  // new compound not faster on average
 
-  const tyreChangeTime = CIRCUIT.baseTyreChangeTime * (1 + (1 - car.team.pitCrewRating / 100));
-  const pitStopCost    = CIRCUIT.pitLaneTime + tyreChangeTime;
+  const tyreChangeTime = currentCircuit.baseTyreChangeTime * (1 + (1 - car.team.pitCrewRating / 100));
+  const pitStopCost    = currentCircuit.pitLaneTime + tyreChangeTime;
 
   return (lapsRemaining * avgGainPerLap) > pitStopCost;
 }
@@ -700,9 +709,9 @@ function shouldPit(car, rng) {
   // Always consume one rng() call — maintains deterministic sequence
   const wearJitter = (rng() - 0.5) * 0.06;  // ±0.03 spread on wear trigger
 
-  if (race.lap >= CIRCUIT.totalLaps - 3) return false;
+  if (race.lap >= currentCircuit.totalLaps - 3) return false;
 
-  const burnPerLap = CIRCUIT.baseFuelBurnPerLap * car.engine.fuelBurnRate;
+  const burnPerLap = currentCircuit.baseFuelBurnPerLap * car.engine.fuelBurnRate;
   const { fuelTrigger, wearTrigger } = car.team.strategy;
 
   // Emergency fuel stop — override everything
@@ -711,7 +720,7 @@ function shouldPit(car, rng) {
   // Normal triggers: fuel at/below threshold OR wear at/above threshold (with jitter)
   const effectiveWearTrigger = Math.max(0.60, Math.min(0.95, wearTrigger + wearJitter));
 
-  const lapsRemaining = CIRCUIT.totalLaps - race.lap;
+  const lapsRemaining = currentCircuit.totalLaps - race.lap;
 
   // Fuel trigger: only fire if the car genuinely cannot reach the flag on current fuel.
   // Without this check, cars with e.g. 6.7 kg and only 4 laps left (needing 5.2 kg)
@@ -731,23 +740,23 @@ function executePitStop(car, rng) {
   // ── Reactive compound choice ─────────────────────────────────────────────────
   // Apply softest-viable rule then aggressiveness; log all estimates for inspection.
   const { compound: newCompound, estimates, minViable } = chooseNextCompound(car, rng);
-  const lapsRemaining = CIRCUIT.totalLaps - race.lap;
+  const lapsRemaining = currentCircuit.totalLaps - race.lap;
   const isLastStint   = estimates[newCompound].canReach;  // chosen compound reaches flag
 
   // ── Fuel load ────────────────────────────────────────────────────────────────
   // Last stint: load exactly enough to reach the flag (+ 1 lap margin for safety).
   // Mid-race: load for estimated stint length + team safety margin.
-  const burnPerLap     = CIRCUIT.baseFuelBurnPerLap * car.engine.fuelBurnRate;
+  const burnPerLap     = currentCircuit.baseFuelBurnPerLap * car.engine.fuelBurnRate;
   const fuelLapsTarget = isLastStint
     ? lapsRemaining + 1
     : estimates[newCompound].estLaps + car.team.strategy.fuelMarginLaps;
-  const fuelTarget = Math.min(CIRCUIT.fuelCapacity, Math.ceil(fuelLapsTarget * burnPerLap));
+  const fuelTarget = Math.min(currentCircuit.fuelCapacity, Math.ceil(fuelLapsTarget * burnPerLap));
   const fuelAdded  = +(Math.max(0, fuelTarget - car.fuel)).toFixed(1);
 
   // ── Stop time: pit lane traversal + max(tyre change, fuelling) ──────────────
-  const pitLaneTime    = CIRCUIT.pitLaneTime;
-  const tyreChangeTime = CIRCUIT.baseTyreChangeTime * (1 + (1 - car.team.pitCrewRating / 100));
-  const fuellingTime   = fuelAdded > 0 ? fuelAdded * CIRCUIT.fuelRigRate : 0;
+  const pitLaneTime    = currentCircuit.pitLaneTime;
+  const tyreChangeTime = currentCircuit.baseTyreChangeTime * (1 + (1 - car.team.pitCrewRating / 100));
+  const fuellingTime   = fuelAdded > 0 ? fuelAdded * currentCircuit.fuelRigRate : 0;
   const stationaryTime = +Math.max(tyreChangeTime, fuellingTime).toFixed(1);
   const duration       = +(pitLaneTime + stationaryTime).toFixed(1);
 
@@ -783,7 +792,7 @@ function executePitStop(car, rng) {
 
 // Returns true once the final sector of the final lap has been processed.
 export function isRaceOver() {
-  return race.lap >= CIRCUIT.totalLaps && race.sector >= 3;
+  return race.lap >= currentCircuit.totalLaps && race.sector >= 3;
 }
 
 // Convenience: run the entire race to completion in one call.
@@ -792,4 +801,156 @@ export function runRace(rng) {
   while (!isRaceOver()) {
     tick(rng);
   }
+}
+
+// ─── Qualifying simulation ────────────────────────────────────────────────────
+//
+// Sequential single-lap format: one driver at a time, all on fresh softs, ~10 kg fuel.
+// Track evolves as rubber is laid — cars later in the draw order enjoy a small grip bonus.
+// Driver error model: crash = no time set; spin/lockup = sector penalty but lap completes.
+//
+// Call runQualifyingSession(rng, circuit) after initRace(seed) has populated cars[].
+// Returns results array sorted P1 → P24; pass to initRace(raceSeed, results) for the race.
+
+const QUALI_FUEL          = 10;     // kg — minimal, just enough for one lap
+const TRACK_EVO_MAX       = 0.015;  // max grip bonus for last car vs first (1.5%)
+
+/**
+ * Simulate one driver's single timed qualifying lap.
+ *
+ * @param {object}        car            — car object from cars[]
+ * @param {function}      rng            — seeded PRNG (shared across all cars in session)
+ * @param {object}        circuit        — circuit definition object
+ * @param {number}        trackEvolution — 0.0 (first car, green track) → 1.0 (last, full rubber)
+ * @param {function|null} onSector       — optional async callback(sectorIndex, sectorTime, isSlow, retired)
+ *   Called after each sector is resolved. Use for animated qualifying UI. Awaited if present.
+ * @returns {Promise<{ lapTime, sectorTimes, retired, sectorsCompleted }>}
+ */
+export async function simulateQualiLap(car, rng, circuit, trackEvolution, onSector = null) {
+  const trackEvoBonus = trackEvolution * TRACK_EVO_MAX;
+
+  let lapTime          = 0;
+  const sectorTimes    = [];
+  let sectorsCompleted = 0;
+
+  for (let sectorIndex = 0; sectorIndex < circuit.sectors.length; sectorIndex++) {
+    const sectorDef = circuit.sectors[sectorIndex];
+    // ── Factor calculations (mirrors tick() for a 1-lap, no-wear scenario) ──
+
+    const engineFactor  = 1.0 + (1 - car.engine.power / 100) * sectorDef.powerWeight;
+
+    const chassisFactor = 1.0 + (1 - car.team.aero / 100) * sectorDef.aeroWeight;
+
+    const setupFactor   = 1.0 + (1 - car.setup / 100) * 0.04;
+
+    const fuelFactor    = 1.0 + (QUALI_FUEL / circuit.fuelCapacity) * 0.03;
+
+    // Fresh soft tyre with track evolution bonus
+    const compound          = COMPOUNDS['soft'];
+    const effectiveMaxGrip  = Math.min(100, car.tyres.maxGrip + compound.gripModifier);
+    const grip              = (effectiveMaxGrip / 100) * (1 + trackEvoBonus);  // rubber = more grip
+    const tyreFactor        = 1.0 + (1 - grip) * tyreConfig.penaltyCoeff;
+
+    // ── Driver error check ────────────────────────────────────────────────────
+    const consistencyRoll = rng() * (1 - car.driver.consistency / 100) + car.driver.consistency / 100;
+    const crashThreshold  = (1 - car.driver.consistency / 100) * CRASH_SCALE * 10; // slightly raised for 1 lap
+    const slowThreshold   = (1 - car.driver.consistency / 100) * SLOW_SCALE  * 10;
+
+    if (consistencyRoll < crashThreshold) {
+      // ── Crash — no time set ───────────────────────────────────────────────
+      raceLog.entries.push({
+        tick: -1, lap: 0, sector: sectorDef.id,
+        car: car.driver.name,
+        factors: {},
+        rolls: { consistencyRoll },
+        events: [{ type: 'driver_error', severity: 'crash', session: 'qualifying' }],
+      });
+      if (onSector) await onSector(sectorIndex, null, false, true);
+      return { lapTime: null, sectorTimes, retired: true, sectorsCompleted };
+    }
+
+    let driverFactor;
+    let isSlow = false;
+    if (consistencyRoll < slowThreshold) {
+      // ── Spin / lock-up — sector penalty but lap continues ─────────────────
+      const penaltyFactor = 1.10 + rng() * 0.12;  // 10–22% sector penalty
+      driverFactor = penaltyFactor;
+      isSlow = true;
+      raceLog.entries.push({
+        tick: -1, lap: 0, sector: sectorDef.id,
+        car: car.driver.name,
+        factors: {},
+        rolls: { consistencyRoll },
+        events: [{ type: 'driver_error', severity: 'slow_sector', penalty: penaltyFactor, session: 'qualifying' }],
+      });
+    } else {
+      const effectiveSkill = car.driver.skill * consistencyRoll;
+      driverFactor = 1.0 + (1 - effectiveSkill / 100) * 0.05;
+    }
+
+    const sectorTime = sectorDef.baseSectorTime
+      * engineFactor
+      * chassisFactor
+      * setupFactor
+      * fuelFactor
+      * tyreFactor
+      * driverFactor;
+
+    sectorTimes.push(+sectorTime.toFixed(3));
+    lapTime += sectorTime;
+    sectorsCompleted++;
+
+    if (onSector) await onSector(sectorIndex, +sectorTime.toFixed(3), isSlow, false);
+  }
+
+  return { lapTime: +lapTime.toFixed(3), sectorTimes, retired: false, sectorsCompleted: 3 };
+}
+
+/**
+ * Run a full sequential qualifying session for all cars in cars[].
+ * Call after initRace(seed) has populated cars[] with setup values.
+ *
+ * @param {function} rng     — seeded PRNG returned by initRace()
+ * @param {object}   circuit — circuit to qualify on
+ * @returns {Array} Sorted qualifying results P1→P24.
+ *   Each entry: { driverName, teamId, lapTime, sectorTimes, retired, drawPosition, gridPosition, setup }
+ */
+export async function runQualifyingSession(rng, circuit) {
+  // Draw order: Fisher-Yates shuffle using the seeded RNG.
+  // Deterministic per event — same seed always produces the same draw.
+  const drawOrder = [...cars];
+  for (let i = drawOrder.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [drawOrder[i], drawOrder[j]] = [drawOrder[j], drawOrder[i]];
+  }
+
+  const rawResults = [];
+  for (let drawIndex = 0; drawIndex < drawOrder.length; drawIndex++) {
+    const car            = drawOrder[drawIndex];
+    const trackEvolution = drawOrder.length > 1 ? drawIndex / (drawOrder.length - 1) : 0;
+    const result = await simulateQualiLap(car, rng, circuit, trackEvolution);
+    rawResults.push({
+      driverName:       car.driver.name,
+      teamId:           car.team.id,
+      setup:            car.setup,       // carry setup through to race (parc ferme)
+      lapTime:          result.lapTime,
+      sectorTimes:      result.sectorTimes,
+      retired:          result.retired,
+      sectorsCompleted: result.sectorsCompleted,
+      drawPosition:     drawIndex + 1,
+    });
+  }
+
+  // Sort: fastest first, then retired cars ordered by sectors completed desc, then draw position desc
+  const timed   = rawResults.filter(r => !r.retired).sort((a, b) => a.lapTime - b.lapTime);
+  const retired = rawResults.filter(r => r.retired)
+    .sort((a, b) =>
+      b.sectorsCompleted - a.sectorsCompleted ||   // more sectors = higher grid slot
+      b.drawPosition     - a.drawPosition          // later draw = higher grid slot (more track data)
+    );
+
+  const sorted = [...timed, ...retired];
+  sorted.forEach((r, i) => { r.gridPosition = i + 1; });
+
+  return sorted;
 }

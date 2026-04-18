@@ -49,6 +49,20 @@
     }
 
     /* ── Topbar ──────────────────────────────────────────────────────────────── */
+    .topbar-nav {
+      display: flex;
+      gap: 16px;
+      margin-left: auto;
+      margin-right: 16px;
+    }
+    .topbar-nav-link {
+      color: var(--lo);
+      text-decoration: none;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+    }
+    .topbar-nav-link:hover { color: var(--mid); }
+
     #topbar {
       width: 100%;
       max-width: 1100px;
@@ -570,6 +584,10 @@
   <!-- ── Topbar ──────────────────────────────────────────────────────────────── -->
   <div id="topbar">
     <div class="b-flat">Simple <em>Motor Racing</em></div>
+    <nav class="topbar-nav">
+      <a href="qualifying.html" class="topbar-nav-link">QUALIFYING</a>
+      <a href="standings.html"  class="topbar-nav-link">STANDINGS</a>
+    </nav>
     <div class="topbar-meta">
       <div id="timing-status">PRE-RACE</div>
       <div class="live-pill" id="live-pill" style="display:none">
@@ -687,9 +705,43 @@
   </div>
 
   <script type="module">
-    import { Renderer }              from './renderer.js';
+    import { Renderer, setCurrentCircuit as setRendererCircuit } from './renderer.js';
     import { initRace }              from './state.js';
-    import { tick, isRaceOver, initStrategies } from './simulation.js';
+    import { tick, isRaceOver, initStrategies, setCurrentCircuit } from './simulation.js';
+    import {
+      getCurrentEvent, getCircuit, getSeedForEvent,
+      loadQualiResults, addRaceResult,
+      advanceDevEvent, retreatDevEvent, isDevMode,
+    } from './championship.js';
+
+    // ── Championship context ───────────────────────────────────────────────────
+    const event   = getCurrentEvent();
+    const circuit = getCircuit(event);
+    setCurrentCircuit(circuit);
+    setRendererCircuit(circuit);
+
+    // Update info bar with championship context
+    const circuitNameEl = document.getElementById('circuit-name');
+    if (circuitNameEl) {
+      circuitNameEl.textContent =
+        `S${event.season} R${event.round} · ${circuit.eventName} — Race`;
+    }
+
+    // Dev navigation (only shown if dev offset is active)
+    if (isDevMode()) {
+      const devBar = document.createElement('div');
+      devBar.style.cssText = 'text-align:center;padding:4px;font-size:11px;color:#4a6a88;background:#080c12;border-bottom:1px solid #1e2f44;';
+      devBar.innerHTML = `
+        <button onclick="import('./championship.js').then(m=>{m.retreatDevEvent();location.reload();})" style="margin-right:8px">◀ PREV</button>
+        DEV MODE — Day offset: ${localStorage.getItem('smr_dev_offset')} &nbsp;|&nbsp; ${circuit.eventName} — Race
+        <button onclick="import('./championship.js').then(m=>{m.advanceDevEvent();location.reload();})" style="margin-left:8px">NEXT ▶</button>
+      `;
+      document.body.prepend(devBar);
+    }
+
+    // Load qualifying results for this round (if qualifying was completed)
+    const qualiResults = loadQualiResults(event.season, event.round);
+    const raceSeed     = getSeedForEvent(event);
 
     // ── Renderer ───────────────────────────────────────────────────────────────
     const renderer = new Renderer();
@@ -741,25 +793,27 @@
 
     // ── Pre-race grid display ──────────────────────────────────────────────────
     {
-      const previewSeed = parseInt(seedInput.value, 10) || 198804;
-      const previewRng  = initRace(previewSeed);
+      // Use championship seed; override with manual seed input if changed
+      const previewSeed = parseInt(seedInput.value, 10) || raceSeed;
+      seedInput.value   = previewSeed;
+      const previewRng  = initRace(previewSeed, qualiResults, circuit);
       initStrategies(previewRng);
     }
     renderer.render();
 
     seedInput.addEventListener('change', () => {
       if (btnStart.disabled) return;
-      const previewSeed = parseInt(seedInput.value, 10) || 198804;
-      const previewRng  = initRace(previewSeed);
+      const previewSeed = parseInt(seedInput.value, 10) || raceSeed;
+      const previewRng  = initRace(previewSeed, qualiResults, circuit);
       initStrategies(previewRng);
       renderer.render();
     });
 
     // ── startRace ──────────────────────────────────────────────────────────────
     function startRace() {
-      const seed = parseInt(seedInput.value, 10) || 198804;
+      const seed = parseInt(seedInput.value, 10) || raceSeed;
 
-      rng    = initRace(seed);
+      rng    = initRace(seed, qualiResults, circuit);
       initStrategies(rng);
       paused = false;
 
@@ -832,6 +886,23 @@
       renderer.render();
       updateStepButtons();
       console.log('Race complete. Full log available at: window.raceLog');
+
+      // Save championship result
+      import('./state.js').then(({ cars }) => {
+        const finishOrder = [...cars]
+          .sort((a, b) => {
+            if (a.status === 'retired' && b.status !== 'retired') return 1;
+            if (b.status === 'retired' && a.status !== 'retired') return -1;
+            return a.position - b.position;
+          })
+          .map(car => ({
+            driverName: car.driver.name,
+            teamId:     car.team.id,
+            position:   car.position,
+            retired:    car.status === 'retired',
+          }));
+        addRaceResult(event.season, event.round, finishOrder);
+      });
     }
 
     import('./state.js').then(m => { window.raceLog = m.raceLog; });

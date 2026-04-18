@@ -555,14 +555,8 @@ export const DRIVERS = [
   },
 ];
 
-// ─── Circuit ─────────────────────────────────────────────────────────────────
-// A fictional composite circuit capturing the spirit of a classic 1988 grand prix venue.
-// 70 laps, long race distance, mixed layout with a distinctive power straight.
-//
-// Sector breakdown:
-//   S1 — Technical corners: tight sequence demanding chassis aero and driver finesse
-//   S2 — Power straight + chicane: engine-dominant; low downforce, high speed
-//   S3 — Mixed flowing section: balanced demands; tyre wear bites here at race end
+// ─── Circuits ────────────────────────────────────────────────────────────────
+// All real defunct racing venues — no longer active in top-level motorsport.
 //
 // Sector weights feed directly into the simulation formulas:
 //   engineFactor  = 1.0 + (1 - power/100)  × powerWeight
@@ -570,50 +564,241 @@ export const DRIVERS = [
 //   wear         += baseWearRate × wearWeight × aggressionMult × trackAbrasiveness
 //
 // baseSectorTime: ideal sector time in seconds for a theoretically perfect car.
-// Lap sum = 28 + 22 + 25 = 75s base → ~87.5 min race time at the front (before factors)
+// fuelCapacity / baseFuelBurnPerLap sized so turbo engines (×1.15) are just over a
+// full tank per race distance — creating meaningful pit strategy variation.
 
-export const CIRCUIT = {
-  name:               'Circuit de Vitesse',
-  totalLaps:          70,
-  trackAbrasiveness:  0.50,   // 0–1; high = harder on tyres (like a rough street circuit)
-  fuelCapacity:       100,    // kg maximum fuel load
-  baseFuelBurnPerLap: 1.30,   // kg/lap baseline (NA); turbos multiply via engine.fuelBurnRate
-                               // At 1.30 kg/lap, worst-case turbo (×1.15) needs 104.7 kg for 70 laps —
-                               // just over a full tank, so NA cars can fuel no-stop and turbos need one fuel top-up
-  pitLaneTime:        18,     // seconds lost slowing, traversing, and rejoining — fixed for all cars
-  baseTyreChangeTime: 7,      // seconds for tyre change at best crew (100); scales up with lower ratings
-  fuelRigRate:        0.12,   // seconds per kg of fuel added; 100kg full refuel ≈ 12s stationary
+export const CIRCUITS = {
 
-  sectors: [
-    {
-      id:          1,
-      label:       'Technical corners',
-      // Favours chassis aero and driver skill; wears tyres hard; less full-throttle
-      powerWeight: 0.02,
-      aeroWeight:  0.05,
-      wearWeight:  1.30,
-      fuelWeight:  0.85,  // tight corners = partial throttle → lower fuel burn
-      baseSectorTime: 28.0,
-    },
-    {
-      id:          2,
-      label:       'Power straight',
-      // Engine horsepower dominant; easy on tyres; sustained full throttle
-      powerWeight: 0.06,
-      aeroWeight:  0.01,
-      wearWeight:  0.70,
-      fuelWeight:  1.30,  // flat-out → highest fuel burn of the three sectors
-      baseSectorTime: 22.0,
-    },
-    {
-      id:          3,
-      label:       'Mixed flowing',
-      // Balanced demands; average fuelWeight across all 3 sectors = 1.0
-      powerWeight: 0.03,
-      aeroWeight:  0.03,
-      wearWeight:  1.00,
-      fuelWeight:  0.85,
-      baseSectorTime: 25.0,
-    },
-  ],
+  // ── Montjuïc ─────────────────────────────────────────────────────────────
+  // Barcelona hillside park circuit. Last F1 use: 1975 Spanish Grand Prix (abandoned
+  // after a first-lap pile-up). Flowing and technical with significant elevation changes.
+  // Balanced demands — no single factor dominates.
+  // Lap sum: 28 + 22 + 25 = 75s → ~87.5 min race at front
+  montjuic: {
+    id:                 'montjuic',
+    name:               'Montjuïc',
+    country:            'Spain',
+    eventName:          'Spanish Grand Prix',
+    totalLaps:          70,
+    trackAbrasiveness:  0.50,
+    fuelCapacity:       100,
+    baseFuelBurnPerLap: 1.30,  // 70 laps × 1.30 × 1.15 turbo = 104.7 kg — just over tank
+    pitLaneTime:        18,
+    baseTyreChangeTime: 7,
+    fuelRigRate:        0.12,
+    sectors: [
+      {
+        id:          1,
+        label:       'Technical corners',
+        powerWeight: 0.02,
+        aeroWeight:  0.05,
+        wearWeight:  1.30,
+        fuelWeight:  0.85,
+        baseSectorTime: 28.0,
+      },
+      {
+        id:          2,
+        label:       'Power straight',
+        powerWeight: 0.06,
+        aeroWeight:  0.01,
+        wearWeight:  0.70,
+        fuelWeight:  1.30,
+        baseSectorTime: 22.0,
+      },
+      {
+        id:          3,
+        label:       'Mixed flowing',
+        powerWeight: 0.03,
+        aeroWeight:  0.03,
+        wearWeight:  1.00,
+        fuelWeight:  0.85,
+        baseSectorTime: 25.0,
+      },
+    ],
+  },
+
+  // ── Reims-Gueux ──────────────────────────────────────────────────────────
+  // Ultra-fast triangle circuit outside Reims. Last F1 use: 1966 French Grand Prix.
+  // Two enormous straights connected by slow corners — pure engine circuit.
+  // Low tyre wear (few corners); high fuel burn (sustained full throttle).
+  // Lap sum: 20 + 18 + 19 = 57s → ~71 min race at front
+  reims: {
+    id:                 'reims',
+    name:               'Reims-Gueux',
+    country:            'France',
+    eventName:          'French Grand Prix',
+    totalLaps:          75,
+    trackAbrasiveness:  0.25,
+    fuelCapacity:       100,
+    baseFuelBurnPerLap: 1.15,  // 75 laps × 1.15 × 1.15 turbo = 99.2 kg — borderline for turbos
+    pitLaneTime:        16,
+    baseTyreChangeTime: 7,
+    fuelRigRate:        0.12,
+    sectors: [
+      {
+        id:          1,
+        label:       'Thillois hairpin',
+        // Slow hairpin — brief chassis/aero moment; easy on tyres
+        powerWeight: 0.02,
+        aeroWeight:  0.04,
+        wearWeight:  0.80,
+        fuelWeight:  0.60,
+        baseSectorTime: 20.0,
+      },
+      {
+        id:          2,
+        label:       'Soissons straight',
+        // Long flat-out blast — engine power dominant above all else
+        powerWeight: 0.09,
+        aeroWeight:  0.01,
+        wearWeight:  0.50,
+        fuelWeight:  1.70,
+        baseSectorTime: 18.0,
+      },
+      {
+        id:          3,
+        label:       'Garenne sweep',
+        // Fast kink back to the hairpin — still power-biased, minimal aero load
+        powerWeight: 0.05,
+        aeroWeight:  0.02,
+        wearWeight:  0.70,
+        fuelWeight:  1.40,
+        baseSectorTime: 19.0,
+      },
+    ],
+  },
+
+  // ── Ain-Diab ─────────────────────────────────────────────────────────────
+  // Casablanca seafront street circuit. Only F1 appearance: 1958 Moroccan Grand Prix.
+  // Tight harbourside bends, a long seafront blast, narrow chicanes. High attrition.
+  // Heavy aero demands; rough surface and walls punish mistakes harshly.
+  // Lap sum: 32 + 26 + 30 = 88s → ~88 min race at front
+  ain_diab: {
+    id:                 'ain_diab',
+    name:               'Ain-Diab',
+    country:            'Morocco',
+    eventName:          'Moroccan Grand Prix',
+    totalLaps:          60,
+    trackAbrasiveness:  0.80,
+    fuelCapacity:       100,
+    baseFuelBurnPerLap: 1.45,  // 60 laps × 1.45 × 1.15 turbo = 100.1 kg — just over tank
+    pitLaneTime:        20,    // slower pit lane on street circuit
+    baseTyreChangeTime: 7,
+    fuelRigRate:        0.12,
+    sectors: [
+      {
+        id:          1,
+        label:       'Harbourside bends',
+        // Tight, technical — aero and driver finesse; walls close, tyres suffer
+        powerWeight: 0.01,
+        aeroWeight:  0.07,
+        wearWeight:  1.50,
+        fuelWeight:  0.70,
+        baseSectorTime: 32.0,
+      },
+      {
+        id:          2,
+        label:       'Seafront blast',
+        // Long coastal straight — engine briefly matters
+        powerWeight: 0.05,
+        aeroWeight:  0.02,
+        wearWeight:  0.90,
+        fuelWeight:  1.20,
+        baseSectorTime: 26.0,
+      },
+      {
+        id:          3,
+        label:       'Casino chicanes',
+        // Narrow twisting section back to the pits — high aero load, punishing on tyres
+        powerWeight: 0.02,
+        aeroWeight:  0.06,
+        wearWeight:  1.40,
+        fuelWeight:  0.90,
+        baseSectorTime: 30.0,
+      },
+    ],
+  },
+
+  // ── Zeltweg Aerodrome ─────────────────────────────────────────────────────
+  // Original bumpy concrete aerodrome circuit in Styria. Only F1 appearance: 1964 Austrian
+  // Grand Prix. Notoriously destructive — rough surface broke cars and shredded tyres.
+  // Heavy wear on everything; the circuit that earns its reputation as the tyre-destroyer.
+  // Lap sum: 27 + 24 + 23 = 74s → ~84 min race at front
+  zeltweg: {
+    id:                 'zeltweg',
+    name:               'Zeltweg Aerodrome',
+    country:            'Austria',
+    eventName:          'Austrian Grand Prix',
+    totalLaps:          68,
+    trackAbrasiveness:  0.90,
+    fuelCapacity:       100,
+    baseFuelBurnPerLap: 1.25,  // 68 laps × 1.25 × 1.15 turbo = 97.75 kg — within tank
+    pitLaneTime:        17,
+    baseTyreChangeTime: 7,
+    fuelRigRate:        0.12,
+    sectors: [
+      {
+        id:          1,
+        label:       'Concrete sweep',
+        // Fast open sweeper on rough concrete — high-speed cornering load
+        powerWeight: 0.03,
+        aeroWeight:  0.06,
+        wearWeight:  1.80,
+        fuelWeight:  1.00,
+        baseSectorTime: 27.0,
+      },
+      {
+        id:          2,
+        label:       'Rough back straight',
+        // Bumpiest section — cars crash over expansion joints; drains mechanical reliability
+        powerWeight: 0.04,
+        aeroWeight:  0.03,
+        wearWeight:  1.60,
+        fuelWeight:  1.10,
+        baseSectorTime: 24.0,
+      },
+      {
+        id:          3,
+        label:       'Blast to finish',
+        // Full-throttle run to the line — power matters, tyres still suffering
+        powerWeight: 0.05,
+        aeroWeight:  0.02,
+        wearWeight:  1.20,
+        fuelWeight:  1.30,
+        baseSectorTime: 23.0,
+      },
+    ],
+  },
+
 };
+
+// Backwards compatibility alias — used by simulation.js and state.js until they are
+// updated to accept a circuit parameter.
+export const CIRCUIT = CIRCUITS.montjuic;
+
+// ─── Season Schedule ─────────────────────────────────────────────────────────
+// Each entry represents one calendar day in the global world.
+// eventType: 'qualifying' | 'race'
+// The order defines the season rhythm — put qualifying before its race on adjacent days
+// (separate real-time days) or combine them however desired by rearranging entries.
+
+export const SEASON_1_START = '2026-05-01';  // epoch date for season 1, day 0
+
+export const SEASON_SCHEDULE = [
+  { round: 1,  eventType: 'qualifying', circuitId: 'montjuic'  },
+  { round: 1,  eventType: 'race',       circuitId: 'montjuic'  },
+  { round: 2,  eventType: 'qualifying', circuitId: 'reims'     },
+  { round: 2,  eventType: 'race',       circuitId: 'reims'     },
+  { round: 3,  eventType: 'qualifying', circuitId: 'ain_diab'  },
+  { round: 3,  eventType: 'race',       circuitId: 'ain_diab'  },
+  { round: 4,  eventType: 'qualifying', circuitId: 'zeltweg'   },
+  { round: 4,  eventType: 'race',       circuitId: 'zeltweg'   },
+  { round: 5,  eventType: 'qualifying', circuitId: 'reims'     },
+  { round: 5,  eventType: 'race',       circuitId: 'reims'     },
+  { round: 6,  eventType: 'qualifying', circuitId: 'ain_diab'  },
+  { round: 6,  eventType: 'race',       circuitId: 'ain_diab'  },
+  { round: 7,  eventType: 'qualifying', circuitId: 'zeltweg'   },
+  { round: 7,  eventType: 'race',       circuitId: 'zeltweg'   },
+  { round: 8,  eventType: 'qualifying', circuitId: 'montjuic'  },
+  { round: 8,  eventType: 'race',       circuitId: 'montjuic'  },
+];

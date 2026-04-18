@@ -89,13 +89,16 @@ Draws the Spectrum-style timing display onto Canvas:
   2. ~~**Tyre manufacturer column**~~ ✓ Done — single letter "G"/"P" in "TYRE" column after team; compound history column renamed "COMP".
   3. ~~**Frozen columns + horizontal scroll**~~ ✓ Done — POS, #, DRIVER sticky with `position: sticky`; table wrapped in `overflow-x: auto` div; driver column has separator border + shadow.
   4. ~~**Team colours**~~ ✓ Done — team colour dot (3×20px strip) next to each driver name; colours defined in data.js and used in lap chart lines.
-  5. **Grand Prix name in header** — e.g. "Season 1 · Race 1 · Swedish Grand Prix · Anderstorp". Requires circuit/race metadata to be defined in data.js.
+  5. ~~**Grand Prix name in header**~~ ✓ Done — info bar now shows "S1 R1 · Spanish Grand Prix — Race" derived from championship context; circuits have `country` and `eventName` fields.
   6. **Freeze controls at top** — hold until screen layout is designed (multi-screen navigation will reshape the header area entirely).
   7. **Hide wear/fuel columns** — user toggle to hide the WEAR and FUEL columns, to increase the mystery of what teams are doing; choice saved in localStorage.
 - **Mobile display** — the canvas timing sheet is designed for desktop. Need a strategy for mobile: either a responsive layout that stacks panels vertically, a simplified mobile view showing only top 6 or so, or a portrait-optimised alternative renderer. Consider touch interactions (tap a driver to highlight their line on the lap chart, etc.). The frozen-columns + horizontal-scroll item above is the first step.
 - Race log viewer / replay tool — filter by car, lap range, event type; inspect factor values and rolls to diagnose model behaviour
-- **Qualifying session** — interesting to watch; will be added before championship mode. No practice sessions — dropped from scope.
-- Multiple circuits with different characteristics
+- ~~**Qualifying session**~~ ✓ Done — `qualifying.html`: sequential single-lap format, all on softs, random draw order (seeded RNG shuffle), track evolution bonus (1.5% grip gain for last car), sector-by-sector animation with onSector callback, crash = NO TIME / spin = time penalty. Results saved to localStorage for parc ferme handoff to race.
+- ~~**Multiple circuits**~~ ✓ Done — 4 real defunct venues in `CIRCUITS` map: Montjuïc (Spain, balanced), Reims-Gueux (France, power), Ain-Diab (Morocco, street), Zeltweg Aerodrome (Austria, tyre-destroyer). `CIRCUIT` alias kept for backwards compat.
+- ~~**Season schedule / calendar**~~ ✓ Done — `SEASON_SCHEDULE` in data.js (16 events: 8 rounds × qualifying+race). `championship.js`: `getCurrentEvent(date)` resolves today's date to season/round/eventType; `getSeedForEvent()` for deterministic seeds; dev mode via `smr_dev_offset` in localStorage.
+- ~~**Championship points and standings**~~ ✓ Done — `championship.js`: `addRaceResult()` calculates points (25-18-15-12-10-8-6-4-2-1) and saves to localStorage; `getStandings()` returns sorted driver/constructor tables. `standings.html` renders both.
+- ~~**Multi-page navigation**~~ ✓ Done — `qualifying.html`, `standings.html`, and `index.html` (race) linked via topbar nav. All pages share same JS modules.
 - **Botched pit stop** — probability-based (linked to pit crew rating); can add up to ~30 extra seconds on top of the normal stop time. Adds jeopardy and unpredictability, especially for lower-ranked teams.
 - **Flat spot from spin** — when a driver error produces a spin/lock-up, there is a chance of a flat spot on the tyre. Flat spot adds a percentage penalty to effective tyre wear and may auto-trigger a pit stop if the wear is severe enough.
 - **Rain and wet-weather tyres** — rain can arrive mid-race or at the start; requires a separate wet compound with different grip/wear characteristics; teams must decide when to switch. Major feature, plan carefully.

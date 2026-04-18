@@ -9,7 +9,15 @@
 //   r.reset();    // call on race reset
 
 import { cars, race, raceLog, lapChartData } from './state.js';
-import { CIRCUIT } from './data.js';
+import { CIRCUIT as DEFAULT_CIRCUIT } from './data.js';
+
+// Active circuit — updated by setCurrentCircuit() before each race/qualifying.
+let currentCircuit = DEFAULT_CIRCUIT;
+
+/** Call before rendering a race or qualifying session on a specific circuit. */
+export function setCurrentCircuit(circuit) {
+  currentCircuit = circuit;
+}
 
 export class Renderer {
 
@@ -238,16 +246,16 @@ export class Renderer {
       const total = this._snapshots.length;
       const idx   = this._viewIdx + 1;
       status    = `◀ REPLAY (${idx}/${total}) ▶`;
-      lapSector = lap > 0 ? `LAP ${lap} / ${CIRCUIT.totalLaps}   S${sector}` : '';
+      lapSector = lap > 0 ? `LAP ${lap} / ${currentCircuit.totalLaps}   S${sector}` : '';
     } else if (displayCars.length === 0 || lap === 0) {
       status    = 'PRE-RACE';
       lapSector = '';
-    } else if (lap >= CIRCUIT.totalLaps && sector >= 3) {
+    } else if (lap >= currentCircuit.totalLaps && sector >= 3) {
       status    = `FINISHED · ${running} CLASSIFIED`;
-      lapSector = `LAP ${CIRCUIT.totalLaps} / ${CIRCUIT.totalLaps}`;
+      lapSector = `LAP ${currentCircuit.totalLaps} / ${currentCircuit.totalLaps}`;
     } else {
       status    = `${running} RUNNING`;
-      lapSector = `LAP ${lap} / ${CIRCUIT.totalLaps}   S${sector}`;
+      lapSector = `LAP ${lap} / ${currentCircuit.totalLaps}   S${sector}`;
     }
 
     this._statusEl.textContent = status;
@@ -778,7 +786,7 @@ export class Renderer {
     const canvas = this._lapChartCanvas;
     if (!canvas) return;
 
-    const totalLaps = CIRCUIT.totalLaps;
+    const totalLaps = currentCircuit.totalLaps;
     // In replay mode, only show laps up to the snapshot's position.
     // lapChartData is populated at end of sector 3, so a mid-lap snapshot
     // (sector 1 or 2) only has data through the previous completed lap.
@@ -994,7 +1002,7 @@ function formatLapTime(seconds) {
 // Derives the sector character from circuit power/aero weights rather than
 // sector number — so it works correctly across different circuit layouts.
 function wheelToWheelVerb(sector) {
-  const def      = CIRCUIT.sectors[sector - 1];
+  const def      = currentCircuit.sectors[sector - 1];
   const isPower  = def && def.powerWeight > def.aeroWeight;   // straight-dominant
   const isCorner = def && def.aeroWeight  > def.powerWeight;  // corner-dominant
   const power    = ['blasts past', 'pulls alongside and passes', 'drives past'];

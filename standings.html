@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Standings — Simple Motor Racing</title>
+  <style>
+    @font-face {
+      font-family: 'Square';
+      src: url('Square.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Square';
+      src: url('Squareo.ttf') format('truetype');
+      font-weight: normal;
+      font-style: oblique;
+    }
+
+    :root {
+      --bg:      #0d1117;
+      --bg-deep: #080c12;
+      --bg-mid:  #0a0f18;
+      --border:  #1e2f44;
+      --hi:      #ffffff;
+      --mid:     #8ab4d4;
+      --lo:      #4a6a88;
+      --dim:     #2a4055;
+      --accent:  #cc2233;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--mid);
+      font-family: 'Square', 'Courier New', monospace;
+      font-size: 12px;
+      min-height: 100vh;
+    }
+
+    #topbar {
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      height: 44px;
+      background: var(--bg-mid);
+      border: 1px solid var(--border);
+      border-bottom: 2px solid var(--accent);
+    }
+    .b-flat { font-family: 'Square', monospace; font-size: 15px; font-weight: normal; color: var(--hi); letter-spacing: 0.04em; flex-shrink: 0; }
+    .b-flat em { font-style: normal; color: var(--mid); }
+
+    .topbar-nav { display: flex; gap: 16px; margin-left: auto; margin-right: 16px; }
+    .topbar-nav-link { color: var(--lo); text-decoration: none; font-size: 10px; letter-spacing: 0.08em; }
+    .topbar-nav-link:hover { color: var(--mid); }
+    .topbar-nav-link.active { color: var(--mid); }
+
+    .topbar-meta { display: flex; align-items: center; gap: 10px; font-size: 11px; letter-spacing: 0.06em; color: var(--lo); }
+
+    #race-info-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 16px;
+      background: var(--bg-deep);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--lo);
+      letter-spacing: 0.06em;
+    }
+    #circuit-name { color: var(--mid); }
+
+    #main {
+      padding: 12px 16px;
+      display: flex;
+      gap: 24px;
+      max-width: 900px;
+    }
+
+    .standings-section { flex: 1; min-width: 0; }
+
+    .panel-title {
+      font-size: 10px;
+      color: var(--lo);
+      letter-spacing: 0.10em;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+    }
+
+    .standings-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    .standings-table th {
+      text-align: left;
+      color: var(--lo);
+      font-size: 9px;
+      letter-spacing: 0.10em;
+      padding: 3px 6px;
+      border-bottom: 1px solid var(--border);
+      font-weight: normal;
+    }
+    .standings-table td {
+      padding: 4px 6px;
+      border-bottom: 1px solid var(--dim);
+      color: var(--mid);
+    }
+    .standings-table td.col-pos    { color: var(--lo); width: 28px; }
+    .standings-table td.col-pos.p1 { color: var(--hi); }
+    .standings-table td.col-name   { color: var(--hi); }
+    .standings-table td.col-pts    { color: var(--hi); font-size: 13px; }
+    .standings-table td.col-wins   { color: var(--lo); }
+    .team-dot-inline {
+      display: inline-block;
+      width: 3px;
+      height: 12px;
+      border-radius: 1px;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+
+    #no-data {
+      color: var(--lo);
+      font-size: 11px;
+      padding: 20px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="topbar">
+    <div class="b-flat">Simple <em>Motor Racing</em></div>
+    <nav class="topbar-nav">
+      <a href="qualifying.html" class="topbar-nav-link">QUALIFYING</a>
+      <a href="index.html"      class="topbar-nav-link">RACE</a>
+      <a href="standings.html"  class="topbar-nav-link active">STANDINGS</a>
+    </nav>
+    <div class="topbar-meta">
+      <div id="topbar-status">STANDINGS</div>
+    </div>
+  </div>
+
+  <div id="race-info-bar">
+    <span id="circuit-name">–</span>
+  </div>
+
+  <div id="main">
+
+    <div class="standings-section">
+      <div class="panel-title">DRIVERS CHAMPIONSHIP</div>
+      <div id="drivers-content"><div id="no-data">No race results yet this season.</div></div>
+    </div>
+
+    <div class="standings-section">
+      <div class="panel-title">CONSTRUCTORS CHAMPIONSHIP</div>
+      <div id="constructors-content"></div>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { getCurrentEvent, getStandings, getCircuit } from './championship.js';
+    import { TEAMS } from './data.js';
+
+    const event   = getCurrentEvent();
+    const circuit = getCircuit(event);
+
+    document.getElementById('circuit-name').textContent =
+      `S${event.season} · ${circuit.eventName} — Season ${event.season} Standings`;
+
+    const standings = getStandings(event.season);
+
+    // Build team colour lookup
+    const teamColours = Object.fromEntries(TEAMS.map(t => [t.id, t.colour]));
+    const teamNames   = Object.fromEntries(TEAMS.map(t => [t.id, t.name]));
+
+    // ── Drivers ─────────────────────────────────────────────────────────────
+    if (standings.drivers.length === 0) {
+      // No-data message already in DOM
+    } else {
+      const table = document.createElement('table');
+      table.className = 'standings-table';
+      table.innerHTML = `
+        <thead><tr>
+          <th>POS</th><th>DRIVER</th><th>TEAM</th><th>PTS</th><th>W</th><th>POD</th>
+        </tr></thead>
+      `;
+      const tbody = document.createElement('tbody');
+      standings.drivers.forEach((d, i) => {
+        const colour = teamColours[d.teamId] || '#888';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="col-pos${i === 0 ? ' p1' : ''}">${i + 1}</td>
+          <td class="col-name">
+            <span class="team-dot-inline" style="background:${colour}"></span>
+            ${d.name.toUpperCase()}
+          </td>
+          <td>${(teamNames[d.teamId] || d.teamId).toUpperCase()}</td>
+          <td class="col-pts">${d.points}</td>
+          <td class="col-wins">${d.wins}</td>
+          <td class="col-wins">${d.podiums}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      const container = document.getElementById('drivers-content');
+      container.innerHTML = '';
+      container.appendChild(table);
+    }
+
+    // ── Constructors ─────────────────────────────────────────────────────────
+    if (standings.constructors.length > 0) {
+      const table = document.createElement('table');
+      table.className = 'standings-table';
+      table.innerHTML = `
+        <thead><tr>
+          <th>POS</th><th>TEAM</th><th>PTS</th><th>W</th>
+        </tr></thead>
+      `;
+      const tbody = document.createElement('tbody');
+      standings.constructors.forEach((c, i) => {
+        const colour = teamColours[c.id] || '#888';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="col-pos${i === 0 ? ' p1' : ''}">${i + 1}</td>
+          <td class="col-name">
+            <span class="team-dot-inline" style="background:${colour}"></span>
+            ${(teamNames[c.id] || c.id).toUpperCase()}
+          </td>
+          <td class="col-pts">${c.points}</td>
+          <td class="col-wins">${c.wins}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      document.getElementById('constructors-content').appendChild(table);
+    }
+  </script>
+</body>
+</html>

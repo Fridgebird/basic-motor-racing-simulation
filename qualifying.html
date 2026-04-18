@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qualifying — Simple Motor Racing</title>
+  <style>
+    /* ── Fonts ─────────────────────────────────────────────────────────────── */
+    @font-face {
+      font-family: 'Square';
+      src: url('Square.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Square';
+      src: url('Squareo.ttf') format('truetype');
+      font-weight: normal;
+      font-style: oblique;
+    }
+
+    /* ── Design tokens ──────────────────────────────────────────────────────── */
+    :root {
+      --bg:      #0d1117;
+      --bg-deep: #080c12;
+      --bg-mid:  #0a0f18;
+      --border:  #1e2f44;
+      --hi:      #ffffff;
+      --mid:     #8ab4d4;
+      --lo:      #4a6a88;
+      --dim:     #2a4055;
+      --accent:  #cc2233;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--mid);
+      font-family: 'Square', 'Courier New', monospace;
+      font-size: 12px;
+      min-height: 100vh;
+    }
+
+    /* ── Topbar ─────────────────────────────────────────────────────────────── */
+    #topbar {
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      height: 44px;
+      background: var(--bg-mid);
+      border: 1px solid var(--border);
+      border-bottom: 2px solid var(--accent);
+    }
+    .b-flat {
+      font-family: 'Square', monospace;
+      font-size: 15px;
+      font-weight: normal;
+      color: var(--hi);
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+    }
+    .b-flat em { font-style: normal; color: var(--mid); }
+
+    .topbar-nav {
+      display: flex;
+      gap: 16px;
+      margin-left: auto;
+      margin-right: 16px;
+    }
+    .topbar-nav-link {
+      color: var(--lo);
+      text-decoration: none;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+    }
+    .topbar-nav-link:hover { color: var(--mid); }
+    .topbar-nav-link.active { color: var(--mid); }
+
+    .topbar-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: var(--lo);
+    }
+
+    /* ── Info bar ───────────────────────────────────────────────────────────── */
+    #race-info-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 16px;
+      background: var(--bg-deep);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--lo);
+      letter-spacing: 0.06em;
+    }
+    #circuit-name { color: var(--mid); }
+
+    /* ── Main layout ────────────────────────────────────────────────────────── */
+    #main {
+      display: flex;
+      gap: 16px;
+      padding: 12px 16px;
+      max-width: 900px;
+    }
+
+    /* ── On-track panel ─────────────────────────────────────────────────────── */
+    #on-track-panel {
+      width: 280px;
+      flex-shrink: 0;
+    }
+
+    .panel-title {
+      font-size: 10px;
+      color: var(--lo);
+      letter-spacing: 0.10em;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+    }
+
+    #current-driver-name {
+      font-size: 14px;
+      color: var(--hi);
+      margin-bottom: 2px;
+      min-height: 18px;
+    }
+    #current-team-name {
+      font-size: 10px;
+      color: var(--lo);
+      margin-bottom: 10px;
+      min-height: 14px;
+    }
+
+    .sector-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .sector-cell {
+      background: var(--bg-mid);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 6px 4px;
+      text-align: center;
+    }
+    .sector-cell .s-label { font-size: 9px; color: var(--dim); display: block; margin-bottom: 3px; letter-spacing: 0.08em; }
+    .sector-cell .s-time  { font-size: 13px; color: var(--mid); }
+    .sector-cell.done     { border-color: var(--lo); }
+    .sector-cell.done .s-time { color: var(--hi); }
+    .sector-cell.slow .s-time { color: #e8c400; }
+
+    #lap-time-display {
+      font-size: 20px;
+      color: var(--hi);
+      text-align: center;
+      padding: 10px;
+      background: var(--bg-mid);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      margin-bottom: 6px;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #lap-time-display.no-time { color: var(--lo); font-size: 13px; }
+    #lap-time-display.purple  { color: #cc44ff; }
+
+    #draw-progress {
+      font-size: 10px;
+      color: var(--dim);
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    #btn-start-quali, #btn-goto-race {
+      width: 100%;
+      padding: 8px;
+      font-family: 'Square', monospace;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      background: var(--bg-mid);
+      color: var(--mid);
+      margin-bottom: 6px;
+    }
+    #btn-start-quali:hover, #btn-goto-race:hover { border-color: var(--lo); color: var(--hi); }
+    #btn-start-quali:disabled { opacity: 0.4; cursor: default; }
+    #btn-goto-race { display: none; border-color: var(--lo); }
+
+    /* ── Leaderboard ────────────────────────────────────────────────────────── */
+    #leaderboard-panel { flex: 1; min-width: 0; }
+
+    #quali-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    #quali-table th {
+      text-align: left;
+      color: var(--lo);
+      font-size: 9px;
+      letter-spacing: 0.10em;
+      padding: 3px 6px;
+      border-bottom: 1px solid var(--border);
+      font-weight: normal;
+    }
+    #quali-table td {
+      padding: 4px 6px;
+      border-bottom: 1px solid var(--dim);
+      color: var(--mid);
+    }
+    #quali-table tr.on-track td { background: rgba(138,180,212,0.06); }
+    #quali-table td.col-pos    { color: var(--lo); width: 28px; }
+    #quali-table td.col-pos.p1 { color: var(--hi); }
+    #quali-table td.col-driver { color: var(--hi); }
+    #quali-table td.col-time.purple { color: #cc44ff; }
+    #quali-table td.col-no-time     { color: var(--lo); font-size: 10px; }
+    #quali-table td.col-gap         { color: var(--lo); }
+    .team-dot-inline {
+      display: inline-block;
+      width: 3px;
+      height: 12px;
+      border-radius: 1px;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+
+    /* ── Speed control ──────────────────────────────────────────────────────── */
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 10px;
+      color: var(--lo);
+    }
+    .control-row select {
+      background: var(--bg-mid);
+      color: var(--mid);
+      border: 1px solid var(--border);
+      font-family: 'Square', monospace;
+      font-size: 10px;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Topbar ──────────────────────────────────────────────────────────────── -->
+  <div id="topbar">
+    <div class="b-flat">Simple <em>Motor Racing</em></div>
+    <nav class="topbar-nav">
+      <a href="qualifying.html" class="topbar-nav-link active">QUALIFYING</a>
+      <a href="index.html"      class="topbar-nav-link">RACE</a>
+      <a href="standings.html"  class="topbar-nav-link">STANDINGS</a>
+    </nav>
+    <div class="topbar-meta">
+      <div id="topbar-status">QUALIFYING</div>
+    </div>
+  </div>
+
+  <!-- ── Info bar ────────────────────────────────────────────────────────────── -->
+  <div id="race-info-bar">
+    <span id="circuit-name">–</span>
+    <span id="session-status">–</span>
+  </div>
+
+  <!-- ── Main ────────────────────────────────────────────────────────────────── -->
+  <div id="main">
+
+    <!-- On-track panel -->
+    <div id="on-track-panel">
+      <div class="panel-title">ON TRACK</div>
+
+      <div id="current-driver-name"></div>
+      <div id="current-team-name"></div>
+
+      <div class="sector-grid">
+        <div class="sector-cell" id="sc1">
+          <span class="s-label">S1</span>
+          <span class="s-time" id="st1">–</span>
+        </div>
+        <div class="sector-cell" id="sc2">
+          <span class="s-label">S2</span>
+          <span class="s-time" id="st2">–</span>
+        </div>
+        <div class="sector-cell" id="sc3">
+          <span class="s-label">S3</span>
+          <span class="s-time" id="st3">–</span>
+        </div>
+      </div>
+
+      <div id="lap-time-display">–</div>
+      <div id="draw-progress"></div>
+
+      <div class="control-row">
+        <label>Speed</label>
+        <select id="speed-select">
+          <option value="200">Fast</option>
+          <option value="600" selected>Normal</option>
+          <option value="1500">Slow</option>
+        </select>
+      </div>
+
+      <button id="btn-start-quali">START QUALIFYING</button>
+      <button id="btn-goto-race">GO TO RACE →</button>
+    </div>
+
+    <!-- Leaderboard panel -->
+    <div id="leaderboard-panel">
+      <div class="panel-title">PROVISIONAL CLASSIFICATION</div>
+      <table id="quali-table">
+        <thead>
+          <tr>
+            <th>POS</th>
+            <th>#</th>
+            <th>DRIVER</th>
+            <th>LAP TIME</th>
+            <th>GAP</th>
+          </tr>
+        </thead>
+        <tbody id="quali-tbody"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { initRace }                              from './state.js';
+    import { setCurrentCircuit, runQualifyingSession, simulateQualiLap } from './simulation.js';
+    import {
+      getCurrentEvent, getCircuit, getSeedForEvent,
+      saveQualiResults, loadQualiResults,
+      advanceDevEvent, retreatDevEvent, isDevMode,
+    } from './championship.js';
+
+    // ── Championship context ───────────────────────────────────────────────────
+    const event   = getCurrentEvent();
+    const circuit = getCircuit(event);
+    const seed    = getSeedForEvent(event);
+    setCurrentCircuit(circuit);
+
+    // Info bar
+    document.getElementById('circuit-name').textContent =
+      `S${event.season} R${event.round} · ${circuit.eventName} — Qualifying · ${circuit.name}, ${circuit.country}`;
+
+    // Dev navigation
+    if (isDevMode()) {
+      const devBar = document.createElement('div');
+      devBar.style.cssText = 'text-align:center;padding:4px;font-size:11px;color:#4a6a88;background:#080c12;border-bottom:1px solid #1e2f44;';
+      devBar.innerHTML = `
+        <button onclick="import('./championship.js').then(m=>{m.retreatDevEvent();location.reload();})" style="margin-right:8px">◀ PREV</button>
+        DEV MODE — offset: ${localStorage.getItem('smr_dev_offset')} &nbsp;|&nbsp; ${circuit.eventName} — Qualifying
+        <button onclick="import('./championship.js').then(m=>{m.advanceDevEvent();location.reload();})" style="margin-left:8px">NEXT ▶</button>
+      `;
+      document.body.prepend(devBar);
+    }
+
+    // ── State ──────────────────────────────────────────────────────────────────
+    let qualiResults  = null;
+    let sessionDone   = false;
+    const speedSel    = document.getElementById('speed-select');
+    const btnStart    = document.getElementById('btn-start-quali');
+    const btnGotoRace = document.getElementById('btn-goto-race');
+
+    // ── Check for cached results ───────────────────────────────────────────────
+    const cached = loadQualiResults(event.season, event.round);
+    if (cached) {
+      qualiResults  = cached;
+      sessionDone   = true;
+      renderFinalLeaderboard(cached);
+      document.getElementById('session-status').textContent = 'SESSION COMPLETE';
+      btnStart.disabled = true;
+      btnGotoRace.style.display = 'block';
+    }
+
+    // ── Start qualifying ───────────────────────────────────────────────────────
+    btnStart.addEventListener('click', async () => {
+      btnStart.disabled = true;
+      document.getElementById('session-status').textContent = 'SESSION RUNNING';
+
+      // Init cars — rolls setups (qualifying seed)
+      const rng = initRace(seed, null, circuit);
+
+      // Run session with animation
+      qualiResults = await runQualifyingSessionAnimated(rng, circuit);
+
+      // Persist
+      saveQualiResults(event.season, event.round, qualiResults);
+
+      sessionDone = true;
+      document.getElementById('session-status').textContent = 'SESSION COMPLETE';
+      btnGotoRace.style.display = 'block';
+      clearOnTrackPanel();
+    });
+
+    btnGotoRace.addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
+
+    // ── Animated qualifying session ────────────────────────────────────────────
+    // Uses simulateQualiLap's onSector callback for sector-by-sector animation.
+    async function runQualifyingSessionAnimated(rng, circuit) {
+      const { cars } = await import('./state.js');
+
+      // Fisher-Yates shuffle (same algorithm as runQualifyingSession — must match)
+      const drawOrder = [...cars];
+      for (let i = drawOrder.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [drawOrder[i], drawOrder[j]] = [drawOrder[j], drawOrder[i]];
+      }
+
+      const rawResults = [];
+      const sectorPause = () => parseInt(speedSel.value, 10) / 3;
+
+      for (let drawIndex = 0; drawIndex < drawOrder.length; drawIndex++) {
+        const car            = drawOrder[drawIndex];
+        const trackEvolution = drawOrder.length > 1 ? drawIndex / (drawOrder.length - 1) : 0;
+
+        showOnTrack(car, drawIndex, drawOrder.length);
+        resetSectorCells();
+
+        // simulateQualiLap calls onSector after each sector — we show it then wait
+        const result = await simulateQualiLap(car, rng, circuit, trackEvolution,
+          async (sectorIndex, sectorTime, isSlow, retired) => {
+            await delay(sectorPause());
+            if (retired) {
+              markSectorCrash(sectorIndex);
+            } else {
+              showSectorTime(sectorIndex, sectorTime, isSlow);
+            }
+          }
+        );
+
+        showLapResult(result);
+        await delay(sectorPause() * 2);
+
+        rawResults.push({
+          driverName:       car.driver.name,
+          teamId:           car.team.id,
+          setup:            car.setup,
+          lapTime:          result.lapTime,
+          sectorTimes:      result.sectorTimes,
+          retired:          result.retired,
+          sectorsCompleted: result.sectorsCompleted,
+          drawPosition:     drawIndex + 1,
+        });
+
+        updateProvisionalLeaderboard(rawResults);
+        await delay(sectorPause());
+      }
+
+      // Final sort (mirrors runQualifyingSession logic)
+      const timed   = rawResults.filter(r => !r.retired).sort((a, b) => a.lapTime - b.lapTime);
+      const retired = rawResults.filter(r => r.retired)
+        .sort((a, b) =>
+          b.sectorsCompleted - a.sectorsCompleted ||
+          b.drawPosition     - a.drawPosition
+        );
+      const sorted = [...timed, ...retired];
+      sorted.forEach((r, i) => { r.gridPosition = i + 1; });
+
+      renderFinalLeaderboard(sorted);
+      return sorted;
+    }
+
+    // ── UI helpers ─────────────────────────────────────────────────────────────
+    function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    function showOnTrack(car, drawIndex, total) {
+      document.getElementById('current-driver-name').textContent = car.driver.name.toUpperCase();
+      const teamName   = car.team.name.toUpperCase();
+      const engineName = car.team.engine ? car.team.engine.toUpperCase() : '';
+      document.getElementById('current-team-name').textContent =
+        teamName === engineName ? teamName : `${teamName}`;
+      document.getElementById('draw-progress').textContent =
+        `Car ${drawIndex + 1} of ${total} — draw position ${drawIndex + 1}`;
+      document.getElementById('lap-time-display').textContent = '–';
+      document.getElementById('lap-time-display').className = '';
+    }
+
+    function resetSectorCells() {
+      for (let i = 1; i <= 3; i++) {
+        document.getElementById(`st${i}`).textContent = '–';
+        document.getElementById(`sc${i}`).className   = 'sector-cell';
+      }
+    }
+
+    function showSectorTime(index, time, isSlow) {
+      const el = document.getElementById(`st${index + 1}`);
+      el.textContent = time.toFixed(1);
+      const cell = document.getElementById(`sc${index + 1}`);
+      cell.className = `sector-cell done${isSlow ? ' slow' : ''}`;
+    }
+
+    function markSectorCrash(index) {
+      const el = document.getElementById(`st${index + 1}`);
+      el.textContent = 'DNF';
+      const cell = document.getElementById(`sc${index + 1}`);
+      cell.className = 'sector-cell done slow';
+      document.getElementById('lap-time-display').textContent = 'NO TIME';
+      document.getElementById('lap-time-display').className = 'no-time';
+    }
+
+    function showLapResult(result) {
+      const el = document.getElementById('lap-time-display');
+      if (result.retired) {
+        el.textContent = 'NO TIME';
+        el.className   = 'no-time';
+      } else {
+        el.textContent = formatTime(result.lapTime);
+        el.className   = '';
+      }
+    }
+
+    function clearOnTrackPanel() {
+      document.getElementById('current-driver-name').textContent = 'SESSION COMPLETE';
+      document.getElementById('current-team-name').textContent   = '';
+      document.getElementById('draw-progress').textContent        = '';
+      document.getElementById('lap-time-display').textContent     = '–';
+    }
+
+    function formatTime(seconds) {
+      const m   = Math.floor(seconds / 60);
+      const s   = seconds % 60;
+      const sec = s.toFixed(3).padStart(6, '0');
+      return `${m}:${sec}`;
+    }
+
+    function gapString(lapTime, bestTime) {
+      if (lapTime == null) return '–';
+      const diff = lapTime - bestTime;
+      return diff < 0.001 ? '–' : `+${diff.toFixed(3)}`;
+    }
+
+    function updateProvisionalLeaderboard(rawResults) {
+      const timed  = rawResults.filter(r => !r.retired).sort((a, b) => a.lapTime - b.lapTime);
+      const noTime = rawResults.filter(r => r.retired);
+      const sorted = [...timed, ...noTime];
+      renderLeaderboard(sorted, false);
+    }
+
+    function renderFinalLeaderboard(results) {
+      renderLeaderboard(results, true);
+    }
+
+    function renderLeaderboard(results, isFinal) {
+      const tbody   = document.getElementById('quali-tbody');
+      const bestTime = results.find(r => !r.retired)?.lapTime || null;
+      tbody.innerHTML = '';
+
+      results.forEach((r, i) => {
+        const tr = document.createElement('tr');
+        if (!isFinal && i === results.filter(x => !x.retired).length - 1 && !r.retired) {
+          tr.className = 'on-track';
+        }
+
+        const pos = i + 1;
+
+        // Resolve colour from TEAMS data — lazy import
+        const colour = teamColours[r.teamId] || '#888';
+
+        tr.innerHTML = `
+          <td class="col-pos${pos === 1 ? ' p1' : ''}">${isFinal ? `P${pos}` : pos}</td>
+          <td></td>
+          <td class="col-driver">
+            <span class="team-dot-inline" style="background:${colour}"></span>
+            ${r.driverName.toUpperCase()}
+          </td>
+          <td class="${r.retired ? 'col-no-time' : 'col-time'}">${r.retired ? 'NO TIME' : formatTime(r.lapTime)}</td>
+          <td class="col-gap">${i === 0 || r.retired ? '' : gapString(r.lapTime, bestTime)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ── Team colours (pre-loaded from data.js) ─────────────────────────────────
+    const teamColours = {};
+    import('./data.js').then(({ TEAMS }) => {
+      TEAMS.forEach(t => { teamColours[t.id] = t.colour; });
+    });
+
+  </script>
+</body>
+</html>

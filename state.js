@@ -4,6 +4,18 @@
 
 import { DRIVERS, TEAMS, ENGINES, TYRES, CIRCUIT } from './data.js';
 
+// Qualifying state — populated by runQualifyingSession() before a race.
+// Persisted to localStorage by championship.js.
+export const qualiState = {
+  results:    [],    // [{ driverName, lapTime, sectorTimes, retired, drawPosition, gridPosition }]
+  isComplete: false,
+};
+
+export function resetQualiState() {
+  qualiState.results    = [];
+  qualiState.isComplete = false;
+}
+
 // ─── Seeded PRNG ──────────────────────────────────────────────────────────────
 // Mulberry32 — fast, well-distributed, fully seedable.
 // Returns a closure that produces a new float in [0, 1) on each call.
@@ -75,7 +87,16 @@ export function updatePositions() {
 //
 // Returns the rng function so simulation.js can continue the same RNG sequence
 // without a gap or reset — essential for full race replayability.
-export function initRace(seed) {
+/**
+ * Initialise race state.
+ * @param {number} seed  — Mulberry32 seed; same seed + same qualiResults = identical replay.
+ * @param {Array|null} qualiResults — Qualifying results from runQualifyingSession().
+ *   If provided: grid order and setup values come from qualifying (parc ferme).
+ *   If null:     falls back to synthetic qualifying grid (for standalone races).
+ * @param {object|null} circuit — Circuit to race on. Defaults to CIRCUIT (montjuic alias).
+ * @returns {function} rng — Seeded PRNG; pass to initStrategies() then tick().
+ */
+export function initRace(seed, qualiResults = null, circuit = null) {
 
   // Reset shared state
   raceLog.seed    = seed;
@@ -85,6 +106,7 @@ export function initRace(seed) {
   race.lap    = 0;
   race.sector = 3;  // so first tick() produces lap=1, sector=1 (not a phantom lap 0)
 
+  const activeCircuit = circuit || CIRCUIT;
   const rng = createRng(seed);
 
   // Build lookup map for quick team access
@@ -117,7 +139,7 @@ export function initRace(seed) {
       tyreHistory:  [],        // compounds used so far e.g. ['S','H','M']
 
       // ── Fuel ──────────────────────────────────────────────────────────────
-      fuel: CIRCUIT.fuelCapacity,   // kg; full tank at lights-out
+      fuel: activeCircuit.fuelCapacity,   // kg; full tank at lights-out
 
       // ── Setup ─────────────────────────────────────────────────────────────
       setup,    // 0–100; feeds setupFactor = 1.0 + (1 - setup/100) × 0.04
@@ -153,32 +175,50 @@ export function initRace(seed) {
     };
   });
 
-  // ── Qualifying simulation ───────────────────────────────────────────────────
-  // No real qualifying in v1, so compute a lightweight score to set the grid.
-  // Weights mirror what matters on a mixed circuit:
-  //   driver skill 50%, engine power 25%, chassis aero 15%, car setup 10%
-  // A small random jitter (±4 points) ensures the grid varies between races.
-  rawCars.forEach(car => {
-    const score =
-      car.driver.skill  * 0.50 +
-      car.engine.power  * 0.25 +
-      car.team.aero     * 0.15 +
-      car.setup         * 0.10 +
-      (rng() * 8 - 4);          // jitter
-    car._qualiScore = score;
-  });
+  // ── Grid order ─────────────────────────────────────────────────────────────
+  if (qualiResults && qualiResults.length > 0) {
+    // Real qualifying results: apply saved grid order and setup values (parc ferme).
+    // qualiResults is sorted P1 → P24 (retired cars at back).
+    const qualiMap = Object.fromEntries(qualiResults.map(r => [r.driverName, r]));
+    rawCars.sort((a, b) => {
+      const qa = qualiMap[a.driver.name];
+      const qb = qualiMap[b.driver.name];
+      return (qa ? qa.gridPosition : 999) - (qb ? qb.gridPosition : 999);
+    });
+    rawCars.forEach((car, i) => {
+      const qr = qualiMap[car.driver.name];
+      // Restore setup from qualifying (parc ferme — same setup carries through to race)
+      if (qr && qr.setup != null) car.setup = qr.setup;
+      car.position     = i + 1;
+      car.gridPosition = i + 1;
+      car.cumulativeTime = i * 0.3;
+    });
+  } else {
+    // Fallback: synthetic qualifying grid (standalone race / no qualifying session).
+    // Weights mirror what matters on a mixed circuit:
+    //   driver skill 50%, engine power 25%, chassis aero 15%, car setup 10%
+    // A small random jitter (±4 points) ensures the grid varies between races.
+    rawCars.forEach(car => {
+      const score =
+        car.driver.skill  * 0.50 +
+        car.engine.power  * 0.25 +
+        car.team.aero     * 0.15 +
+        car.setup         * 0.10 +
+        (rng() * 8 - 4);          // jitter
+      car._qualiScore = score;
+    });
 
-  // Sort highest score → front of grid
-  rawCars.sort((a, b) => b._qualiScore - a._qualiScore);
+    rawCars.sort((a, b) => b._qualiScore - a._qualiScore);
 
-  rawCars.forEach((car, i) => {
-    car.position     = i + 1;
-    car.gridPosition = i + 1;
-    // Stagger starting cumulative times by 0.3 s per grid slot.
-    // Represents the physical gap between cars on the grid at lights-out;
-    // prevents a dead-heat at tick 1 and gives the field a natural initial spread.
-    car.cumulativeTime = i * 0.3;
-  });
+    rawCars.forEach((car, i) => {
+      car.position     = i + 1;
+      car.gridPosition = i + 1;
+      // Stagger starting cumulative times by 0.3 s per grid slot.
+      // Represents the physical gap between cars on the grid at lights-out;
+      // prevents a dead-heat at tick 1 and gives the field a natural initial spread.
+      car.cumulativeTime = i * 0.3;
+    });
+  }
 
   // ── Log pre-race setup rolls ────────────────────────────────────────────────
   rawCars.forEach(car => {
@@ -192,7 +232,7 @@ export function initRace(seed) {
           type:        'setup_roll',
           previous:    car._setupBase,
           result:      car.setup,
-          sessionType: 'pre_race',
+          sessionType: qualiResults ? 'from_qualifying' : 'pre_race',
         },
       ],
     });

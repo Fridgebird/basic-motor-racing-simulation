@@ -710,7 +710,7 @@
     import { tick, isRaceOver, initStrategies, setCurrentCircuit } from './simulation.js';
     import {
       getCurrentEvent, getCircuit, getSeedForEvent,
-      loadQualiResults, addRaceResult,
+      loadQualiResults, addRaceResult, hasRaceResult,
       advanceDevEvent, retreatDevEvent, isDevMode,
     } from './championship.js';
 
@@ -800,6 +800,22 @@
       initStrategies(previewRng);
     }
     renderer.render();
+
+    // ── Restore completed race state if navigating back ────────────────────────
+    // If a race result was already saved for this event, replay the full race
+    // instantly (no animation) to restore the final timing sheet, then lock the UI.
+    if (hasRaceResult(event.season, event.round)) {
+      const seed = parseInt(seedInput.value, 10) || raceSeed;
+      rng = initRace(seed, qualiResults, circuit);
+      initStrategies(rng);
+      renderer.isLive = false;
+      while (!isRaceOver()) {
+        tick(rng);
+        renderer.pushSnapshot();
+      }
+      renderer.render();
+      onRaceFinished();
+    }
 
     seedInput.addEventListener('change', () => {
       if (btnStart.disabled) return;

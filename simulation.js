@@ -761,7 +761,7 @@ function executePitStop(car, rng) {
   const duration       = +(pitLaneTime + stationaryTime).toFixed(1);
 
   car.cumulativeTime += duration;
-  car.fuel      = fuelTarget;
+  car.fuel      += fuelAdded;
   car.compound  = newCompound;
   car.tyreHistory.push(newCompound[0].toUpperCase());
   car.tyreWear  = 0;

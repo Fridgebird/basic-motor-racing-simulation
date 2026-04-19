@@ -782,7 +782,7 @@ export const CIRCUIT = CIRCUITS.montjuic;
 // The order defines the season rhythm — put qualifying before its race on adjacent days
 // (separate real-time days) or combine them however desired by rearranging entries.
 
-export const SEASON_1_START = '2026-05-01';  // epoch date for season 1, day 0
+export const SEASON_1_START = '2026-04-19';  // epoch date for season 1, day 0
 
 export const SEASON_SCHEDULE = [
   { round: 1,  eventType: 'qualifying', circuitId: 'montjuic'  },

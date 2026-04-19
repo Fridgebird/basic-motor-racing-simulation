@@ -181,6 +181,12 @@ export function loadQualiResults(season, round) {
   return raw ? JSON.parse(raw) : null;
 }
 
+/** True if a race result has been stored for this season/round */
+export function hasRaceResult(season, round) {
+  const state = loadChampionshipState();
+  return !!(state.seasons[season] && state.seasons[season].races[round]);
+}
+
 // ─── Championship state localStorage ─────────────────────────────────────────
 
 const CHAMP_KEY = 'smr_championship';

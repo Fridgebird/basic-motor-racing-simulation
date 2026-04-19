@@ -123,6 +123,19 @@
       margin-bottom: 8px;
     }
 
+    #driver-info-row {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      margin-bottom: 10px;
+      min-height: 34px;
+    }
+    #driver-colour-bar {
+      width: 4px;
+      border-radius: 2px;
+      background: var(--dim);
+      flex-shrink: 0;
+    }
     #current-driver-name {
       font-size: 14px;
       color: var(--hi);
@@ -132,8 +145,19 @@
     #current-team-name {
       font-size: 10px;
       color: var(--lo);
-      margin-bottom: 10px;
       min-height: 14px;
+    }
+
+    .seed-label { color: var(--dim); margin-right: 4px; }
+    #seed-input {
+      background: var(--bg-mid);
+      color: var(--lo);
+      border: 1px solid var(--border);
+      font-family: 'Square', monospace;
+      font-size: 10px;
+      padding: 2px 5px;
+      border-radius: 2px;
+      width: 72px;
     }
 
     .sector-grid {
@@ -150,10 +174,14 @@
       text-align: center;
     }
     .sector-cell .s-label { font-size: 9px; color: var(--dim); display: block; margin-bottom: 3px; letter-spacing: 0.08em; }
-    .sector-cell .s-time  { font-size: 13px; color: var(--mid); }
+    .sector-cell .s-time  { font-size: 13px; color: var(--mid); display: block; }
+    .sector-cell .s-gap   { font-size: 9px; color: var(--dim); display: block; margin-top: 2px; min-height: 11px; }
     .sector-cell.done     { border-color: var(--lo); }
     .sector-cell.done .s-time { color: var(--hi); }
     .sector-cell.slow .s-time { color: #e8c400; }
+    .sector-cell.purple   { border-color: #cc44ff; }
+    .sector-cell.purple .s-time { color: #cc44ff; }
+    .sector-cell.purple .s-gap  { color: #cc44ff; }
 
     #lap-time-display {
       font-size: 20px;
@@ -272,7 +300,12 @@
   <!-- ── Info bar ────────────────────────────────────────────────────────────── -->
   <div id="race-info-bar">
     <span id="circuit-name">–</span>
-    <span id="session-status">–</span>
+    <span>
+      <span class="seed-label">SEED</span>
+      <input type="number" id="seed-input" title="Override qualifying seed">
+      &nbsp;&nbsp;
+      <span id="session-status">–</span>
+    </span>
   </div>
 
   <!-- ── Main ────────────────────────────────────────────────────────────────── -->
@@ -282,21 +315,29 @@
     <div id="on-track-panel">
       <div class="panel-title">ON TRACK</div>
 
-      <div id="current-driver-name"></div>
-      <div id="current-team-name"></div>
+      <div id="driver-info-row">
+        <div id="driver-colour-bar"></div>
+        <div>
+          <div id="current-driver-name"></div>
+          <div id="current-team-name"></div>
+        </div>
+      </div>
 
       <div class="sector-grid">
         <div class="sector-cell" id="sc1">
           <span class="s-label">S1</span>
           <span class="s-time" id="st1">–</span>
+          <span class="s-gap"  id="sg1"></span>
         </div>
         <div class="sector-cell" id="sc2">
           <span class="s-label">S2</span>
           <span class="s-time" id="st2">–</span>
+          <span class="s-gap"  id="sg2"></span>
         </div>
         <div class="sector-cell" id="sc3">
           <span class="s-label">S3</span>
           <span class="s-time" id="st3">–</span>
+          <span class="s-gap"  id="sg3"></span>
         </div>
       </div>
 
@@ -308,7 +349,7 @@
         <select id="speed-select">
           <option value="200">Fast</option>
           <option value="600" selected>Normal</option>
-          <option value="1500">Slow</option>
+          <option value="4500">Slow</option>
         </select>
       </div>
 
@@ -367,17 +408,32 @@
     }
 
     // ── State ──────────────────────────────────────────────────────────────────
-    let qualiResults  = null;
-    let sessionDone   = false;
+    let qualiResults    = null;
+    let sessionDone     = false;
+    let bestSectorTimes = [null, null, null];  // fastest sector time per sector across all drivers
+    let poleSectorTimes = null;                // sector times of current provisional P1
+
     const speedSel    = document.getElementById('speed-select');
     const btnStart    = document.getElementById('btn-start-quali');
     const btnGotoRace = document.getElementById('btn-goto-race');
+    const seedInput   = document.getElementById('seed-input');
+
+    // Seed: default to championship-derived seed; user can override before session starts
+    let activeSeed = seed;
+    seedInput.value = seed;
+    seedInput.addEventListener('change', () => {
+      if (!sessionDone && !btnStart.disabled) {
+        activeSeed = parseInt(seedInput.value, 10) || seed;
+        seedInput.value = activeSeed;
+      }
+    });
 
     // ── Check for cached results ───────────────────────────────────────────────
     const cached = loadQualiResults(event.season, event.round);
     if (cached) {
-      qualiResults  = cached;
-      sessionDone   = true;
+      qualiResults       = cached;
+      sessionDone        = true;
+      seedInput.disabled = true;
       renderFinalLeaderboard(cached);
       document.getElementById('session-status').textContent = 'SESSION COMPLETE';
       btnStart.disabled = true;
@@ -387,10 +443,13 @@
     // ── Start qualifying ───────────────────────────────────────────────────────
     btnStart.addEventListener('click', async () => {
       btnStart.disabled = true;
+      seedInput.disabled = true;
+      bestSectorTimes = [null, null, null];
+      poleSectorTimes = null;
       document.getElementById('session-status').textContent = 'SESSION RUNNING';
 
       // Init cars — rolls setups (qualifying seed)
-      const rng = initRace(seed, null, circuit);
+      const rng = initRace(activeSeed, null, circuit);
 
       // Run session with animation
       qualiResults = await runQualifyingSessionAnimated(rng, circuit);
@@ -481,8 +540,11 @@
       document.getElementById('current-driver-name').textContent = car.driver.name.toUpperCase();
       const teamName   = car.team.name.toUpperCase();
       const engineName = car.team.engine ? car.team.engine.toUpperCase() : '';
-      document.getElementById('current-team-name').textContent =
-        teamName === engineName ? teamName : `${teamName}`;
+      const teamLabel  = teamName === engineName || !engineName
+        ? teamName : `${teamName}-${engineName}`;
+      document.getElementById('current-team-name').textContent = teamLabel;
+      document.getElementById('driver-colour-bar').style.background =
+        teamColours[car.team.id] || 'var(--dim)';
       document.getElementById('draw-progress').textContent =
         `Car ${drawIndex + 1} of ${total} — draw position ${drawIndex + 1}`;
       document.getElementById('lap-time-display').textContent = '–';
@@ -492,15 +554,36 @@
     function resetSectorCells() {
       for (let i = 1; i <= 3; i++) {
         document.getElementById(`st${i}`).textContent = '–';
+        document.getElementById(`sg${i}`).textContent = '';
         document.getElementById(`sc${i}`).className   = 'sector-cell';
       }
     }
 
     function showSectorTime(index, time, isSlow) {
-      const el = document.getElementById(`st${index + 1}`);
-      el.textContent = time.toFixed(1);
+      const isFastest = !isSlow && (bestSectorTimes[index] === null || time < bestSectorTimes[index]);
+      if (isFastest) bestSectorTimes[index] = time;
+
+      const el   = document.getElementById(`st${index + 1}`);
+      const gap  = document.getElementById(`sg${index + 1}`);
       const cell = document.getElementById(`sc${index + 1}`);
-      cell.className = `sector-cell done${isSlow ? ' slow' : ''}`;
+
+      el.textContent = time.toFixed(3);
+
+      // Gap vs pole sitter's equivalent sector time
+      if (!isSlow && poleSectorTimes && poleSectorTimes[index] != null) {
+        const diff = time - poleSectorTimes[index];
+        gap.textContent = diff < -0.001 ? `${diff.toFixed(3)}` : `+${diff.toFixed(3)}`;
+      } else {
+        gap.textContent = '';
+      }
+
+      if (isFastest) {
+        cell.className = 'sector-cell done purple';
+      } else if (isSlow) {
+        cell.className = 'sector-cell done slow';
+      } else {
+        cell.className = 'sector-cell done';
+      }
     }
 
     function markSectorCrash(index) {
@@ -524,10 +607,11 @@
     }
 
     function clearOnTrackPanel() {
-      document.getElementById('current-driver-name').textContent = 'SESSION COMPLETE';
-      document.getElementById('current-team-name').textContent   = '';
-      document.getElementById('draw-progress').textContent        = '';
-      document.getElementById('lap-time-display').textContent     = '–';
+      document.getElementById('current-driver-name').textContent  = 'SESSION COMPLETE';
+      document.getElementById('current-team-name').textContent    = '';
+      document.getElementById('driver-colour-bar').style.background = 'var(--dim)';
+      document.getElementById('draw-progress').textContent         = '';
+      document.getElementById('lap-time-display').textContent      = '–';
     }
 
     function formatTime(seconds) {
@@ -547,6 +631,10 @@
       const timed  = rawResults.filter(r => !r.retired).sort((a, b) => a.lapTime - b.lapTime);
       const noTime = rawResults.filter(r => r.retired);
       const sorted = [...timed, ...noTime];
+      // Update pole sector times for the next driver's sector-gap comparison
+      if (timed.length > 0 && timed[0].sectorTimes) {
+        poleSectorTimes = timed[0].sectorTimes;
+      }
       renderLeaderboard(sorted, false);
     }
 

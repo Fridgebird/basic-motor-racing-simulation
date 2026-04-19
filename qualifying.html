@@ -173,9 +173,9 @@
       padding: 6px 4px;
       text-align: center;
     }
-    .sector-cell .s-label { font-size: 9px; color: var(--dim); display: block; margin-bottom: 3px; letter-spacing: 0.08em; }
+    .sector-cell .s-label { font-size: 9px; color: var(--lo); display: block; margin-bottom: 3px; letter-spacing: 0.08em; }
     .sector-cell .s-time  { font-size: 13px; color: var(--mid); display: block; }
-    .sector-cell .s-gap   { font-size: 9px; color: var(--dim); display: block; margin-top: 2px; min-height: 11px; }
+    .sector-cell .s-gap   { font-size: 9px; color: var(--lo); display: block; margin-top: 2px; min-height: 11px; }
     .sector-cell.done     { border-color: var(--lo); }
     .sector-cell.done .s-time { color: var(--hi); }
     .sector-cell.slow .s-time { color: #e8c400; }
@@ -202,12 +202,12 @@
 
     #draw-progress {
       font-size: 10px;
-      color: var(--dim);
+      color: var(--lo);
       text-align: center;
       margin-bottom: 12px;
     }
 
-    #btn-start-quali, #btn-rerun-quali, #btn-goto-race {
+    #btn-start-quali, #btn-rerun-quali, #btn-goto-race, #btn-pause-quali {
       width: 100%;
       padding: 8px;
       font-family: 'Square', monospace;
@@ -220,10 +220,11 @@
       color: var(--mid);
       margin-bottom: 6px;
     }
-    #btn-start-quali:hover, #btn-rerun-quali:hover, #btn-goto-race:hover { border-color: var(--lo); color: var(--hi); }
+    #btn-start-quali:hover, #btn-rerun-quali:hover, #btn-goto-race:hover, #btn-pause-quali:hover { border-color: var(--lo); color: var(--hi); }
     #btn-start-quali:disabled { opacity: 0.4; cursor: default; }
-    #btn-rerun-quali { display: none; color: var(--lo); }
-    #btn-goto-race   { display: none; border-color: var(--lo); }
+    #btn-rerun-quali  { display: none; color: var(--lo); }
+    #btn-goto-race    { display: none; border-color: var(--lo); }
+    #btn-pause-quali  { display: none; }
 
     /* ── Leaderboard ────────────────────────────────────────────────────────── */
     #leaderboard-panel { flex: 1; min-width: 0; }
@@ -349,12 +350,13 @@
         <label>Speed</label>
         <select id="speed-select">
           <option value="200">Fast</option>
-          <option value="600" selected>Normal</option>
-          <option value="4500">Slow</option>
+          <option value="2350">Normal</option>
+          <option value="4500" selected>Slow</option>
         </select>
       </div>
 
       <button id="btn-start-quali">START QUALIFYING</button>
+      <button id="btn-pause-quali">PAUSE</button>
       <button id="btn-rerun-quali">RE-RUN QUALIFYING</button>
       <button id="btn-goto-race">GO TO RACE →</button>
     </div>
@@ -414,9 +416,11 @@
     let sessionDone     = false;
     let bestSectorTimes = [null, null, null];  // fastest sector time per sector across all drivers
     let poleSectorTimes = null;                // sector times of current provisional P1
+    let paused          = false;
 
     const speedSel    = document.getElementById('speed-select');
     const btnStart    = document.getElementById('btn-start-quali');
+    const btnPause    = document.getElementById('btn-pause-quali');
     const btnRerun    = document.getElementById('btn-rerun-quali');
     const btnGotoRace = document.getElementById('btn-goto-race');
     const seedInput   = document.getElementById('seed-input');
@@ -454,8 +458,9 @@
 
     // ── Start qualifying ───────────────────────────────────────────────────────
     btnStart.addEventListener('click', async () => {
-      btnStart.disabled = true;
-      seedInput.disabled = true;
+      btnStart.disabled        = true;
+      seedInput.disabled       = true;
+      btnPause.style.display   = 'block';
       bestSectorTimes = [null, null, null];
       poleSectorTimes = null;
       document.getElementById('session-status').textContent = 'SESSION RUNNING';
@@ -469,14 +474,27 @@
       // Persist
       saveQualiResults(event.season, event.round, qualiResults);
 
-      sessionDone = true;
+      sessionDone              = true;
+      paused                   = false;
+      btnPause.style.display   = 'none';
       document.getElementById('session-status').textContent = 'SESSION COMPLETE';
+      btnRerun.style.display    = 'block';
       btnGotoRace.style.display = 'block';
       clearOnTrackPanel();
     });
 
     btnGotoRace.addEventListener('click', () => {
       window.location.href = 'index.html';
+    });
+
+    btnPause.addEventListener('click', () => {
+      paused = !paused;
+      btnPause.textContent = paused ? 'RESUME' : 'PAUSE';
+      if (paused) {
+        document.getElementById('session-status').textContent = 'PAUSED';
+      } else {
+        document.getElementById('session-status').textContent = 'SESSION RUNNING';
+      }
     });
 
     btnRerun.addEventListener('click', () => {
@@ -551,7 +569,17 @@
     }
 
     // ── UI helpers ─────────────────────────────────────────────────────────────
-    function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+    function delay(ms) {
+      return new Promise(resolve => {
+        let elapsed = 0;
+        const tick = () => {
+          if (!paused) elapsed += 50;
+          if (elapsed >= ms) { resolve(); return; }
+          setTimeout(tick, 50);
+        };
+        setTimeout(tick, 50);
+      });
+    }
 
     function showOnTrack(car, drawIndex, total) {
       document.getElementById('current-driver-name').textContent = car.driver.name.toUpperCase();

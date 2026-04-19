@@ -194,8 +194,10 @@
       margin-bottom: 6px;
       min-height: 48px;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 2px;
     }
     #lap-time-display.no-time { color: var(--lo); font-size: 13px; }
     #lap-time-display.purple  { color: #cc44ff; }
@@ -252,6 +254,7 @@
     #quali-table td.col-pos    { color: var(--lo); width: 28px; }
     #quali-table td.col-pos.p1 { color: var(--hi); }
     #quali-table td.col-driver { color: var(--hi); }
+    #quali-table td.col-team   { color: var(--lo); font-size: 10px; }
     #quali-table td.col-time.purple { color: #cc44ff; }
     #quali-table td.col-no-time     { color: var(--lo); font-size: 10px; }
     #quali-table td.col-gap         { color: var(--lo); }
@@ -370,6 +373,7 @@
             <th>POS</th>
             <th>#</th>
             <th>DRIVER</th>
+            <th>TEAM</th>
             <th>LAP TIME</th>
             <th>GAP</th>
           </tr>
@@ -425,11 +429,17 @@
     const btnGotoRace = document.getElementById('btn-goto-race');
     const seedInput   = document.getElementById('seed-input');
 
-    // Team colours — must be declared before cached-results check since renderLeaderboard uses it.
-    // Populated async; re-render leaderboard once colours arrive so dots aren't grey.
+    // Team colours and labels — must be declared before cached-results check.
+    // Populated async; re-render leaderboard once data arrives so dots aren't grey.
     const teamColours = {};
+    const teamLabels  = {};  // teamId → "MCLAREN-HONDA"
     import('./data.js').then(({ TEAMS }) => {
-      TEAMS.forEach(t => { teamColours[t.id] = t.colour; });
+      TEAMS.forEach(t => {
+        teamColours[t.id] = t.colour;
+        const tName = t.name.toUpperCase();
+        const eName = t.engine ? t.engine.toUpperCase() : '';
+        teamLabels[t.id] = (tName === eName || !eName) ? tName : `${tName}-${eName}`;
+      });
       if (qualiResults) renderFinalLeaderboard(qualiResults);
     });
 
@@ -536,7 +546,10 @@
           }
         );
 
-        showLapResult(result);
+        // rawResults at this point contains only previously completed drivers — use as reference
+        const provisionalBest = rawResults.filter(r => !r.retired)
+          .reduce((best, r) => (best === null || r.lapTime < best ? r.lapTime : best), null);
+        showLapResult(result, provisionalBest, rawResults);
         await delay(sectorPause() * 2);
 
         rawResults.push({
@@ -591,7 +604,7 @@
       document.getElementById('driver-colour-bar').style.background =
         teamColours[car.team.id] || 'var(--dim)';
       document.getElementById('draw-progress').textContent =
-        `Car ${drawIndex + 1} of ${total} — draw position ${drawIndex + 1}`;
+        `Car ${drawIndex + 1} of ${total}`;
       document.getElementById('lap-time-display').textContent = '–';
       document.getElementById('lap-time-display').className = '';
     }
@@ -640,15 +653,32 @@
       document.getElementById('lap-time-display').className = 'no-time';
     }
 
-    function showLapResult(result) {
+    function showLapResult(result, provisionalBest, previousResults) {
       const el = document.getElementById('lap-time-display');
       if (result.retired) {
+        el.innerHTML = '';
         el.textContent = 'NO TIME';
         el.className   = 'no-time';
-      } else {
-        el.textContent = formatTime(result.lapTime);
-        el.className   = '';
+        return;
       }
+
+      const isNewBest      = provisionalBest === null || result.lapTime < provisionalBest;
+      const provisionalPos = previousResults.filter(r => !r.retired && r.lapTime < result.lapTime).length + 1;
+      const timeColor      = isNewBest ? '#cc44ff' : 'var(--hi)';
+
+      let gapHtml = '';
+      if (provisionalBest !== null) {
+        const diff   = result.lapTime - provisionalBest;
+        const gapStr = diff <= 0 ? diff.toFixed(3) : `+${diff.toFixed(3)}`;
+        const gapCol = diff <= 0 ? '#cc44ff' : 'var(--lo)';
+        gapHtml = `<span style="font-size:12px;color:${gapCol}">${gapStr}</span>`;
+      }
+
+      const posCol  = provisionalPos === 1 ? 'var(--hi)' : 'var(--lo)';
+      const posHtml = `<span style="font-size:12px;color:${posCol}">P${provisionalPos}</span>`;
+
+      el.innerHTML  = `<span style="font-size:20px;color:${timeColor}">${formatTime(result.lapTime)}</span>${gapHtml}${posHtml}`;
+      el.className  = '';
     }
 
     function clearOnTrackPanel() {
@@ -703,6 +733,7 @@
         // Resolve colour from TEAMS data — lazy import
         const colour = teamColours[r.teamId] || '#888';
 
+        const teamLabel = teamLabels[r.teamId] || '';
         tr.innerHTML = `
           <td class="col-pos${pos === 1 ? ' p1' : ''}">${isFinal ? `P${pos}` : pos}</td>
           <td></td>
@@ -710,6 +741,7 @@
             <span class="team-dot-inline" style="background:${colour}"></span>
             ${r.driverName.toUpperCase()}
           </td>
+          <td class="col-team">${teamLabel}</td>
           <td class="${r.retired ? 'col-no-time' : 'col-time'}">${r.retired ? 'NO TIME' : formatTime(r.lapTime)}</td>
           <td class="col-gap">${i === 0 || r.retired ? '' : gapString(r.lapTime, bestTime)}</td>
         `;

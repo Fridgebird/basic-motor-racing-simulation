@@ -418,6 +418,12 @@
     const btnGotoRace = document.getElementById('btn-goto-race');
     const seedInput   = document.getElementById('seed-input');
 
+    // Team colours — must be declared before cached-results check since renderLeaderboard uses it
+    const teamColours = {};
+    import('./data.js').then(({ TEAMS }) => {
+      TEAMS.forEach(t => { teamColours[t.id] = t.colour; });
+    });
+
     // Seed: default to championship-derived seed; user can override before session starts
     let activeSeed = seed;
     seedInput.value = seed;
@@ -672,11 +678,6 @@
       });
     }
 
-    // ── Team colours (pre-loaded from data.js) ─────────────────────────────────
-    const teamColours = {};
-    import('./data.js').then(({ TEAMS }) => {
-      TEAMS.forEach(t => { teamColours[t.id] = t.colour; });
-    });
 
   </script>
 </body>

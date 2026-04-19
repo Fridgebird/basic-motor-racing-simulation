@@ -207,7 +207,7 @@
       margin-bottom: 12px;
     }
 
-    #btn-start-quali, #btn-goto-race {
+    #btn-start-quali, #btn-rerun-quali, #btn-goto-race {
       width: 100%;
       padding: 8px;
       font-family: 'Square', monospace;
@@ -220,9 +220,10 @@
       color: var(--mid);
       margin-bottom: 6px;
     }
-    #btn-start-quali:hover, #btn-goto-race:hover { border-color: var(--lo); color: var(--hi); }
+    #btn-start-quali:hover, #btn-rerun-quali:hover, #btn-goto-race:hover { border-color: var(--lo); color: var(--hi); }
     #btn-start-quali:disabled { opacity: 0.4; cursor: default; }
-    #btn-goto-race { display: none; border-color: var(--lo); }
+    #btn-rerun-quali { display: none; color: var(--lo); }
+    #btn-goto-race   { display: none; border-color: var(--lo); }
 
     /* ── Leaderboard ────────────────────────────────────────────────────────── */
     #leaderboard-panel { flex: 1; min-width: 0; }
@@ -354,6 +355,7 @@
       </div>
 
       <button id="btn-start-quali">START QUALIFYING</button>
+      <button id="btn-rerun-quali">RE-RUN QUALIFYING</button>
       <button id="btn-goto-race">GO TO RACE →</button>
     </div>
 
@@ -415,13 +417,16 @@
 
     const speedSel    = document.getElementById('speed-select');
     const btnStart    = document.getElementById('btn-start-quali');
+    const btnRerun    = document.getElementById('btn-rerun-quali');
     const btnGotoRace = document.getElementById('btn-goto-race');
     const seedInput   = document.getElementById('seed-input');
 
-    // Team colours — must be declared before cached-results check since renderLeaderboard uses it
+    // Team colours — must be declared before cached-results check since renderLeaderboard uses it.
+    // Populated async; re-render leaderboard once colours arrive so dots aren't grey.
     const teamColours = {};
     import('./data.js').then(({ TEAMS }) => {
       TEAMS.forEach(t => { teamColours[t.id] = t.colour; });
+      if (qualiResults) renderFinalLeaderboard(qualiResults);
     });
 
     // Seed: default to championship-derived seed; user can override before session starts
@@ -437,12 +442,13 @@
     // ── Check for cached results ───────────────────────────────────────────────
     const cached = loadQualiResults(event.season, event.round);
     if (cached) {
-      qualiResults       = cached;
-      sessionDone        = true;
-      seedInput.disabled = true;
+      qualiResults           = cached;
+      sessionDone            = true;
+      seedInput.disabled     = true;
       renderFinalLeaderboard(cached);
       document.getElementById('session-status').textContent = 'SESSION COMPLETE';
-      btnStart.disabled = true;
+      btnStart.style.display  = 'none';
+      btnRerun.style.display  = 'block';
       btnGotoRace.style.display = 'block';
     }
 
@@ -471,6 +477,11 @@
 
     btnGotoRace.addEventListener('click', () => {
       window.location.href = 'index.html';
+    });
+
+    btnRerun.addEventListener('click', () => {
+      localStorage.removeItem(`smr_quali_${event.season}_${event.round}`);
+      location.reload();
     });
 
     // ── Animated qualifying session ────────────────────────────────────────────

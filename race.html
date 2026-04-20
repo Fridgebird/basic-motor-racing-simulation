@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Motor Racing</title>
+  <style>
+    /* ── Fonts ───────────────────────────────────────────────────────────────── */
+    @font-face {
+      font-family: 'Square';
+      src: url('Square.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Square';
+      src: url('Squareo.ttf') format('truetype');
+      font-weight: normal;
+      font-style: oblique;
+    }
+
+    /* ── Design tokens ────────────────────────────────────────────────────────── */
+    :root {
+      --bg:      #0d1117;
+      --bg-deep: #080c12;
+      --bg-mid:  #0a0f18;
+      --border:  #1e2f44;
+      --hi:      #ffffff;
+      --mid:     #8ab4d4;
+      --lo:      #4a6a88;
+      --dim:     #2a4055;
+      --accent:  #cc2233;
+    }
+
+    /* ── Reset ───────────────────────────────────────────────────────────────── */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ── Base ────────────────────────────────────────────────────────────────── */
+    body {
+      background: var(--bg);
+      color: var(--hi);
+      font-family: 'Square', 'Courier New', monospace;
+      font-size: 13px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 8px 24px;
+    }
+
+    /* ── Topbar ──────────────────────────────────────────────────────────────── */
+    .topbar-nav {
+      display: flex;
+      gap: 16px;
+      margin-left: auto;
+      margin-right: 16px;
+    }
+    .topbar-nav-link {
+      color: var(--lo);
+      text-decoration: none;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+    }
+    .topbar-nav-link:hover { color: var(--mid); }
+    .topbar-nav-link.disabled {
+      color: var(--dim);
+      pointer-events: none;
+    }
+
+    #topbar {
+      width: 100%;
+      max-width: 1100px;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-bottom: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      margin-bottom: 8px;
+    }
+
+    .b-flat {
+      font-size: 14px;
+      letter-spacing: 3px;
+      color: var(--hi);
+      text-transform: uppercase;
+      line-height: 1;
+    }
+    .b-flat em {
+      font-style: normal;   /* override browser default italic on <em> */
+      color: var(--mid);
+    }
+
+    .topbar-meta {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    #timing-status {
+      font-size: 9px;
+      letter-spacing: 1px;
+      color: var(--mid);
+      text-transform: uppercase;
+    }
+
+    .live-pill {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 2px;
+      padding: 2px 6px;
+    }
+    .live-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+    /* ── Race info bar ────────────────────────────────────────────────────────── */
+    #race-info-bar {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 4px 6px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+
+    #circuit-name {
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--mid);
+      text-transform: uppercase;
+    }
+
+    .race-info-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    #meta-lap-sector {
+      font-size: 9px;
+      letter-spacing: 1px;
+      color: var(--mid);
+      text-transform: uppercase;
+    }
+
+    #fastest-lap-display {
+      font-size: 9px;
+      letter-spacing: 1px;
+      color: var(--mid);
+    }
+
+    /* ── Tab bar (mobile only) ────────────────────────────────────────────────── */
+    #tab-bar {
+      display: none;
+      width: 100%;
+      max-width: 1100px;
+      margin-bottom: 8px;
+      gap: 4px;
+    }
+    .tab-btn {
+      flex: 1;
+      background: var(--bg-deep);
+      color: var(--lo);
+      border: 1px solid var(--border);
+      font-family: 'Square', 'Courier New', monospace;
+      font-size: 12px;
+      padding: 6px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .tab-btn.active { color: var(--mid); border-color: var(--border); }
+
+    /* ── Main content ─────────────────────────────────────────────────────────── */
+    #main-content {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    /* ── Timing panel ─────────────────────────────────────────────────────────── */
+    #timing-panel { flex: 1 1 600px; min-width: 0; }
+
+    th.gap-toggle:hover { color: var(--hi); }
+    th.gap-toggle { user-select: none; }
+
+    #timing-table-scroll { overflow-x: auto; }
+
+    #timing-table {
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    /* Frozen columns — POS, #, DRIVER always visible */
+    .col-pos, .col-num, .col-driver { position: sticky; }
+    .col-pos    { left: 0; }
+    .col-num    { left: 38px; }
+    .col-driver { left: 70px; border-right: 1px solid var(--border); box-shadow: 4px 0 8px #000; }
+    #timing-table th.col-team,
+    #timing-table td.col-team { padding-left: 10px; }
+    th.col-pos, th.col-num, th.col-driver { z-index: 2; }
+    td.col-pos, td.col-num, td.col-driver { z-index: 1; }
+    #timing-table th.col-pos, #timing-table th.col-num, #timing-table th.col-driver,
+    #timing-table td.col-pos, #timing-table td.col-num, #timing-table td.col-driver {
+      background: var(--bg-deep);
+    }
+
+    #timing-table thead tr { border-bottom: 1px solid var(--border); }
+
+    #timing-table th {
+      color: var(--mid);
+      text-align: left;
+      padding: 3px 5px;
+      font-weight: normal;
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    #timing-table td {
+      padding: 3px 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Column widths */
+    .col-pos     { width: 38px; }
+    .col-num     { width: 32px; color: var(--mid); }
+    .col-driver  { width: 105px; }
+    .col-team    { width: 130px; color: var(--lo); display: none; /* hidden — restore by removing display:none */ }
+    .col-lastlap { width: 80px; color: var(--mid); }
+    .col-gap     { width: 70px; color: var(--mid); }
+    .col-tyre    { width: 82px; }
+    .col-tyre-mfr { width: 30px; color: var(--mid); }
+    .col-wear    { width: 44px; }
+    .col-fuel    { width: 54px; }
+    .col-stops   { width: 34px; color: var(--mid); }
+    .col-health  { width: 90px; }
+
+    /* Driver cell internals */
+    .driver-cell {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      max-width: 100%;
+    }
+    .team-dot {
+      display: inline-block;
+      width: 3px;
+      min-height: 20px;
+      border-radius: 1px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+    .driver-info { overflow: hidden; }
+    .t-driver {
+      font-size: 11px;
+      color: var(--hi);
+      letter-spacing: 1px;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .t-team-tag {
+      font-size: 8px;
+      color: var(--mid);
+      letter-spacing: 1px;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Position cell */
+    .pos-cell     { font-size: 11px; color: var(--mid); }
+    .pos-cell.p1  { color: var(--hi); }
+
+    /* Tyre compound pips */
+    .pip {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+    .pip-s { background: #ff3333; }
+    .pip-m { background: #e8c400; }
+    .pip-h { background: #888888; }
+    .tyre-cell { display: flex; align-items: center; gap: 2px; }
+    .tyre-laps { color: var(--mid); margin-left: 2px; }
+
+    /* Fastest lap */
+    td.lap-fast { color: #cc44ff; }
+
+    /* Row text states — high-specificity selectors override per-column colour rules.
+       .t-driver / .t-team-tag are on child divs so need explicit targeting. */
+    #timing-table tr.gained td,
+    #timing-table tr.gained .t-driver,
+    #timing-table tr.gained .t-team-tag { color: #00cc77; }
+
+    #timing-table tr.lost td,
+    #timing-table tr.lost .t-driver,
+    #timing-table tr.lost .t-team-tag   { color: #ff4444; }
+
+    /* Pitted / retired — lower specificity is fine; just dims column text */
+    tr.pitted  { color: var(--lo); }
+    tr.retired { color: var(--dim); }
+
+    tr.first-retired td { border-top: 1px solid var(--border); padding-top: 5px; }
+
+    /* FLIP position-swap animation */
+    #timing-body tr { will-change: transform; }
+
+    @keyframes pass-flash {
+      0%   { background-color: rgba(0, 200, 100, 0.30); }
+      100% { background-color: transparent; }
+    }
+    @keyframes drop-flash {
+      0%   { background-color: rgba(255, 60, 60, 0.22); }
+      100% { background-color: transparent; }
+    }
+    /* Apply to TDs so the flash is visible on all columns including sticky ones
+       (CSS animations override normal background declarations). */
+    #timing-table tr.anim-pass td { animation: pass-flash 600ms ease-out forwards; }
+    #timing-table tr.anim-drop td { animation: drop-flash 600ms ease-out forwards; }
+
+    /* Wear / fuel colour coding */
+    td.warn-red    { color: #ff4444; }
+    td.warn-yellow { color: #e8c400; }
+
+    /* Health cell */
+    td.health-out { color: #ff4444; }
+    td.health-dmg { color: #ff8800; }
+
+    /* ── Spacing strip ────────────────────────────────────────────────────────── */
+    #strip-panel {
+      flex: 0 0 70px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+    #strip-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 20px;
+      margin-bottom: 6px;
+      gap: 2px;
+    }
+    #strip-controls button {
+      flex: 0 0 18px;
+      height: 18px;
+      padding: 0;
+      font-size: 14px;
+      line-height: 1;
+      border: 1px solid var(--border);
+      color: var(--lo);
+      min-width: unset;
+      letter-spacing: 0;
+    }
+    #strip-controls button:hover { background: var(--bg-mid); color: var(--mid); }
+
+    #strip-zoom-label {
+      flex: 1;
+      text-align: center;
+      font-size: 9px;
+      color: var(--lo);
+      letter-spacing: 0;
+    }
+    #strip-scroll {
+      overflow-y: auto;
+      overflow-x: hidden;
+      max-height: 560px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) var(--bg-deep);
+    }
+    #strip-scroll::-webkit-scrollbar       { width: 4px; }
+    #strip-scroll::-webkit-scrollbar-track { background: var(--bg-deep); }
+    #strip-scroll::-webkit-scrollbar-thumb { background: var(--border); }
+    #spacing-strip { display: block; }
+
+    /* ── Commentary panel ─────────────────────────────────────────────────────── */
+    #commentary-panel {
+      flex: 0 0 280px;
+      min-width: 0;
+      max-height: 600px;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+      padding-left: 10px;
+    }
+    #commentary-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--mid);
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 6px;
+      flex-shrink: 0;
+    }
+    #commentary-filter-btn {
+      font-size: 9px;
+      padding: 2px 6px;
+      border: 1px solid var(--border);
+      color: var(--lo);
+      letter-spacing: 0;
+      height: auto;
+      text-transform: uppercase;
+    }
+    #commentary-filter-btn:hover { border-color: var(--mid); color: var(--mid); }
+
+    #commentary-feed {
+      overflow-y: auto;
+      flex: 1;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) var(--bg-deep);
+    }
+    #commentary-feed::-webkit-scrollbar       { width: 5px; }
+    #commentary-feed::-webkit-scrollbar-track { background: var(--bg-deep); }
+    #commentary-feed::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .c-entry {
+      padding: 3px 0;
+      border-bottom: 1px solid var(--bg-mid);
+      line-height: 1.4;
+      font-size: 11px;
+    }
+    .c-lap    { color: var(--lo); }
+    .c-tag    { font-weight: bold; }
+    .c-detail { color: var(--mid); }
+
+    .tag-pit   { color: #e8c400; }
+    .tag-out   { color: #cc44ff; }
+    .tag-crash { color: #cc44ff; }
+    .tag-dmg   { color: #ff8800; }
+    .tag-spin  { color: #ff8800; }
+    .tag-pass  { color: #00cc77; }
+
+    /* ── Lap chart ───────────────────────────────────────────────────────────── */
+    #lap-chart-panel {
+      width: 100%;
+      max-width: 1100px;
+      margin-top: 14px;
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+    }
+    #lap-chart-title {
+      color: var(--mid);
+      font-size: 10px;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    #lap-chart-canvas { display: block; width: 100%; }
+
+    /* ── Footer ──────────────────────────────────────────────────────────────── */
+    #race-footer {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+    #seed-display { color: var(--dim); font-size: 10px; }
+
+    #legend {
+      display: flex;
+      gap: 12px;
+      font-size: 10px;
+    }
+    .leg-item { color: var(--lo); }
+    .leg-item span { margin-right: 3px; }
+    .leg-gain { color: #00cc77; }
+    .leg-lose { color: #ff4444; }
+    .leg-pit  { color: var(--lo); }
+    .leg-ret  { color: var(--dim); }
+
+    /* ── Controls ────────────────────────────────────────────────────────────── */
+    #controls {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    button {
+      background: var(--bg-deep);
+      color: var(--mid);
+      border: 1px solid var(--border);
+      font-family: 'Square', 'Courier New', monospace;
+      font-size: 12px;
+      padding: 5px 14px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    button:hover  { border-color: var(--mid); color: var(--hi); background: var(--bg-mid); }
+    button:active { background: var(--bg-mid); }
+    button:disabled {
+      border-color: var(--dim);
+      color: var(--dim);
+      cursor: default;
+      background: var(--bg-deep);
+    }
+
+    #speed-label, #seed-label { color: var(--mid); font-size: 12px; }
+
+    select {
+      background: var(--bg-deep);
+      color: var(--mid);
+      border: 1px solid var(--border);
+      font-family: 'Square', 'Courier New', monospace;
+      font-size: 12px;
+      padding: 4px 8px;
+    }
+
+    #seed-input {
+      background: var(--bg-deep);
+      color: var(--hi);
+      border: 1px solid var(--border);
+      font-family: 'Square', 'Courier New', monospace;
+      font-size: 12px;
+      padding: 4px 8px;
+      width: 100px;
+    }
+
+    /* ── Not available notice ─────────────────────────────────────────────────── */
+    #not-available-notice {
+      display: none;
+      width: 100%;
+      max-width: 1100px;
+      text-align: center;
+      padding: 12px;
+      color: var(--lo);
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+
+    /* ── Mobile ──────────────────────────────────────────────────────────────── */
+    @media (max-width: 767px) {
+      body { padding: 0 4px 16px; font-size: 12px; }
+
+      #race-info-bar { flex-direction: column; gap: 4px; align-items: flex-start; }
+
+      #tab-bar { display: flex; }
+
+      #main-content { flex-direction: column; }
+
+      #strip-panel { display: none; }
+
+      #commentary-panel {
+        flex: none;
+        width: 100%;
+        max-height: 300px;
+        border-left: none;
+        border-top: 1px solid var(--border);
+        padding-left: 0;
+        padding-top: 8px;
+      }
+
+      .hide-mobile { display: none !important; }
+
+      #legend { display: none; }
+
+      #timing-panel.tab-hidden,
+      #commentary-panel.tab-hidden { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Topbar ──────────────────────────────────────────────────────────────── -->
+  <div id="topbar">
+    <div class="b-flat">Simple <em>Motor Racing</em></div>
+    <nav class="topbar-nav">
+      <a href="index.html"      class="topbar-nav-link">← CALENDAR</a>
+      <a href="standings.html"  class="topbar-nav-link" id="nav-standings">STANDINGS</a>
+    </nav>
+    <div class="topbar-meta">
+      <div id="timing-status">PRE-RACE</div>
+      <div class="live-pill" id="live-pill" style="display:none">
+        <div class="live-dot"></div>Live
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Race info bar ───────────────────────────────────────────────────────── -->
+  <div id="race-info-bar">
+    <div class="race-info-left">
+      <span id="circuit-name">RACE 1</span>
+      <span id="meta-lap-sector" style="visibility:hidden"></span>
+    </div>
+    <span id="fastest-lap-display" style="visibility:hidden">
+      Fastest <strong id="fastest-lap-time" style="color:#cc44ff">–</strong>
+      <span id="fastest-lap-driver" style="color:#8ab4d4"></span>
+    </span>
+  </div>
+
+  <!-- ── Tab bar (mobile only) ───────────────────────────────────────────────── -->
+  <div id="tab-bar">
+    <button class="tab-btn active" data-panel="timing">TIMING</button>
+    <button class="tab-btn"        data-panel="commentary">COMMENTARY</button>
+  </div>
+
+  <!-- ── Main content ────────────────────────────────────────────────────────── -->
+  <div id="main-content">
+
+    <!-- Timing sheet -->
+    <div id="timing-panel">
+      <div id="timing-table-scroll">
+      <table id="timing-table">
+        <thead>
+          <tr>
+            <th class="col-pos">POS</th>
+            <th class="col-num">#</th>
+            <th class="col-driver">DRIVER</th>
+            <th class="col-team    hide-mobile">TEAM</th>
+            <th class="col-tyre-mfr hide-mobile">TYR</th>
+            <th class="col-lastlap hide-mobile">LAST LAP</th>
+            <th class="col-gap gap-toggle" id="gap-toggle-header">INT ▾</th>
+            <th class="col-tyre">COMP/AGE</th>
+            <th class="col-wear  hide-mobile">WEAR</th>
+            <th class="col-fuel  hide-mobile">FUEL</th>
+            <th class="col-stops hide-mobile">STP</th>
+            <th class="col-health">HEALTH</th>
+          </tr>
+        </thead>
+        <tbody id="timing-body"></tbody>
+      </table>
+      </div>
+    </div>
+
+    <!-- Car spacing strip -->
+    <div id="strip-panel">
+      <div id="strip-controls">
+        <button id="strip-zoom-out">−</button>
+        <span id="strip-zoom-label">120 s</span>
+        <button id="strip-zoom-in">+</button>
+      </div>
+      <div id="strip-scroll">
+        <canvas id="spacing-strip" width="64" height="560"></canvas>
+      </div>
+    </div>
+
+    <!-- Commentary feed -->
+    <div id="commentary-panel">
+      <div id="commentary-title">
+        <span>RACE COMMENTARY</span>
+        <button id="commentary-filter-btn">ALL</button>
+      </div>
+      <div id="commentary-feed"></div>
+    </div>
+
+  </div>
+
+  <!-- ── Lap chart ────────────────────────────────────────────────────────────── -->
+  <div id="lap-chart-panel">
+    <div id="lap-chart-title">LAP CHART</div>
+    <canvas id="lap-chart-canvas"></canvas>
+  </div>
+
+  <!-- ── Footer ──────────────────────────────────────────────────────────────── -->
+  <div id="race-footer">
+    <span id="seed-display"></span>
+    <div id="legend">
+      <span class="leg-item"><span class="leg-gain">■</span>GAINED</span>
+      <span class="leg-item"><span class="leg-lose">■</span>LOST</span>
+      <span class="leg-item"><span class="leg-pit">■</span>PIT</span>
+      <span class="leg-item"><span class="leg-ret">■</span>RETIRED</span>
+    </div>
+  </div>
+
+  <!-- ── Controls ─────────────────────────────────────────────────────────────── -->
+  <div id="controls">
+    <button id="btn-start">START RACE</button>
+    <button id="btn-replay" style="display:none">REPLAY RACE</button>
+    <button id="btn-pause" disabled>PAUSE</button>
+    <button id="btn-prev"  disabled title="Step one sector back">◀</button>
+    <button id="btn-next"  disabled title="Step one sector forward">▶</button>
+    <button id="btn-reset" disabled>RESET</button>
+
+    <span id="seed-label">SEED:</span>
+    <input id="seed-input" type="number" value="198804" min="1" max="9999999">
+
+    <span id="speed-label">SPEED:</span>
+    <select id="speed-select">
+      <option value="25714">LEISURELY (~30 MINS)</option>
+      <option value="17143">SLOW      (~20 MINS)</option>
+      <option value="8571" selected>NORMAL    (~10 MINS)</option>
+      <option value="4286">FAST      (~5 MINS)</option>
+      <option value="1714">VERY FAST (~2 MINS)</option>
+      <option value="0">INSTANT</option>
+    </select>
+  </div>
+
+  <!-- ── Not available notice ─────────────────────────────────────────────────── -->
+  <div id="not-available-notice"></div>
+
+  <script type="module">
+    import { Renderer, setCurrentCircuit as setRendererCircuit } from './renderer.js';
+    import { initRace }              from './state.js';
+    import { tick, isRaceOver, initStrategies, setCurrentCircuit } from './simulation.js';
+    import {
+      getCurrentEvent, getCircuit, getSeedForEvent, getEventForRound,
+      loadQualiResults, addRaceResult, hasRaceResult,
+      advanceDevEvent, retreatDevEvent, isDevMode,
+      getTodayDayOffset, getWorldSeed, setWorldSeed,
+      getEventDate, formatShortDate,
+    } from './championship.js';
+
+    // ── Championship context ───────────────────────────────────────────────────
+    // Resolve event from URL params if provided, otherwise use today's current event
+    const params  = new URLSearchParams(location.search);
+    const pSeason = params.get('season');
+    const pRound  = params.get('round');
+
+    const event = (pSeason && pRound)
+      ? getEventForRound(parseInt(pSeason, 10), parseInt(pRound, 10), 'race')
+      : getCurrentEvent();
+
+    const circuit    = getCircuit(event);
+    const worldSeed  = getWorldSeed();
+    const raceSeed   = getSeedForEvent(event, worldSeed);
+    setCurrentCircuit(circuit);
+    setRendererCircuit(circuit);
+
+    // Update info bar with championship context
+    const circuitNameEl = document.getElementById('circuit-name');
+    if (circuitNameEl) {
+      circuitNameEl.textContent =
+        `S${event.season} R${event.round} · ${circuit.eventName} — Race`;
+    }
+
+    // ── Day-gating ─────────────────────────────────────────────────────────────
+    const todayOffset     = getTodayDayOffset();
+    const isRaceAvailable = event.dayOffset <= todayOffset;
+    const noticeEl        = document.getElementById('not-available-notice');
+
+    if (!isRaceAvailable) {
+      const raceDate = getEventDate(event.dayOffset);
+      noticeEl.style.display = 'block';
+      noticeEl.textContent   = `Race day: ${formatShortDate(raceDate)}`;
+    }
+
+    // ── Dev navigation bar ─────────────────────────────────────────────────────
+    if (isDevMode()) {
+      const devBar = document.createElement('div');
+      devBar.style.cssText = 'width:100%;max-width:1100px;text-align:center;padding:4px;font-size:11px;color:#4a6a88;background:#080c12;border-bottom:1px solid #1e2f44;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:12px;';
+      devBar.innerHTML = `
+        <button onclick="import('./championship.js').then(m=>{m.retreatDevEvent();location.reload();})" style="padding:2px 8px">◀ PREV</button>
+        <span>DEV — offset: ${localStorage.getItem('smr_dev_offset')} &nbsp;|&nbsp; ${circuit.eventName} — Race</span>
+        <button onclick="import('./championship.js').then(m=>{m.advanceDevEvent();location.reload();})" style="padding:2px 8px">NEXT ▶</button>
+        &nbsp;|&nbsp;
+        <span style="color:#4a6a88">SEED:</span>
+        <input id="world-seed-input" type="number" value="${worldSeed}" style="width:80px;background:#080c12;color:#8ab4d4;border:1px solid #1e2f44;font-family:inherit;font-size:11px;padding:2px 4px;">
+      `;
+      // Insert dev bar after the topbar
+      const topbar = document.getElementById('topbar');
+      topbar.insertAdjacentElement('afterend', devBar);
+
+      // Wire up world seed input
+      devBar.querySelector('#world-seed-input').addEventListener('change', e => {
+        setWorldSeed(parseInt(e.target.value, 10) || 0);
+        location.reload();
+      });
+    }
+
+    // Load qualifying results for this round (if qualifying was completed)
+    const qualiResults = loadQualiResults(event.season, event.round);
+
+    // ── Renderer ───────────────────────────────────────────────────────────────
+    const renderer = new Renderer();
+
+    // ── State ──────────────────────────────────────────────────────────────────
+    let rng    = null;
+    let loopId = null;
+    let paused = false;
+
+    // ── Controls ───────────────────────────────────────────────────────────────
+    const btnStart   = document.getElementById('btn-start');
+    const btnReplay  = document.getElementById('btn-replay');
+    const btnPause   = document.getElementById('btn-pause');
+    const btnPrev    = document.getElementById('btn-prev');
+    const btnNext    = document.getElementById('btn-next');
+    const btnReset   = document.getElementById('btn-reset');
+    const seedInput  = document.getElementById('seed-input');
+    const speedSel   = document.getElementById('speed-select');
+    const navStandings = document.getElementById('nav-standings');
+
+    // Apply day-gating to START RACE button
+    if (!isRaceAvailable && !hasRaceResult(event.season, event.round)) {
+      btnStart.disabled = true;
+    }
+
+    // Seed input defaults to championship seed
+    seedInput.value = raceSeed;
+
+    btnStart.addEventListener('click', startRace);
+    btnReplay.addEventListener('click', replayRace);
+    btnPause.addEventListener('click', togglePause);
+    btnReset.addEventListener('click', resetRace);
+
+    btnPrev.addEventListener('click', () => {
+      renderer.stepBack();
+      updateStepButtons();
+    });
+    btnNext.addEventListener('click', () => {
+      renderer.stepForward();
+      updateStepButtons();
+    });
+
+    // ── Mobile tab switching ───────────────────────────────────────────────────
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const target = btn.dataset.panel;
+        document.getElementById('timing-panel').classList.toggle('tab-hidden', target !== 'timing');
+        document.getElementById('commentary-panel').classList.toggle('tab-hidden', target !== 'commentary');
+      });
+    });
+
+    // ── Step button state ──────────────────────────────────────────────────────
+    function updateStepButtons() {
+      const steppable = paused || isRaceOver();
+      btnPrev.disabled = !steppable || !renderer.canStepBack;
+      btnNext.disabled = !steppable || !renderer.inReplay;
+    }
+
+    // ── Pre-race grid display ──────────────────────────────────────────────────
+    {
+      const previewSeed = parseInt(seedInput.value, 10) || raceSeed;
+      seedInput.value   = previewSeed;
+      const previewRng  = initRace(previewSeed, qualiResults, circuit);
+      initStrategies(previewRng);
+    }
+    renderer.render();
+
+    // ── Restore completed race state if navigating back ────────────────────────
+    if (hasRaceResult(event.season, event.round)) {
+      const seed = parseInt(seedInput.value, 10) || raceSeed;
+      rng = initRace(seed, qualiResults, circuit);
+      initStrategies(rng);
+      renderer.isLive = false;
+      while (!isRaceOver()) {
+        tick(rng);
+        renderer.pushSnapshot();
+      }
+      renderer.render();
+      onRaceFinished();
+    }
+
+    seedInput.addEventListener('change', () => {
+      if (btnStart.disabled) return;
+      const previewSeed = parseInt(seedInput.value, 10) || raceSeed;
+      const previewRng  = initRace(previewSeed, qualiResults, circuit);
+      initStrategies(previewRng);
+      renderer.render();
+    });
+
+    // ── startRace ──────────────────────────────────────────────────────────────
+    function startRace() {
+      const seed = parseInt(seedInput.value, 10) || raceSeed;
+
+      rng    = initRace(seed, qualiResults, circuit);
+      initStrategies(rng);
+      paused = false;
+
+      btnStart.style.display   = 'none';
+      btnReplay.style.display  = 'none';
+      btnPause.disabled        = false;
+      btnReset.disabled        = false;
+      seedInput.disabled       = true;
+
+      // Disable STANDINGS during active race
+      navStandings.classList.add('disabled');
+
+      renderer.isLive = true;
+      renderer.render();
+      scheduleNextSector();
+    }
+
+    // ── replayRace ─────────────────────────────────────────────────────────────
+    // Re-runs animation with same seed (same result) without clearing localStorage
+    function replayRace() {
+      clearTimeout(loopId);
+      paused = false;
+      rng    = null;
+
+      btnStart.style.display   = 'none';
+      btnReplay.style.display  = 'none';
+      btnPause.disabled        = true;
+      btnPause.textContent     = 'PAUSE';
+      btnReset.disabled        = false;
+      seedInput.disabled       = true;
+
+      renderer.isLive = false;
+      renderer.reset();
+
+      const seed = parseInt(seedInput.value, 10) || raceSeed;
+      rng    = initRace(seed, qualiResults, circuit);
+      initStrategies(rng);
+      paused = false;
+
+      btnPause.disabled = false;
+
+      // Disable STANDINGS during replay
+      navStandings.classList.add('disabled');
+
+      renderer.isLive = true;
+      renderer.render();
+      scheduleNextSector();
+    }
+
+    // ── Game loop ──────────────────────────────────────────────────────────────
+    function advanceSector() {
+      if (paused || isRaceOver()) return;
+
+      const delay = Math.round(parseInt(speedSel.value, 10) / 3);
+      renderer.animationsEnabled = delay >= 1000;
+
+      tick(rng);
+      renderer.pushSnapshot();
+      renderer.render();
+
+      if (isRaceOver()) {
+        onRaceFinished();
+      } else {
+        scheduleNextSector();
+      }
+    }
+
+    function scheduleNextSector() {
+      const delay = Math.round(parseInt(speedSel.value, 10) / 3);
+      loopId = setTimeout(advanceSector, delay);
+    }
+
+    // ── togglePause ────────────────────────────────────────────────────────────
+    function togglePause() {
+      paused = !paused;
+      btnPause.textContent = paused ? 'RESUME' : 'PAUSE';
+      renderer.isLive = !paused;
+      if (!paused) {
+        if (renderer.inReplay) renderer.exitReplay();
+        if (!isRaceOver()) scheduleNextSector();
+      }
+      updateStepButtons();
+    }
+
+    // ── resetRace ──────────────────────────────────────────────────────────────
+    function resetRace() {
+      clearTimeout(loopId);
+      paused = false;
+      rng    = null;
+
+      btnStart.style.display   = 'inline-block';
+      btnReplay.style.display  = 'none';
+      btnPause.disabled        = true;
+      btnPause.textContent     = 'PAUSE';
+      btnReset.disabled        = true;
+      seedInput.disabled       = false;
+
+      // Re-apply day-gating if needed
+      if (!isRaceAvailable && !hasRaceResult(event.season, event.round)) {
+        btnStart.disabled = true;
+      }
+
+      // Re-enable STANDINGS
+      navStandings.classList.remove('disabled');
+
+      renderer.isLive = false;
+      renderer.reset();
+      updateStepButtons();
+    }
+
+    // ── onRaceFinished ─────────────────────────────────────────────────────────
+    function onRaceFinished() {
+      btnPause.disabled    = true;
+      btnStart.style.display  = 'none';
+      btnReplay.style.display = 'inline-block';
+      renderer.isLive = false;
+      renderer.render();
+      updateStepButtons();
+      console.log('Race complete. Full log available at: window.raceLog');
+
+      // Re-enable STANDINGS
+      navStandings.classList.remove('disabled');
+
+      // Save championship result
+      import('./state.js').then(({ cars }) => {
+        const finishOrder = [...cars]
+          .sort((a, b) => {
+            if (a.status === 'retired' && b.status !== 'retired') return 1;
+            if (b.status === 'retired' && a.status !== 'retired') return -1;
+            return a.position - b.position;
+          })
+          .map(car => ({
+            driverName: car.driver.name,
+            teamId:     car.team.id,
+            position:   car.position,
+            retired:    car.status === 'retired',
+          }));
+        addRaceResult(event.season, event.round, finishOrder);
+      });
+    }
+
+    import('./state.js').then(m => { window.raceLog = m.raceLog; });
+  </script>
+
+</body>
+</html>

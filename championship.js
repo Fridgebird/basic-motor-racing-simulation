@@ -64,11 +64,59 @@ export function getCircuit(event) {
 /**
  * Deterministic seed for a given event.
  * Same event on any device on any day produces the same seed.
+ * worldSeed shifts the entire universe — all events get a different outcome.
  */
-export function getSeedForEvent(event) {
+export function getSeedForEvent(event, worldSeed = 0) {
   // Mix season + round + eventType flag so qualifying and race have different seeds
   const typeFlag = event.eventType === 'qualifying' ? 0 : 1;
-  return (event.season * 10000) + (event.round * 10) + typeFlag;
+  return (event.season * 10000) + (event.round * 10) + typeFlag + worldSeed;
+}
+
+/**
+ * Return the event object for a specific season/round/type.
+ * Used by qualifying.html and race.html when loaded with URL params.
+ */
+export function getEventForRound(season, round, eventType) {
+  const idx = SEASON_SCHEDULE.findIndex(e => e.round === round && e.eventType === eventType);
+  if (idx < 0) return null;
+  const dayOffset = (season - 1) * SEASON_SCHEDULE.length + idx;
+  return { ...SEASON_SCHEDULE[idx], season, eventIndex: idx, dayOffset };
+}
+
+/** Returns today's absolute day offset with dev offset applied */
+export function getTodayDayOffset() {
+  const devOffset = parseInt(localStorage.getItem('smr_dev_offset') || '0', 10);
+  return daysBetween(SEASON_1_START, todayISO()) + devOffset;
+}
+
+// ─── World seed ───────────────────────────────────────────────────────────────
+// Shifts the entire season universe — changing it produces a completely different
+// set of qualifying results and races across all rounds and seasons.
+// In prod, set WORLD_SEED_DEFAULT to a fixed arbitrary number before deploying.
+// In dev mode, overridable via the topbar input (stored in localStorage).
+
+export const WORLD_SEED_DEFAULT = 0;
+
+export function getWorldSeed() {
+  const stored = localStorage.getItem('smr_world_seed');
+  return stored !== null ? parseInt(stored, 10) : WORLD_SEED_DEFAULT;
+}
+
+export function setWorldSeed(n) {
+  localStorage.setItem('smr_world_seed', String(n));
+}
+
+/** Return the ISO date string for a given absolute day offset from SEASON_1_START */
+export function getEventDate(absoluteDayOffset) {
+  const ts = parseISO(SEASON_1_START) + absoluteDayOffset * 86_400_000;
+  return new Date(ts).toISOString().slice(0, 10);
+}
+
+/** Format an ISO date as e.g. "Apr 21" */
+export function formatShortDate(isoStr) {
+  const [y, m, d] = isoStr.split('-').map(Number);
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[m - 1]} ${d}`;
 }
 
 // ─── Dev navigation ──────────────────────────────────────────────────────────

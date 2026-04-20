@@ -209,7 +209,7 @@
       margin-bottom: 12px;
     }
 
-    #btn-start-quali, #btn-rerun-quali, #btn-goto-race, #btn-pause-quali {
+    #btn-start-quali, #btn-replay-quali, #btn-rerun-quali, #btn-goto-race, #btn-pause-quali {
       width: 100%;
       padding: 8px;
       font-family: 'Square', monospace;
@@ -222,8 +222,9 @@
       color: var(--mid);
       margin-bottom: 6px;
     }
-    #btn-start-quali:hover, #btn-rerun-quali:hover, #btn-goto-race:hover, #btn-pause-quali:hover { border-color: var(--lo); color: var(--hi); }
+    #btn-start-quali:hover, #btn-replay-quali:hover, #btn-rerun-quali:hover, #btn-goto-race:hover, #btn-pause-quali:hover { border-color: var(--lo); color: var(--hi); }
     #btn-start-quali:disabled { opacity: 0.4; cursor: default; }
+    #btn-replay-quali { display: none; color: var(--lo); }
     #btn-rerun-quali  { display: none; color: var(--lo); }
     #btn-goto-race    { display: none; border-color: var(--lo); }
     #btn-pause-quali  { display: none; }
@@ -293,9 +294,8 @@
   <div id="topbar">
     <div class="b-flat">Simple <em>Motor Racing</em></div>
     <nav class="topbar-nav">
-      <a href="qualifying.html" class="topbar-nav-link active">QUALIFYING</a>
-      <a href="index.html"      class="topbar-nav-link">RACE</a>
-      <a href="standings.html"  class="topbar-nav-link">STANDINGS</a>
+      <a href="index.html"     class="topbar-nav-link">← CALENDAR</a>
+      <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
     </nav>
     <div class="topbar-meta">
       <div id="topbar-status">QUALIFYING</div>
@@ -355,11 +355,13 @@
           <option value="200">Fast</option>
           <option value="2350">Normal</option>
           <option value="4500" selected>Slow</option>
+          <option value="0">Instant</option>
         </select>
       </div>
 
       <button id="btn-start-quali">START QUALIFYING</button>
       <button id="btn-pause-quali">PAUSE</button>
+      <button id="btn-replay-quali">REPLAY QUALIFYING</button>
       <button id="btn-rerun-quali">RE-RUN QUALIFYING</button>
       <button id="btn-goto-race">GO TO RACE →</button>
     </div>
@@ -388,15 +390,24 @@
     import { initRace }                              from './state.js';
     import { setCurrentCircuit, runQualifyingSession, simulateQualiLap } from './simulation.js';
     import {
-      getCurrentEvent, getCircuit, getSeedForEvent,
+      getCurrentEvent, getCircuit, getSeedForEvent, getEventForRound,
       saveQualiResults, loadQualiResults,
       advanceDevEvent, retreatDevEvent, isDevMode,
+      getWorldSeed, setWorldSeed,
     } from './championship.js';
 
     // ── Championship context ───────────────────────────────────────────────────
-    const event   = getCurrentEvent();
-    const circuit = getCircuit(event);
-    const seed    = getSeedForEvent(event);
+    const params  = new URLSearchParams(location.search);
+    const pSeason = params.get('season');
+    const pRound  = params.get('round');
+
+    const event = (pSeason && pRound)
+      ? getEventForRound(parseInt(pSeason, 10), parseInt(pRound, 10), 'qualifying')
+      : getCurrentEvent();
+
+    const circuit   = getCircuit(event);
+    const worldSeed = getWorldSeed();
+    const seed      = getSeedForEvent(event, worldSeed);
     setCurrentCircuit(circuit);
 
     // Info bar
@@ -406,13 +417,20 @@
     // Dev navigation
     if (isDevMode()) {
       const devBar = document.createElement('div');
-      devBar.style.cssText = 'text-align:center;padding:4px;font-size:11px;color:#4a6a88;background:#080c12;border-bottom:1px solid #1e2f44;';
+      devBar.style.cssText = 'width:100%;max-width:1100px;text-align:center;padding:4px;font-size:11px;color:#4a6a88;background:#080c12;border-bottom:1px solid #1e2f44;display:flex;align-items:center;justify-content:center;gap:12px;';
       devBar.innerHTML = `
-        <button onclick="import('./championship.js').then(m=>{m.retreatDevEvent();location.reload();})" style="margin-right:8px">◀ PREV</button>
-        DEV MODE — offset: ${localStorage.getItem('smr_dev_offset')} &nbsp;|&nbsp; ${circuit.eventName} — Qualifying
-        <button onclick="import('./championship.js').then(m=>{m.advanceDevEvent();location.reload();})" style="margin-left:8px">NEXT ▶</button>
+        <button onclick="import('./championship.js').then(m=>{m.retreatDevEvent();location.reload();})" style="padding:2px 8px">◀ PREV</button>
+        <span>DEV — offset: ${localStorage.getItem('smr_dev_offset')} &nbsp;|&nbsp; ${circuit.eventName} — Qualifying</span>
+        <button onclick="import('./championship.js').then(m=>{m.advanceDevEvent();location.reload();})" style="padding:2px 8px">NEXT ▶</button>
+        &nbsp;|&nbsp;
+        <span style="color:#4a6a88">SEED:</span>
+        <input id="world-seed-input" type="number" value="${worldSeed}" style="width:80px;background:#080c12;color:#8ab4d4;border:1px solid #1e2f44;font-family:inherit;font-size:11px;padding:2px 4px;">
       `;
       document.body.prepend(devBar);
+      devBar.querySelector('#world-seed-input').addEventListener('change', e => {
+        setWorldSeed(parseInt(e.target.value, 10) || 0);
+        location.reload();
+      });
     }
 
     // ── State ──────────────────────────────────────────────────────────────────
@@ -425,6 +443,7 @@
     const speedSel    = document.getElementById('speed-select');
     const btnStart    = document.getElementById('btn-start-quali');
     const btnPause    = document.getElementById('btn-pause-quali');
+    const btnReplay   = document.getElementById('btn-replay-quali');
     const btnRerun    = document.getElementById('btn-rerun-quali');
     const btnGotoRace = document.getElementById('btn-goto-race');
     const seedInput   = document.getElementById('seed-input');
@@ -461,8 +480,9 @@
       seedInput.disabled     = true;
       renderFinalLeaderboard(cached);
       document.getElementById('session-status').textContent = 'SESSION COMPLETE';
-      btnStart.style.display  = 'none';
-      btnRerun.style.display  = 'block';
+      btnStart.style.display   = 'none';
+      btnReplay.style.display  = 'block';
+      btnRerun.style.display   = 'block';
       btnGotoRace.style.display = 'block';
     }
 
@@ -488,13 +508,44 @@
       paused                   = false;
       btnPause.style.display   = 'none';
       document.getElementById('session-status').textContent = 'SESSION COMPLETE';
+      btnReplay.style.display   = 'block';
       btnRerun.style.display    = 'block';
       btnGotoRace.style.display = 'block';
       clearOnTrackPanel();
     });
 
     btnGotoRace.addEventListener('click', () => {
-      window.location.href = 'index.html';
+      window.location.href = `race.html?season=${event.season}&round=${event.round}`;
+    });
+
+    btnReplay.addEventListener('click', async () => {
+      // Re-run animation with same activeSeed (same result) without clearing localStorage
+      sessionDone = false;
+      qualiResults = null;
+      bestSectorTimes = [null, null, null];
+      poleSectorTimes = null;
+      paused = false;
+
+      document.getElementById('quali-tbody').innerHTML = '';
+      document.getElementById('session-status').textContent = 'SESSION RUNNING';
+      btnReplay.style.display   = 'none';
+      btnRerun.style.display    = 'none';
+      btnGotoRace.style.display = 'none';
+      btnPause.style.display    = 'block';
+      clearOnTrackPanel();
+
+      const rng = initRace(activeSeed, null, circuit);
+      qualiResults = await runQualifyingSessionAnimated(rng, circuit);
+      saveQualiResults(event.season, event.round, qualiResults);
+
+      sessionDone              = true;
+      paused                   = false;
+      btnPause.style.display   = 'none';
+      document.getElementById('session-status').textContent = 'SESSION COMPLETE';
+      btnReplay.style.display   = 'block';
+      btnRerun.style.display    = 'block';
+      btnGotoRace.style.display = 'block';
+      clearOnTrackPanel();
     });
 
     btnPause.addEventListener('click', () => {
@@ -583,6 +634,7 @@
 
     // ── UI helpers ─────────────────────────────────────────────────────────────
     function delay(ms) {
+      if (ms <= 0) return Promise.resolve();
       return new Promise(resolve => {
         let elapsed = 0;
         const tick = () => {

@@ -15,7 +15,11 @@ let currentCircuit = DEFAULT_CIRCUIT;
 
 /** Set the circuit for the upcoming qualifying session or race. */
 export function setCurrentCircuit(circuit) {
-  currentCircuit = circuit;
+  // Precompute sumFuelWeights so fuelBurnPerSector always integrates to
+  // exactly baseFuelBurnPerLap × fuelBurnRate per lap, regardless of how
+  // the individual sector fuelWeight values are distributed.
+  const sumFuelWeights = circuit.sectors.reduce((s, sec) => s + sec.fuelWeight, 0);
+  currentCircuit = { ...circuit, sumFuelWeights };
 }
 import { cars, race, raceLog, lapChartData, updatePositions } from './state.js';
 
@@ -269,9 +273,11 @@ export function tick(rng) {
     car.tyreWear = Math.min(1, car.tyreWear + wearDelta);
 
     // ── Fuel burn ────────────────────────────────────────────────────────────
-    // Base rate × engine's thirst multiplier × sector throttle demand
-    // Average fuelWeight across 3 sectors = 1.0, so per-lap total stays consistent
-    const fuelBurnPerSector = (currentCircuit.baseFuelBurnPerLap / 3)
+    // Base rate × engine's thirst multiplier × sector throttle demand.
+    // Dividing by sumFuelWeights (not hardcoded 3) ensures total per-lap burn
+    // always equals baseFuelBurnPerLap × fuelBurnRate regardless of how the
+    // sector fuelWeights are distributed — keeping the AI's refuelling maths correct.
+    const fuelBurnPerSector = (currentCircuit.baseFuelBurnPerLap / currentCircuit.sumFuelWeights)
       * car.engine.fuelBurnRate
       * sectorDef.fuelWeight;
     car.fuel = Math.max(0, car.fuel - fuelBurnPerSector);

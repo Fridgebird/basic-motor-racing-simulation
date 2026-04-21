@@ -227,11 +227,12 @@
 
   <!-- ── Dev bar ──────────────────────────────────────────────────────────────── -->
   <div id="dev-bar">
-    <button id="dev-prev">◀ PREV DAY</button>
+    <button id="dev-prev">◀ PREV</button>
     <span id="dev-label"></span>
-    <button id="dev-next">NEXT DAY ▶</button>
-    <span class="dev-label">WORLD SEED:</span>
+    <button id="dev-next">NEXT ▶</button>
+    <span class="dev-label">KEY:</span>
     <input type="number" id="world-seed-input">
+    <button id="dev-exit" style="margin-left:8px;color:#cc2233;border-color:#cc2233">EXIT DEV</button>
   </div>
 
   <!-- ── Season header ────────────────────────────────────────────────────────── -->
@@ -261,35 +262,45 @@
     import {
       getCurrentEvent, getCircuit, getEventForRound,
       getTodayDayOffset, getWorldSeed, setWorldSeed,
-      advanceDevEvent, retreatDevEvent, isDevMode,
+      advanceDevEvent, retreatDevEvent, isDevMode, enterDevMode, exitDevMode,
       getEventDate, formatShortDate,
     } from './championship.js';
     import { SEASON_SCHEDULE } from './data.js';
 
+    // ── Dev mode entry via ?dev=1 ──────────────────────────────────────────────
+    const params = new URLSearchParams(location.search);
+    if (params.get('dev') === '1') {
+      enterDevMode();
+      // Strip the param from the URL so it doesn't persist visibly
+      history.replaceState(null, '', location.pathname);
+    }
+
     // ── Resolve context ────────────────────────────────────────────────────────
-    const todayOffset = getTodayDayOffset();
+    const todayOffset  = getTodayDayOffset();
     const currentEvent = getCurrentEvent();
-    const season = currentEvent.season;
-    const schedLen = SEASON_SCHEDULE.length;
+    const season       = currentEvent.season;
+    const schedLen     = SEASON_SCHEDULE.length;
 
     // ── Season header ──────────────────────────────────────────────────────────
     document.getElementById('season-title').textContent =
       `S${season} · ${2026 + season - 1} Season Calendar`;
 
-    // Compute start/end dates for this season
-    const seasonStart = (season - 1) * schedLen;     // absolute day offset of event 0
-    const seasonEnd   = season * schedLen - 1;        // absolute day offset of last event
-    const startDate   = formatShortDate(getEventDate(seasonStart));
-    const endDate     = formatShortDate(getEventDate(seasonEnd));
-    document.getElementById('season-date-range').textContent = `${startDate} – ${endDate}`;
+    const seasonStart = (season - 1) * schedLen;
+    const seasonEnd   = season * schedLen - 1;
+    document.getElementById('season-date-range').textContent =
+      `${formatShortDate(getEventDate(seasonStart))} – ${formatShortDate(getEventDate(seasonEnd))}`;
 
     // ── Dev bar ────────────────────────────────────────────────────────────────
     const devBar = document.getElementById('dev-bar');
     if (isDevMode()) {
+      const todayDateStr  = formatShortDate(getEventDate(todayOffset));
+      const todayEventStr = `${currentEvent.eventType === 'qualifying' ? 'Qualifying' : 'Race'} — R${currentEvent.round} · S${currentEvent.season}`;
+
       devBar.style.display = 'flex';
       document.getElementById('dev-label').textContent =
-        `DEV — offset: ${localStorage.getItem('smr_dev_offset')}`;
+        `DEV · Day ${todayOffset} · ${todayDateStr} · ${todayEventStr}`;
       document.getElementById('world-seed-input').value = getWorldSeed();
+
       document.getElementById('dev-prev').addEventListener('click', () => {
         retreatDevEvent(); location.reload();
       });
@@ -299,6 +310,9 @@
       document.getElementById('world-seed-input').addEventListener('change', e => {
         setWorldSeed(parseInt(e.target.value, 10) || 0);
         location.reload();
+      });
+      document.getElementById('dev-exit').addEventListener('click', () => {
+        exitDevMode(); location.reload();
       });
     }
 

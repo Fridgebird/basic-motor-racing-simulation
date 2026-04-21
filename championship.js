@@ -38,15 +38,11 @@ function daysBetween(fromISO, toISO) {
  * @param {string} [dateStr] — ISO date override (defaults to today; dev offset applied on top)
  * @returns {{ round, eventType, circuitId, season, eventIndex, dayOffset }}
  */
-export function getCurrentEvent(dateStr) {
-  const base = dateStr || todayISO();
-  const devOffset = parseInt(localStorage.getItem('smr_dev_offset') || '0', 10);
-  const rawOffset = daysBetween(SEASON_1_START, base);
-  const dayOffset = rawOffset + devOffset;
-
-  const len         = SEASON_SCHEDULE.length;
-  const seasonIndex = Math.floor(dayOffset / len);   // 0-based season number
-  const eventIndex  = ((dayOffset % len) + len) % len; // guard against negative offsets
+export function getCurrentEvent() {
+  const dayOffset  = getTodayDayOffset();
+  const len        = SEASON_SCHEDULE.length;
+  const seasonIndex = Math.floor(dayOffset / len);
+  const eventIndex  = ((dayOffset % len) + len) % len;
 
   return {
     ...SEASON_SCHEDULE[eventIndex],
@@ -83,10 +79,15 @@ export function getEventForRound(season, round, eventType) {
   return { ...SEASON_SCHEDULE[idx], season, eventIndex: idx, dayOffset };
 }
 
-/** Returns today's absolute day offset with dev offset applied */
+/**
+ * Returns today's absolute day offset.
+ * In dev mode, returns the directly-stored dev day (ignores real date entirely).
+ * In prod, returns days since SEASON_1_START.
+ */
 export function getTodayDayOffset() {
-  const devOffset = parseInt(localStorage.getItem('smr_dev_offset') || '0', 10);
-  return daysBetween(SEASON_1_START, todayISO()) + devOffset;
+  const devDay = localStorage.getItem('smr_dev_today');
+  if (devDay !== null) return parseInt(devDay, 10);
+  return daysBetween(SEASON_1_START, todayISO());
 }
 
 // ─── World seed ───────────────────────────────────────────────────────────────
@@ -119,28 +120,44 @@ export function formatShortDate(isoStr) {
   return `${months[m - 1]} ${d}`;
 }
 
-// ─── Dev navigation ──────────────────────────────────────────────────────────
+// ─── Dev mode ────────────────────────────────────────────────────────────────
+// Activated by visiting any page with ?dev=1 in the URL.
+// Persists in localStorage (smr_dev_mode = '1') until explicitly exited.
+// smr_dev_today stores the current "virtual today" as an absolute day offset.
+// Advancing/retreating changes this value directly — real date is ignored entirely.
 
-/** Step forward one event in dev mode */
-export function advanceDevEvent() {
-  const cur = parseInt(localStorage.getItem('smr_dev_offset') || '0', 10);
-  localStorage.setItem('smr_dev_offset', String(cur + 1));
-}
-
-/** Step backward one event in dev mode */
-export function retreatDevEvent() {
-  const cur = parseInt(localStorage.getItem('smr_dev_offset') || '0', 10);
-  localStorage.setItem('smr_dev_offset', String(cur - 1));
-}
-
-/** Clear dev offset (return to real calendar) */
-export function clearDevOffset() {
-  localStorage.removeItem('smr_dev_offset');
-}
-
-/** True if a dev offset is currently active */
+/** True if dev mode is active */
 export function isDevMode() {
-  return localStorage.getItem('smr_dev_offset') !== null;
+  return localStorage.getItem('smr_dev_mode') === '1';
+}
+
+/**
+ * Activate dev mode. Sets smr_dev_mode and initialises smr_dev_today to the
+ * current real day offset if not already set.
+ */
+export function enterDevMode() {
+  localStorage.setItem('smr_dev_mode', '1');
+  if (localStorage.getItem('smr_dev_today') === null) {
+    localStorage.setItem('smr_dev_today', String(daysBetween(SEASON_1_START, todayISO())));
+  }
+}
+
+/** Deactivate dev mode and clear the virtual today. Returns to real calendar. */
+export function exitDevMode() {
+  localStorage.removeItem('smr_dev_mode');
+  localStorage.removeItem('smr_dev_today');
+}
+
+/** Step virtual today forward one day */
+export function advanceDevEvent() {
+  const cur = getTodayDayOffset();
+  localStorage.setItem('smr_dev_today', String(cur + 1));
+}
+
+/** Step virtual today backward one day */
+export function retreatDevEvent() {
+  const cur = getTodayDayOffset();
+  localStorage.setItem('smr_dev_today', String(cur - 1));
 }
 
 // ─── Points & Results ─────────────────────────────────────────────────────────

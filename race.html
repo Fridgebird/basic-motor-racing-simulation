@@ -731,14 +731,20 @@
     import {
       getCurrentEvent, getCircuit, getSeedForEvent, getEventForRound,
       loadQualiResults, addRaceResult, hasRaceResult,
-      advanceDevEvent, retreatDevEvent, isDevMode,
+      advanceDevEvent, retreatDevEvent, isDevMode, enterDevMode, exitDevMode,
       getTodayDayOffset, getWorldSeed, setWorldSeed,
       getEventDate, formatShortDate,
     } from './championship.js';
 
+    // ── Dev mode entry via ?dev=1 ──────────────────────────────────────────────
+    const params = new URLSearchParams(location.search);
+    if (params.get('dev') === '1') {
+      enterDevMode();
+      history.replaceState(null, '', location.pathname + (params.get('season') ? `?season=${params.get('season')}&round=${params.get('round')}` : ''));
+    }
+
     // ── Championship context ───────────────────────────────────────────────────
     // Resolve event from URL params if provided, otherwise use today's current event
-    const params  = new URLSearchParams(location.search);
     const pSeason = params.get('season');
     const pRound  = params.get('round');
 
@@ -770,27 +776,25 @@
       noticeEl.textContent   = `Race day: ${formatShortDate(raceDate)}`;
     }
 
-    // ── Dev navigation bar ─────────────────────────────────────────────────────
+    // ── Dev bar ────────────────────────────────────────────────────────────────
     if (isDevMode()) {
+      const todayOffset2   = getTodayDayOffset();
+      const todayDateStr   = formatShortDate(getEventDate(todayOffset2));
       const devBar = document.createElement('div');
-      devBar.style.cssText = 'width:100%;max-width:1100px;text-align:center;padding:4px;font-size:11px;color:#4a6a88;background:#080c12;border-bottom:1px solid #1e2f44;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:12px;';
+      devBar.style.cssText = 'width:100%;max-width:1100px;padding:4px 8px;font-size:11px;color:#4a6a88;background:#080c12;border:1px solid #1e2f44;border-top:none;margin-bottom:4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;';
       devBar.innerHTML = `
-        <button onclick="import('./championship.js').then(m=>{m.retreatDevEvent();location.reload();})" style="padding:2px 8px">◀ PREV</button>
-        <span>DEV — offset: ${localStorage.getItem('smr_dev_offset')} &nbsp;|&nbsp; ${circuit.eventName} — Race</span>
-        <button onclick="import('./championship.js').then(m=>{m.advanceDevEvent();location.reload();})" style="padding:2px 8px">NEXT ▶</button>
-        &nbsp;|&nbsp;
-        <span style="color:#4a6a88">SEED:</span>
-        <input id="world-seed-input" type="number" value="${worldSeed}" style="width:80px;background:#080c12;color:#8ab4d4;border:1px solid #1e2f44;font-family:inherit;font-size:11px;padding:2px 4px;">
+        <button id="db-prev" style="padding:2px 8px">◀ PREV</button>
+        <span>DEV · Day ${todayOffset2} · ${todayDateStr} · R${event.round} ${event.eventType === 'qualifying' ? 'Qualifying' : 'Race'} — ${circuit.eventName}</span>
+        <button id="db-next" style="padding:2px 8px">NEXT ▶</button>
+        <span style="color:#2a4055">KEY:</span>
+        <input id="db-seed" type="number" value="${worldSeed}" style="width:80px;background:#080c12;color:#8ab4d4;border:1px solid #1e2f44;font-family:inherit;font-size:11px;padding:2px 4px;">
+        <button id="db-exit" style="margin-left:auto;padding:2px 8px;color:#cc2233;border-color:#cc2233">EXIT DEV</button>
       `;
-      // Insert dev bar after the topbar
-      const topbar = document.getElementById('topbar');
-      topbar.insertAdjacentElement('afterend', devBar);
-
-      // Wire up world seed input
-      devBar.querySelector('#world-seed-input').addEventListener('change', e => {
-        setWorldSeed(parseInt(e.target.value, 10) || 0);
-        location.reload();
-      });
+      document.getElementById('topbar').insertAdjacentElement('afterend', devBar);
+      devBar.querySelector('#db-prev').addEventListener('click', () => { retreatDevEvent(); location.reload(); });
+      devBar.querySelector('#db-next').addEventListener('click', () => { advanceDevEvent(); location.reload(); });
+      devBar.querySelector('#db-seed').addEventListener('change', e => { setWorldSeed(parseInt(e.target.value, 10) || 0); location.reload(); });
+      devBar.querySelector('#db-exit').addEventListener('click', () => { exitDevMode(); location.href = 'index.html'; });
     }
 
     // Load qualifying results for this round (if qualifying was completed)

@@ -165,7 +165,7 @@
     import {
       getCurrentEvent, getStandings, getCircuit,
       isDevMode, enterDevMode, exitDevMode, resetWorld,
-      advanceDevEvent, retreatDevEvent,
+      advanceDevEvent, retreatDevEvent, ensurePastResultsCached,
       getWorldSeed, setWorldSeed, getTodayDayOffset, getEventDate, formatShortDate,
     } from './championship.js';
     import { TEAMS } from './data.js';
@@ -209,8 +209,9 @@
     }
 
     document.getElementById('circuit-name').textContent =
-      `S${event.season} · ${circuit.eventName} — Season ${event.season} Standings`;
+      `Season ${event.season} — Championship Standings`;
 
+    await ensurePastResultsCached(event.season);
     const standings = getStandings(event.season);
 
     // Build team colour lookup

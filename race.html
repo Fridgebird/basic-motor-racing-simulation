@@ -874,20 +874,6 @@
     }
     renderer.render();
 
-    // ── Restore completed race state if navigating back ────────────────────────
-    if (hasRaceResult(event.season, event.round)) {
-      const seed = parseInt(seedInput.value, 10) || raceSeed;
-      rng = initRace(seed, qualiResults, circuit);
-      initStrategies(rng);
-      renderer.isLive = false;
-      while (!isRaceOver()) {
-        tick(rng);
-        renderer.pushSnapshot();
-      }
-      renderer.render();
-      onRaceFinished();
-    }
-
     seedInput.addEventListener('change', () => {
       if (btnStart.disabled) return;
       const previewSeed = parseInt(seedInput.value, 10) || raceSeed;
@@ -1026,6 +1012,9 @@
 
       // Save championship result
       import('./state.js').then(({ cars }) => {
+        const finishers = cars.filter(c => c.status !== 'retired')
+                              .sort((a, b) => a.position - b.position);
+        const leader = finishers[0];
         const finishOrder = [...cars]
           .sort((a, b) => {
             if (a.status === 'retired' && b.status !== 'retired') return 1;
@@ -1033,10 +1022,16 @@
             return a.position - b.position;
           })
           .map(car => ({
-            driverName: car.driver.name,
-            teamId:     car.team.id,
-            position:   car.position,
-            retired:    car.status === 'retired',
+            driverName:    car.driver.name,
+            teamId:        car.team.id,
+            position:      car.position,
+            retired:       car.status === 'retired',
+            gap:           (car.status !== 'retired' && leader)
+                             ? +(car.cumulativeTime - leader.cumulativeTime).toFixed(3)
+                             : null,
+            stops:         car.stopsMade,
+            lapsCompleted: car.status === 'retired' ? (car.retiredLap ?? 0) : circuit.totalLaps,
+            dnfReason:     car.retiredReason ?? null,
           }));
         addRaceResult(event.season, event.round, finishOrder);
       });

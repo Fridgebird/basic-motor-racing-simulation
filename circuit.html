@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circuit — Simple Motor Racing</title>
+  <style>
+    @font-face {
+      font-family: 'Square';
+      src: url('Square.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Square';
+      src: url('Squareo.ttf') format('truetype');
+      font-weight: normal;
+      font-style: oblique;
+    }
+
+    :root {
+      --bg:      #0d1117;
+      --bg-deep: #080c12;
+      --bg-mid:  #0a0f18;
+      --border:  #1e2f44;
+      --hi:      #ffffff;
+      --mid:     #8ab4d4;
+      --lo:      #4a6a88;
+      --dim:     #2a4055;
+      --accent:  #cc2233;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--mid);
+      font-family: 'Square', 'Courier New', monospace;
+      font-size: 12px;
+      min-height: 100vh;
+    }
+
+    #topbar {
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      height: 44px;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-bottom: 2px solid var(--accent);
+    }
+    .b-flat { font-size: 15px; font-weight: normal; color: var(--hi); letter-spacing: 0.04em; flex-shrink: 0; }
+    .b-flat em { font-style: normal; color: var(--mid); }
+    .topbar-nav { display: flex; gap: 16px; margin-left: auto; margin-right: 16px; }
+    .topbar-nav-link { color: var(--lo); text-decoration: none; font-size: 10px; letter-spacing: 0.08em; }
+    .topbar-nav-link:hover { color: var(--mid); }
+
+    #info-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 16px;
+      background: var(--bg-deep);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--lo);
+      letter-spacing: 0.06em;
+    }
+    #event-label { color: var(--mid); }
+
+    #main {
+      padding: 20px 16px;
+      max-width: 760px;
+    }
+
+    .circuit-hero {
+      margin-bottom: 24px;
+    }
+    .circuit-name {
+      font-size: 20px;
+      color: var(--hi);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+    .circuit-location {
+      font-size: 11px;
+      color: var(--lo);
+      letter-spacing: 1px;
+    }
+
+    .info-section {
+      margin-bottom: 20px;
+    }
+    .section-title {
+      font-size: 9px;
+      color: var(--lo);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+      margin-bottom: 10px;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 6px 0;
+    }
+    .stat-label {
+      font-size: 10px;
+      color: var(--lo);
+      letter-spacing: 0.06em;
+      padding: 3px 0;
+    }
+    .stat-value {
+      font-size: 11px;
+      color: var(--hi);
+      padding: 3px 0;
+    }
+    .stat-value.muted { color: var(--mid); }
+    .stat-value.dim   { color: var(--lo); font-style: oblique; }
+
+    .sector-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    .sector-table th {
+      text-align: left;
+      color: var(--lo);
+      font-size: 9px;
+      letter-spacing: 0.10em;
+      padding: 3px 8px;
+      border-bottom: 1px solid var(--border);
+      font-weight: normal;
+    }
+    .sector-table td {
+      padding: 5px 8px;
+      border-bottom: 1px solid var(--dim);
+    }
+    .sector-table td:first-child { color: var(--lo); width: 36px; }
+    .sector-table td.sec-label   { color: var(--hi); }
+    .sector-table td.sec-char    { color: var(--lo); font-size: 10px; }
+
+    .char-power   { color: #e87040; }
+    .char-aero    { color: #40a0e8; }
+    .char-balanced { color: var(--mid); }
+
+    .footer-nav {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 8px 0 12px;
+      border-top: 1px solid var(--border);
+      margin-top: 8px;
+    }
+    .footer-btn {
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      color: var(--lo);
+      font-family: inherit;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      padding: 4px 12px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .footer-btn:hover   { color: var(--mid); border-color: var(--mid); }
+    .footer-btn.primary { color: var(--mid); border-color: var(--lo); }
+    .footer-btn.primary:hover { color: var(--hi); border-color: var(--mid); }
+  </style>
+</head>
+<body>
+
+  <div id="topbar">
+    <div class="b-flat">Simple <em>Motor Racing</em></div>
+    <nav class="topbar-nav">
+      <a href="index.html"     class="topbar-nav-link">← CALENDAR</a>
+      <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
+    </nav>
+  </div>
+
+  <div id="info-bar">
+    <span id="event-label">–</span>
+  </div>
+
+  <div id="main">
+    <div class="circuit-hero">
+      <div class="circuit-name" id="circuit-name">–</div>
+      <div class="circuit-location" id="circuit-location">–</div>
+    </div>
+
+    <div class="info-section">
+      <div class="section-title">Circuit</div>
+      <div class="stat-grid" id="circuit-stats"></div>
+    </div>
+
+    <div class="info-section">
+      <div class="section-title">Sector Characteristics</div>
+      <table class="sector-table" id="sector-table">
+        <thead><tr><th>#</th><th>SECTOR</th><th>CHARACTER</th></tr></thead>
+        <tbody id="sector-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="info-section">
+      <div class="section-title">Strategy Notes</div>
+      <div class="stat-grid" id="strategy-stats"></div>
+    </div>
+
+    <div class="info-section">
+      <div class="section-title">Lap Record</div>
+      <div class="stat-grid" id="lap-record-stats"></div>
+    </div>
+
+    <div class="footer-nav" id="footer-nav"></div>
+  </div>
+
+  <script type="module">
+    import { getCircuit, getEventForRound, getCurrentEvent } from './championship.js';
+    import { CIRCUITS, SEASON_SCHEDULE } from './data.js';
+
+    const params    = new URLSearchParams(location.search);
+    const circuitId = params.get('circuitId');
+    const pSeason   = params.get('season');
+    const pRound    = params.get('round');
+
+    // Resolve circuit — either directly by id, or from season/round
+    let circuit, season, round;
+    if (circuitId && CIRCUITS[circuitId]) {
+      circuit = CIRCUITS[circuitId];
+      // Try to find which round this circuit appears in for the current season
+      const event = getCurrentEvent();
+      season = event.season;
+      const entry = SEASON_SCHEDULE.find(e => e.circuitId === circuitId && e.eventType === 'race');
+      round = entry ? entry.round : null;
+    } else if (pSeason && pRound) {
+      season = parseInt(pSeason, 10);
+      round  = parseInt(pRound,  10);
+      const event = getEventForRound(season, round, 'race');
+      circuit = event ? getCircuit(event) : null;
+    } else {
+      circuit = getCircuit(getCurrentEvent());
+      const event = getCurrentEvent();
+      season = event.season;
+      round  = event.round;
+    }
+
+    if (!circuit) {
+      document.getElementById('main').innerHTML = '<p style="color:var(--lo);font-size:11px">Circuit not found.</p>';
+      return;
+    }
+
+    document.title = `${circuit.name} — Simple Motor Racing`;
+
+    // ── Info bar ────────────────────────────────────────────────────────────────
+    const roundLabel = round ? `R${round} · ` : '';
+    document.getElementById('event-label').textContent =
+      `${roundLabel}${circuit.eventName} — Circuit Guide`;
+
+    // ── Hero ─────────────────────────────────────────────────────────────────────
+    document.getElementById('circuit-name').textContent     = circuit.name;
+    document.getElementById('circuit-location').textContent = circuit.country;
+
+    // ── Circuit stats ────────────────────────────────────────────────────────────
+    const raceDistKm = circuit.lengthKm
+      ? (circuit.lengthKm * circuit.totalLaps).toFixed(0)
+      : null;
+    const lengthStr = circuit.lengthKm
+      ? `${circuit.lengthKm.toFixed(3)} km`
+      : '–';
+    const distStr = raceDistKm
+      ? `${circuit.totalLaps} laps · ${raceDistKm} km`
+      : `${circuit.totalLaps} laps`;
+
+    function abrasiveness(val) {
+      if (val <= 0.30) return 'Smooth';
+      if (val <= 0.60) return 'Moderate';
+      if (val <= 0.80) return 'Aggressive';
+      return 'Destructive';
+    }
+
+    setStats('circuit-stats', [
+      ['Length',          lengthStr],
+      ['Race distance',   distStr],
+      ['Abrasiveness',    abrasiveness(circuit.trackAbrasiveness)],
+    ]);
+
+    // ── Sector characteristics ───────────────────────────────────────────────────
+    const tbody = document.getElementById('sector-tbody');
+    circuit.sectors.forEach(sec => {
+      const char = sectorCharacter(sec);
+      const tr   = document.createElement('tr');
+      tr.innerHTML = `
+        <td>S${sec.id}</td>
+        <td class="sec-label">${sec.label}</td>
+        <td class="sec-char ${char.cls}">${char.text}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // ── Strategy stats ────────────────────────────────────────────────────────────
+    function fuelLoad(burnPerLap) {
+      if (burnPerLap < 1.2)  return 'Low';
+      if (burnPerLap <= 1.35) return 'Moderate';
+      return 'High';
+    }
+
+    setStats('strategy-stats', [
+      ['Fuel load',   fuelLoad(circuit.baseFuelBurnPerLap)],
+      ['Pit lane',    `~${circuit.pitLaneTime}s traversal`],
+    ]);
+
+    // ── Lap record ────────────────────────────────────────────────────────────────
+    setStats('lap-record-stats', [
+      ['Record', `No lap record set — Season ${season ?? 1}`],
+    ]);
+
+    // ── Footer nav ────────────────────────────────────────────────────────────────
+    const footerNav = document.getElementById('footer-nav');
+    const backA = Object.assign(document.createElement('a'), {
+      href: 'index.html', className: 'footer-btn', textContent: '← CALENDAR',
+    });
+    footerNav.appendChild(backA);
+
+    if (round) {
+      const s = season || 1;
+      const qualiA = Object.assign(document.createElement('a'), {
+        href: `qualifying.html?season=${s}&round=${round}`,
+        className: 'footer-btn primary',
+        textContent: 'QUALIFYING →',
+      });
+      const raceA = Object.assign(document.createElement('a'), {
+        href: `race.html?season=${s}&round=${round}`,
+        className: 'footer-btn primary',
+        textContent: 'RACE →',
+      });
+      footerNav.append(qualiA, raceA);
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────────────
+    function setStats(containerId, rows) {
+      const el = document.getElementById(containerId);
+      rows.forEach(([label, value]) => {
+        const lEl = document.createElement('div');
+        lEl.className = 'stat-label';
+        lEl.textContent = label;
+        const vEl = document.createElement('div');
+        vEl.className = 'stat-value muted';
+        vEl.textContent = value;
+        el.append(lEl, vEl);
+      });
+    }
+
+    function sectorCharacter(sec) {
+      const { powerWeight, aeroWeight } = sec;
+      if (powerWeight > aeroWeight * 1.5) return { text: 'Power-biased',   cls: 'char-power' };
+      if (aeroWeight  > powerWeight * 1.5) return { text: 'Corner-biased', cls: 'char-aero' };
+      return { text: 'Balanced', cls: 'char-balanced' };
+    }
+  </script>
+
+</body>
+</html>

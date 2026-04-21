@@ -81,20 +81,12 @@
       padding: 10px 4px 8px;
       border-bottom: 1px solid var(--border);
       margin-bottom: 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
     }
     #season-title {
       font-size: 9px;
       letter-spacing: 3px;
       color: var(--mid);
       text-transform: uppercase;
-    }
-    #season-date-range {
-      font-size: 9px;
-      color: var(--lo);
-      letter-spacing: 1px;
     }
 
     /* ── Calendar table ──────────────────────────────────────────────────────── */
@@ -120,63 +112,83 @@
     }
 
     #calendar-table td {
-      padding: 6px 8px;
+      padding: 8px 8px;
       font-size: 11px;
       white-space: nowrap;
+      vertical-align: middle;
     }
 
     .cal-row {
       border-bottom: 1px solid var(--bg-mid);
     }
 
-    /* Round group separator */
-    .cal-row.round-start td {
-      padding-top: 12px;
-    }
-
-    /* Clickable rows */
-    .cal-row.clickable {
-      cursor: pointer;
-    }
-    .cal-row.clickable:hover td {
-      background: var(--bg-mid);
-    }
-
-    .cal-row.today td { background: rgba(138, 180, 212, 0.06); }
-    .cal-row.today.clickable:hover td { background: rgba(138, 180, 212, 0.12); }
-
     /* Column widths */
-    .cal-round   { width: 36px;  color: var(--lo); }
-    .cal-event   { width: 90px;  }
-    .cal-circuit { width: 160px; color: var(--hi); }
-    .cal-country { width: 110px; color: var(--lo); }
-    .cal-date    { width: 80px;  color: var(--lo); }
-    .cal-status  { width: 120px; text-align: right; }
+    .cal-round   { width: 36px;  color: var(--lo); font-size: 11px; }
+    .cal-event   { min-width: 140px; color: var(--hi); }
+    .cal-circuit { min-width: 120px; color: var(--lo); }
+    .cal-info    { width: 28px; }
+    .cal-actions { width: auto; text-align: right; }
 
-    /* Status badges */
-    .badge {
-      display: inline-block;
-      font-size: 9px;
-      letter-spacing: 1px;
-      padding: 2px 7px;
-      border-radius: 2px;
-      text-transform: uppercase;
-    }
-    .badge-upcoming  { color: var(--dim); border: 1px solid var(--dim); }
-    .badge-today     { color: var(--accent); border: 1px solid var(--accent); }
-    .badge-complete  { color: var(--lo); border: 1px solid var(--dim); }
-    .badge-today::before {
-      content: '▶ ';
-      font-size: 8px;
-    }
+    .event-name  { color: var(--hi); font-size: 11px; }
+    .circuit-name-text { color: var(--lo); font-size: 10px; letter-spacing: 0.05em; }
 
-    /* Event type text */
-    .event-qual { color: var(--lo); }
-    .event-race { color: var(--mid); }
-
-    /* Greyed upcoming rows */
+    /* Upcoming rows */
     .cal-row.upcoming td { color: var(--dim); }
-    .cal-row.upcoming .cal-circuit { color: var(--lo); }
+    .cal-row.upcoming .event-name { color: var(--lo); }
+
+    /* Action buttons */
+    .action-btns {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .btn-cal {
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      color: var(--lo);
+      font-family: inherit;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      padding: 3px 8px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-cal:hover { color: var(--mid); border-color: var(--mid); }
+
+    .btn-watch {
+      color: var(--mid);
+      border-color: var(--lo);
+    }
+    .btn-watch:hover { color: var(--hi); border-color: var(--mid); }
+
+    .btn-info {
+      padding: 3px 6px;
+      color: var(--dim);
+      border-color: var(--dim);
+      font-size: 10px;
+    }
+    .btn-info:hover { color: var(--lo); border-color: var(--lo); }
+
+    .btn-locked {
+      color: var(--dim);
+      border-color: var(--bg-mid);
+      pointer-events: none;
+      cursor: default;
+      opacity: 0.5;
+    }
+
+    /* Separator between quali and race button groups */
+    .btn-separator {
+      display: inline-block;
+      width: 1px;
+      height: 16px;
+      background: var(--border);
+      margin: 0 4px;
+      vertical-align: middle;
+    }
 
     /* ── Dev bar ──────────────────────────────────────────────────────────────── */
     #dev-bar {
@@ -239,7 +251,6 @@
   <!-- ── Season header ────────────────────────────────────────────────────────── -->
   <div id="season-header">
     <span id="season-title">–</span>
-    <span id="season-date-range">–</span>
   </div>
 
   <!-- ── Calendar ─────────────────────────────────────────────────────────────── -->
@@ -250,9 +261,9 @@
           <th class="cal-round">RND</th>
           <th class="cal-event">EVENT</th>
           <th class="cal-circuit">CIRCUIT</th>
-          <th class="cal-country">COUNTRY</th>
-          <th class="cal-date">DATE</th>
-          <th class="cal-status">STATUS</th>
+          <th class="cal-info"></th>
+          <th class="cal-actions">QUALIFYING</th>
+          <th class="cal-actions">RACE</th>
         </tr>
       </thead>
       <tbody id="calendar-body"></tbody>
@@ -266,13 +277,12 @@
       advanceDevEvent, retreatDevEvent, isDevMode, enterDevMode, exitDevMode,
       resetWorld, getEventDate, formatShortDate,
     } from './championship.js';
-    import { SEASON_SCHEDULE } from './data.js';
+    import { SEASON_SCHEDULE, CIRCUITS } from './data.js';
 
     // ── Dev mode entry via ?dev=1 ──────────────────────────────────────────────
     const params = new URLSearchParams(location.search);
     if (params.get('dev') === '1') {
       enterDevMode();
-      // Strip the param from the URL so it doesn't persist visibly
       history.replaceState(null, '', location.pathname);
     }
 
@@ -281,15 +291,10 @@
     const currentEvent = getCurrentEvent();
     const season       = currentEvent.season;
     const schedLen     = SEASON_SCHEDULE.length;
+    const seasonStart  = (season - 1) * schedLen;
 
     // ── Season header ──────────────────────────────────────────────────────────
-    document.getElementById('season-title').textContent =
-      `S${season} · ${2026 + season - 1} Season Calendar`;
-
-    const seasonStart = (season - 1) * schedLen;
-    const seasonEnd   = season * schedLen - 1;
-    document.getElementById('season-date-range').textContent =
-      `${formatShortDate(getEventDate(seasonStart))} – ${formatShortDate(getEventDate(seasonEnd))}`;
+    document.getElementById('season-title').textContent = `Season ${season} — Calendar`;
 
     // ── Dev bar ────────────────────────────────────────────────────────────────
     const devBar = document.getElementById('dev-bar');
@@ -322,58 +327,83 @@
       });
     }
 
-    // ── Build calendar rows ────────────────────────────────────────────────────
+    // ── Build calendar rows (one per round) ───────────────────────────────────
     const tbody = document.getElementById('calendar-body');
-    let prevRound = null;
 
-    SEASON_SCHEDULE.forEach((entry, idx) => {
-      const absoluteDayOffset = seasonStart + idx;
-      const circuit = getCircuit(entry);
-      const dateStr = getEventDate(absoluteDayOffset);
-      const dateLabel = formatShortDate(dateStr);
+    // Group schedule by round
+    const rounds = [];
+    SEASON_SCHEDULE.forEach(entry => {
+      let round = rounds.find(r => r.round === entry.round);
+      if (!round) {
+        round = { round: entry.round, circuitId: entry.circuitId, quali: null, race: null };
+        rounds.push(round);
+      }
+      if (entry.eventType === 'qualifying') round.quali = entry;
+      else round.race = entry;
+    });
 
-      // Determine status
-      let status, badgeClass, rowClass;
-      if (absoluteDayOffset < todayOffset) {
-        status = 'COMPLETE';
-        badgeClass = 'badge-complete';
-        rowClass   = 'complete';
-      } else if (absoluteDayOffset === todayOffset) {
-        status = 'TODAY';
-        badgeClass = 'badge-today';
-        rowClass   = 'today';
-      } else {
-        status = 'UPCOMING';
-        badgeClass = 'badge-upcoming';
-        rowClass   = 'upcoming';
+    rounds.forEach(roundData => {
+      const { round, circuitId } = roundData;
+      const circuit = CIRCUITS[circuitId];
+
+      const qualiIdx    = SEASON_SCHEDULE.findIndex(e => e.round === round && e.eventType === 'qualifying');
+      const raceIdx     = SEASON_SCHEDULE.findIndex(e => e.round === round && e.eventType === 'race');
+      const qualiOffset = seasonStart + qualiIdx;
+      const raceOffset  = seasonStart + raceIdx;
+
+      const qualiAvail = qualiOffset < todayOffset;
+      const raceAvail  = raceOffset  < todayOffset;
+      // Also allow access on the exact day
+      const qualiToday = qualiOffset === todayOffset;
+      const raceToday  = raceOffset  === todayOffset;
+
+      const qualiUnlocked = qualiAvail || qualiToday;
+      const raceUnlocked  = raceAvail  || raceToday;
+
+      const isUpcoming = !qualiUnlocked;
+
+      // Build button HTML
+      function btn(label, href, isWatch, unlocked) {
+        if (!unlocked) {
+          return `<span class="btn-cal btn-locked">${label}</span>`;
+        }
+        const cls = isWatch ? 'btn-cal btn-watch' : 'btn-cal';
+        return `<a href="${href}" class="${cls}">${label}</a>`;
       }
 
-      const isClickable = absoluteDayOffset <= todayOffset;
-      const isRoundStart = entry.round !== prevRound;
-      prevRound = entry.round;
-
-      const href = entry.eventType === 'qualifying'
-        ? `qualifying.html?season=${season}&round=${entry.round}`
-        : `race.html?season=${season}&round=${entry.round}`;
+      const qualiResultHref = `results.html?season=${season}&round=${round}&type=qualifying`;
+      const qualiWatchHref  = `qualifying.html?season=${season}&round=${round}`;
+      const raceResultHref  = `results.html?season=${season}&round=${round}&type=race`;
+      const raceWatchHref   = `race.html?season=${season}&round=${round}`;
+      const circuitHref     = `circuit.html?circuitId=${circuitId}`;
 
       const tr = document.createElement('tr');
-      tr.className = `cal-row ${rowClass}${isClickable ? ' clickable' : ''}${isRoundStart ? ' round-start' : ''}`;
-
-      const eventLabel = entry.eventType === 'qualifying' ? 'Qualifying' : 'Race';
-      const eventClass = entry.eventType === 'qualifying' ? 'event-qual' : 'event-race';
+      tr.className = `cal-row${isUpcoming ? ' upcoming' : ''}`;
 
       tr.innerHTML = `
-        <td class="cal-round">${isRoundStart ? `R${entry.round}` : ''}</td>
-        <td class="cal-event ${eventClass}">${eventLabel}</td>
-        <td class="cal-circuit">${circuit.name}</td>
-        <td class="cal-country">${circuit.country}</td>
-        <td class="cal-date">${dateLabel}</td>
-        <td class="cal-status"><span class="badge ${badgeClass}">${status}</span></td>
+        <td class="cal-round">R${round}</td>
+        <td class="cal-event">
+          <div class="event-name">${circuit.eventName}</div>
+        </td>
+        <td class="cal-circuit">
+          <span class="circuit-name-text">${circuit.name}</span>
+        </td>
+        <td class="cal-info">
+          <a href="${circuitHref}" class="btn-cal btn-info" title="Circuit info">ⓘ</a>
+        </td>
+        <td class="cal-actions">
+          <div class="action-btns">
+            ${btn('RESULT', qualiResultHref, false, qualiAvail)}
+            ${btn('WATCH', qualiWatchHref, true, qualiUnlocked)}
+          </div>
+        </td>
+        <td class="cal-actions">
+          <div class="action-btns">
+            ${btn('RESULT', raceResultHref, false, raceAvail)}
+            ${btn('WATCH', raceWatchHref, true, raceUnlocked)}
+          </div>
+        </td>
       `;
-
-      if (isClickable) {
-        tr.addEventListener('click', () => { window.location.href = href; });
-      }
 
       tbody.appendChild(tr);
     });

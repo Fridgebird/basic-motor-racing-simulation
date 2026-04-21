@@ -267,6 +267,73 @@ export function hasRaceResult(season, round) {
   return !!(state.seasons[season] && state.seasons[season].races[round]);
 }
 
+// ─── Silent result computation ────────────────────────────────────────────────
+
+/**
+ * Ensure all past race and qualifying results are cached in localStorage.
+ * Safe to call on any page — idempotent (skips already-cached rounds).
+ * Never computes today's or future events, so it cannot spoil upcoming races.
+ *
+ * @param {number} season
+ */
+export async function ensurePastResultsCached(season) {
+  const todayOffset = getTodayDayOffset();
+  const seasonStart = (season - 1) * SEASON_SCHEDULE.length;
+
+  for (let idx = 0; idx < SEASON_SCHEDULE.length; idx++) {
+    const entry     = SEASON_SCHEDULE[idx];
+    const absOffset = seasonStart + idx;
+    if (absOffset >= todayOffset) break;   // skip today and future
+
+    const event   = getEventForRound(season, entry.round, entry.eventType);
+    const circuit = CIRCUITS[entry.circuitId];
+    const seed    = getSeedForEvent(event, getWorldSeed());
+
+    if (entry.eventType === 'qualifying') {
+      if (!loadQualiResults(season, entry.round)) {
+        const { initRace }                         = await import('./state.js');
+        const { runQualifyingSession, setCurrentCircuit } = await import('./simulation.js');
+        setCurrentCircuit(circuit);
+        const rng     = initRace(seed, null, circuit);
+        const results = await runQualifyingSession(rng, circuit);
+        saveQualiResults(season, entry.round, results);
+      }
+    } else {
+      if (!hasRaceResult(season, entry.round)) {
+        const qualiResults = loadQualiResults(season, entry.round);
+        const { initRace, cars }                              = await import('./state.js');
+        const { runRace, initStrategies, setCurrentCircuit } = await import('./simulation.js');
+        setCurrentCircuit(circuit);
+        const rng = initRace(seed, qualiResults, circuit);
+        initStrategies(rng);
+        runRace(rng);
+        const finishers = cars.filter(c => c.status !== 'retired')
+                              .sort((a, b) => a.position - b.position);
+        const leader = finishers[0];
+        const finishOrder = [...cars]
+          .sort((a, b) => {
+            if (a.status === 'retired' && b.status !== 'retired') return 1;
+            if (b.status === 'retired' && a.status !== 'retired') return -1;
+            return a.position - b.position;
+          })
+          .map(car => ({
+            driverName:    car.driver.name,
+            teamId:        car.team.id,
+            position:      car.position,
+            retired:       car.status === 'retired',
+            gap:           (car.status !== 'retired' && leader)
+                             ? +(car.cumulativeTime - leader.cumulativeTime).toFixed(3)
+                             : null,
+            stops:         car.stopsMade,
+            lapsCompleted: car.status === 'retired' ? (car.retiredLap ?? 0) : circuit.totalLaps,
+            dnfReason:     car.retiredReason ?? null,
+          }));
+        addRaceResult(season, entry.round, finishOrder);
+      }
+    }
+  }
+}
+
 // ─── Championship state localStorage ─────────────────────────────────────────
 
 const CHAMP_KEY = 'smr_championship';

@@ -519,8 +519,10 @@
       // Run session with animation
       qualiResults = await runQualifyingSessionAnimated(rng, circuit);
 
-      // Persist
-      saveQualiResults(event.season, event.round, qualiResults);
+      // Persist (guard: don't overwrite a silently-computed result — they'd be identical)
+      if (!loadQualiResults(event.season, event.round)) {
+        saveQualiResults(event.season, event.round, qualiResults);
+      }
 
       sessionDone              = true;
       paused                   = false;
@@ -554,7 +556,9 @@
 
       const rng = initRace(activeSeed, null, circuit);
       qualiResults = await runQualifyingSessionAnimated(rng, circuit);
-      saveQualiResults(event.season, event.round, qualiResults);
+      if (!loadQualiResults(event.season, event.round)) {
+        saveQualiResults(event.season, event.round, qualiResults);
+      }
 
       sessionDone              = true;
       paused                   = false;

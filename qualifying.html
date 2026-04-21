@@ -391,7 +391,7 @@
     import { setCurrentCircuit, runQualifyingSession, simulateQualiLap } from './simulation.js';
     import {
       getCurrentEvent, getCircuit, getSeedForEvent, getEventForRound,
-      saveQualiResults, loadQualiResults,
+      saveQualiResults, loadQualiResults, resetWorld,
       advanceDevEvent, retreatDevEvent, isDevMode, enterDevMode, exitDevMode,
       getWorldSeed, setWorldSeed, getTodayDayOffset, getEventDate, formatShortDate,
     } from './championship.js';
@@ -436,12 +436,18 @@
         <button id="db-next" style="padding:2px 8px">NEXT ▶</button>
         <span style="color:#2a4055">KEY:</span>
         <input id="db-seed" type="number" value="${worldSeed}" style="width:80px;background:#080c12;color:#8ab4d4;border:1px solid #1e2f44;font-family:inherit;font-size:11px;padding:2px 4px;">
-        <button id="db-exit" style="margin-left:auto;padding:2px 8px;color:#cc2233;border-color:#cc2233">EXIT DEV</button>
+        <button id="db-reset" style="padding:2px 8px;color:#cc2233;border-color:#cc2233">RESET WORLD</button>
+        <button id="db-exit" style="padding:2px 8px;color:#cc2233;border-color:#cc2233">EXIT DEV</button>
       `;
       document.getElementById('topbar').insertAdjacentElement('afterend', devBar);
       devBar.querySelector('#db-prev').addEventListener('click', () => { retreatDevEvent(); location.reload(); });
       devBar.querySelector('#db-next').addEventListener('click', () => { advanceDevEvent(); location.reload(); });
       devBar.querySelector('#db-seed').addEventListener('change', e => { setWorldSeed(parseInt(e.target.value, 10) || 0); location.reload(); });
+      devBar.querySelector('#db-reset').addEventListener('click', () => {
+        if (confirm('Clear all race and qualifying results? This cannot be undone.')) {
+          resetWorld(); location.reload();
+        }
+      });
       devBar.querySelector('#db-exit').addEventListener('click', () => { exitDevMode(); location.href = 'index.html'; });
     }
 

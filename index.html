@@ -232,7 +232,8 @@
     <button id="dev-next">NEXT ▶</button>
     <span class="dev-label">KEY:</span>
     <input type="number" id="world-seed-input">
-    <button id="dev-exit" style="margin-left:8px;color:#cc2233;border-color:#cc2233">EXIT DEV</button>
+    <button id="dev-reset" style="margin-left:8px;color:#cc2233;border-color:#cc2233">RESET WORLD</button>
+    <button id="dev-exit" style="color:#cc2233;border-color:#cc2233">EXIT DEV</button>
   </div>
 
   <!-- ── Season header ────────────────────────────────────────────────────────── -->
@@ -263,7 +264,7 @@
       getCurrentEvent, getCircuit, getEventForRound,
       getTodayDayOffset, getWorldSeed, setWorldSeed,
       advanceDevEvent, retreatDevEvent, isDevMode, enterDevMode, exitDevMode,
-      getEventDate, formatShortDate,
+      resetWorld, getEventDate, formatShortDate,
     } from './championship.js';
     import { SEASON_SCHEDULE } from './data.js';
 
@@ -310,6 +311,11 @@
       document.getElementById('world-seed-input').addEventListener('change', e => {
         setWorldSeed(parseInt(e.target.value, 10) || 0);
         location.reload();
+      });
+      document.getElementById('dev-reset').addEventListener('click', () => {
+        if (confirm('Clear all race and qualifying results? This cannot be undone.')) {
+          resetWorld(); location.reload();
+        }
       });
       document.getElementById('dev-exit').addEventListener('click', () => {
         exitDevMode(); location.reload();

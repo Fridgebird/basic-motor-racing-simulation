@@ -160,6 +160,21 @@ export function retreatDevEvent() {
   localStorage.setItem('smr_dev_today', String(cur - 1));
 }
 
+/**
+ * Wipe all race results and qualifying results from localStorage.
+ * Leaves dev mode state (smr_dev_mode, smr_dev_today, smr_world_seed) intact.
+ * Used by the dev bar "RESET WORLD" button after simulation tuning.
+ */
+export function resetWorld() {
+  localStorage.removeItem('smr_championship');
+  const toRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('smr_quali_')) toRemove.push(key);
+  }
+  toRemove.forEach(k => localStorage.removeItem(k));
+}
+
 // ─── Points & Results ─────────────────────────────────────────────────────────
 
 /**

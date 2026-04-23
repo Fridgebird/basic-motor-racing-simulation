@@ -178,8 +178,7 @@
   <div id="topbar">
     <div class="b-flat">Simple <em>Motor Racing</em></div>
     <nav class="topbar-nav">
-      <a href="index.html"     class="topbar-nav-link">← CALENDAR</a>
-      <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
+      <a href="index.html" class="topbar-nav-link">← CALENDAR</a>
     </nav>
   </div>
 
@@ -223,6 +222,7 @@
     import { getCircuit, getEventForRound, getCurrentEvent } from './championship.js';
     import { CIRCUITS, SEASON_SCHEDULE } from './data.js';
 
+    (async () => {
     const params    = new URLSearchParams(location.search);
     const circuitId = params.get('circuitId');
     const pSeason   = params.get('season');
@@ -361,6 +361,7 @@
       if (aeroWeight  > powerWeight * 1.5) return { text: 'Corner-biased', cls: 'char-aero' };
       return { text: 'Balanced', cls: 'char-balanced' };
     }
+    })();
   </script>
 
 </body>

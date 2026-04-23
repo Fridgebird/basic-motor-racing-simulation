@@ -601,8 +601,7 @@
   <div id="topbar">
     <div class="b-flat">Simple <em>Motor Racing</em></div>
     <nav class="topbar-nav">
-      <a href="index.html"      class="topbar-nav-link">← CALENDAR</a>
-      <a href="standings.html"  class="topbar-nav-link" id="nav-standings">STANDINGS</a>
+      <a href="index.html" class="topbar-nav-link">← CALENDAR</a>
     </nav>
     <div class="topbar-meta">
       <div id="timing-status">PRE-RACE</div>
@@ -823,8 +822,6 @@
     const btnReset   = document.getElementById('btn-reset');
     const seedInput  = document.getElementById('seed-input');
     const speedSel   = document.getElementById('speed-select');
-    const navStandings = document.getElementById('nav-standings');
-
     // Apply day-gating to START RACE button
     if (!isRaceAvailable && !hasRaceResult(event.season, event.round)) {
       btnStart.disabled = true;
@@ -896,9 +893,6 @@
       btnReset.disabled        = false;
       seedInput.disabled       = true;
 
-      // Disable STANDINGS during active race
-      navStandings.classList.add('disabled');
-
       renderer.isLive = true;
       renderer.render();
       scheduleNextSector();
@@ -927,9 +921,6 @@
       paused = false;
 
       btnPause.disabled = false;
-
-      // Disable STANDINGS during replay
-      navStandings.classList.add('disabled');
 
       renderer.isLive = true;
       renderer.render();
@@ -989,9 +980,6 @@
         btnStart.disabled = true;
       }
 
-      // Re-enable STANDINGS
-      navStandings.classList.remove('disabled');
-
       renderer.isLive = false;
       renderer.reset();
       updateStepButtons();
@@ -1006,9 +994,6 @@
       renderer.render();
       updateStepButtons();
       console.log('Race complete. Full log available at: window.raceLog');
-
-      // Re-enable STANDINGS
-      navStandings.classList.remove('disabled');
 
       // Save championship result
       import('./state.js').then(({ cars }) => {

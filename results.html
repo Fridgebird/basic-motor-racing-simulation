@@ -76,14 +76,31 @@
 
     #main {
       padding: 16px 16px;
-      max-width: 760px;
+      max-width: 900px;
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
     }
 
+    #result-col  { flex: 1; min-width: 0; }
+    #champ-col   { width: 260px; flex-shrink: 0; }
+
+    .panel-title {
+      font-size: 9px;
+      color: var(--lo);
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+      margin-bottom: 10px;
+    }
+
+    /* ── Result table ── */
     .results-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 11px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
     .results-table th {
       text-align: left;
@@ -99,15 +116,15 @@
       border-bottom: 1px solid var(--dim);
       color: var(--mid);
     }
-    .col-pos        { color: var(--lo); width: 32px; }
+    .col-pos        { color: var(--lo); width: 28px; }
     .col-pos.p1     { color: var(--hi); }
     .col-pos.dnf    { color: var(--dim); font-size: 10px; }
     .col-name       { color: var(--hi); }
     .col-team       { color: var(--lo); }
     .col-gap        { font-variant-numeric: tabular-nums; }
     .col-gap.leader { color: var(--lo); }
-    .col-stops      { width: 48px; text-align: center; color: var(--lo); }
-    .col-status     { width: 60px; }
+    .col-stops      { width: 44px; text-align: center; color: var(--lo); }
+    .col-status     { width: 56px; }
     .col-time       { font-variant-numeric: tabular-nums; }
     .col-time.pole  { color: var(--hi); }
 
@@ -125,6 +142,35 @@
 
     .no-time { color: var(--dim); font-size: 10px; }
 
+    /* ── Championship standings panel ── */
+    .standings-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      margin-bottom: 16px;
+    }
+    .standings-table th {
+      text-align: left;
+      color: var(--lo);
+      font-size: 9px;
+      letter-spacing: 0.10em;
+      padding: 3px 4px;
+      border-bottom: 1px solid var(--border);
+      font-weight: normal;
+    }
+    .standings-table td {
+      padding: 3px 4px;
+      border-bottom: 1px solid var(--dim);
+      color: var(--mid);
+      font-size: 10px;
+    }
+    .standings-table td.s-pos    { color: var(--lo); width: 22px; }
+    .standings-table td.s-pos.p1 { color: var(--hi); }
+    .standings-table td.s-name   { color: var(--hi); }
+    .standings-table td.s-pts    { color: var(--hi); text-align: right; }
+    .standings-table td.s-w      { color: var(--lo); text-align: right; width: 24px; }
+
+    /* ── Footer ── */
     .results-footer {
       display: flex;
       gap: 12px;
@@ -153,8 +199,7 @@
   <div id="topbar">
     <div class="b-flat">Simple <em>Motor Racing</em></div>
     <nav class="topbar-nav">
-      <a href="index.html"     class="topbar-nav-link">← CALENDAR</a>
-      <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
+      <a href="index.html" class="topbar-nav-link">← CALENDAR</a>
     </nav>
   </div>
 
@@ -164,82 +209,268 @@
 
   <div id="loading-msg">Computing results…</div>
   <div id="main" style="display:none">
-    <div id="results-container"></div>
-    <div class="results-footer" id="results-footer"></div>
+    <div id="result-col">
+      <div id="results-container"></div>
+      <div class="results-footer" id="results-footer"></div>
+    </div>
+    <div id="champ-col" style="display:none">
+      <div id="champ-panel"></div>
+    </div>
   </div>
 
   <script type="module">
     import {
       getCircuit, getEventForRound, ensurePastResultsCached,
-      hasRaceResult, loadQualiResults, getStandings,
+      hasRaceResult, loadQualiResults, getStandingsThroughRound,
     } from './championship.js';
     import { TEAMS } from './data.js';
+    import { initRace, cars } from './state.js';
+    import { runRace, initStrategies, setCurrentCircuit, runQualifyingSession } from './simulation.js';
 
-    const params  = new URLSearchParams(location.search);
-    const season  = parseInt(params.get('season'), 10) || 1;
-    const round   = parseInt(params.get('round'),  10) || 1;
-    const type    = params.get('type') === 'qualifying' ? 'qualifying' : 'race';
+    // Wrap in async IIFE so early exits don't use return at module level
+    (async () => {
+      const params  = new URLSearchParams(location.search);
+      const season  = parseInt(params.get('season'), 10) || 1;
+      const round   = parseInt(params.get('round'),  10) || 1;
+      const type    = params.get('type') === 'qualifying' ? 'qualifying' : 'race';
 
-    const event   = getEventForRound(season, round, type);
-    if (!event) {
-      document.getElementById('loading-msg').textContent = 'Event not found.';
-      return;
-    }
-    const circuit = getCircuit(event);
+      const event = getEventForRound(season, round, type);
+      if (!event) {
+        document.getElementById('loading-msg').textContent = 'Event not found.';
+        return;
+      }
+      const circuit = getCircuit(event);
 
-    const typeLabel = type === 'qualifying' ? 'Qualifying Result' : 'Race Result';
-    document.getElementById('event-label').textContent =
-      `S${season} R${round} · ${circuit.eventName} — ${typeLabel}`;
-    document.title = `${circuit.eventName} ${typeLabel} — Simple Motor Racing`;
+      const typeLabel = type === 'qualifying' ? 'Qualifying Result' : 'Race Result';
+      document.getElementById('event-label').textContent =
+        `S${season} R${round} · ${circuit.eventName} — ${typeLabel}`;
+      document.title = `${circuit.eventName} ${typeLabel} — Simple Motor Racing`;
 
-    const teamColours = Object.fromEntries(TEAMS.map(t => [t.id, t.colour]));
-    const teamNames   = Object.fromEntries(TEAMS.map(t => [t.id, t.name]));
+      const simFns = { initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession };
 
-    // Engine name lookup (for display only)
-    const engByTeam = {};
-    TEAMS.forEach(t => { engByTeam[t.id] = t.engine; });
-    const engineNames = { honda:'Honda', ferrari:'Ferrari', megatron:'Megatron', ford:'Ford' };
+      // Compute any missing past results
+      await ensurePastResultsCached(season, simFns);
 
-    function teamDisplay(teamId) {
-      const base = (teamNames[teamId] || teamId).toUpperCase();
-      const eng  = engineNames[engByTeam[teamId]];
-      if (!eng) return base;
-      // Deduplicate Ferrari-Ferrari
-      const engUp = eng.toUpperCase();
-      return base.includes(engUp) ? base : `${base}-${engUp}`;
-    }
+      document.getElementById('loading-msg').style.display = 'none';
+      document.getElementById('main').style.display        = 'flex';
 
-    // ── Compute any missing past results ──────────────────────────────────────
-    await ensurePastResultsCached(season);
+      const container = document.getElementById('results-container');
+      const footer    = document.getElementById('results-footer');
 
-    document.getElementById('loading-msg').style.display = 'none';
-    document.getElementById('main').style.display = 'block';
+      const teamColours = Object.fromEntries(TEAMS.map(t => [t.id, t.colour]));
+      const teamNames   = Object.fromEntries(TEAMS.map(t => [t.id, t.name]));
+      const engByTeam   = Object.fromEntries(TEAMS.map(t => [t.id, t.engine]));
+      const engineNames = { honda: 'Honda', ferrari: 'Ferrari', megatron: 'Megatron', ford: 'Ford' };
 
-    const container = document.getElementById('results-container');
-    const footer    = document.getElementById('results-footer');
+      function teamDisplay(teamId) {
+        const base = (teamNames[teamId] || teamId).toUpperCase();
+        const eng  = engineNames[engByTeam[teamId]];
+        if (!eng) return base;
+        const engUp = eng.toUpperCase();
+        return base.includes(engUp) ? base : `${base}-${engUp}`;
+      }
 
-    // ── Render ─────────────────────────────────────────────────────────────────
-    if (type === 'qualifying') {
-      renderQuali();
-    } else {
-      renderRace();
-    }
+      // ── Render result ────────────────────────────────────────────────────────
+      if (type === 'qualifying') {
+        renderQuali(container, teamColours, teamDisplay);
+      } else {
+        renderRace(container, teamColours, teamDisplay);
+        renderChampionship(season, round, teamColours, teamNames);
+      }
 
-    // ── Footer ──────────────────────────────────────────────────────────────────
-    const backA = Object.assign(document.createElement('a'), {
-      href: 'index.html', className: 'footer-btn', textContent: '← CALENDAR',
-    });
-    const watchLabel = type === 'qualifying' ? 'WATCH QUALIFYING →' : 'WATCH RACE →';
-    const watchHref  = type === 'qualifying'
-      ? `qualifying.html?season=${season}&round=${round}`
-      : `race.html?season=${season}&round=${round}`;
-    const watchA = Object.assign(document.createElement('a'), {
-      href: watchHref, className: 'footer-btn primary', textContent: watchLabel,
-    });
-    footer.append(backA, watchA);
+      // ── Footer ───────────────────────────────────────────────────────────────
+      const backA = Object.assign(document.createElement('a'), {
+        href: 'index.html', className: 'footer-btn', textContent: '← CALENDAR',
+      });
+      const watchLabel = type === 'qualifying' ? 'WATCH QUALIFYING →' : 'WATCH RACE →';
+      const watchHref  = type === 'qualifying'
+        ? `qualifying.html?season=${season}&round=${round}`
+        : `race.html?season=${season}&round=${round}`;
+      const watchA = Object.assign(document.createElement('a'), {
+        href: watchHref, className: 'footer-btn primary', textContent: watchLabel,
+      });
+      footer.append(backA, watchA);
 
-    // ── Race result table ──────────────────────────────────────────────────────
-    function renderRace() {
+      // ── Race result table ────────────────────────────────────────────────────
+      function renderRace(el, colours, displayTeam) {
+        if (!hasRaceResult(season, round)) {
+          el.innerHTML = '<p style="color:var(--lo);font-size:11px;padding:20px 0">No result available yet.</p>';
+          return;
+        }
+
+        const { races }  = { races: getStandingsThroughRound(season, round) };
+        // Use stored race entry directly via championship state
+        // getStandingsThroughRound returns computed totals, not raw race entries.
+        // We need the raw finishOrder for the table — load it from getStandings.
+        const { getStandings } = { getStandings: null }; // not available, use workaround below
+        // Actually load raw from localStorage via the state we have:
+        // We'll call getStandingsThroughRound which doesn't return raw races.
+        // Instead, use the fact that ensurePastResultsCached has stored via addRaceResult.
+        // We import getStandings above — but we didn't import it. Let's do it.
+        // Refactor: import getStandings and use races[round] from it.
+        el.innerHTML = '<p style="color:var(--lo);font-size:11px;padding:8px 0">Loading…</p>';
+      }
+
+      // ── Qualifying result table ──────────────────────────────────────────────
+      function renderQuali(el, colours, displayTeam) {
+        const results = loadQualiResults(season, round);
+        if (!results) {
+          el.innerHTML = '<p style="color:var(--lo);font-size:11px;padding:20px 0">No result available yet.</p>';
+          return;
+        }
+
+        const table = buildTable(
+          ['POS', 'DRIVER', 'TEAM', 'LAP TIME', 'GAP'],
+          ['col-pos', 'col-name', 'col-team', 'col-time', 'col-gap']
+        );
+        const tbody = table.querySelector('tbody');
+
+        const sorted = [...results].sort((a, b) => {
+          if (a.retired && !b.retired) return 1;
+          if (!a.retired && b.retired) return -1;
+          return (a.gridPosition || 99) - (b.gridPosition || 99);
+        });
+
+        const poleEntry = sorted.find(r => !r.retired && r.lapTime);
+        const poleTime  = poleEntry ? poleEntry.lapTime : null;
+
+        sorted.forEach(r => {
+          const colour   = colours[r.teamId] || '#888';
+          const pos      = r.retired ? '—' : r.gridPosition;
+          const pCls     = r.retired ? 'dnf' : (r.gridPosition === 1 ? 'p1' : '');
+          let timeHtml   = '<span class="no-time">NO TIME</span>';
+          let gapStr     = '';
+          if (!r.retired && r.lapTime) {
+            const m  = Math.floor(r.lapTime / 60);
+            const s  = (r.lapTime % 60).toFixed(3).padStart(6, '0');
+            timeHtml = `${m}:${s}`;
+            gapStr   = r.gridPosition === 1 ? '—' : (poleTime ? `+${(r.lapTime - poleTime).toFixed(3)}` : '');
+          }
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="col-pos ${pCls}">${pos}</td>
+            <td class="col-name"><span class="team-dot" style="background:${colour}"></span>${r.driverName.toUpperCase()}</td>
+            <td class="col-team">${displayTeam(r.teamId)}</td>
+            <td class="col-time${r.gridPosition === 1 && !r.retired ? ' pole' : ''}">${timeHtml}</td>
+            <td class="col-gap${r.gridPosition === 1 ? ' leader' : ''}">${gapStr}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        el.appendChild(table);
+      }
+
+      // ── Championship panel ───────────────────────────────────────────────────
+      function renderChampionship(season, round, colours, names) {
+        const { drivers, constructors } = getStandingsThroughRound(season, round);
+        if (!drivers.length) return;
+
+        const panel = document.getElementById('champ-panel');
+        document.getElementById('champ-col').style.display = 'block';
+
+        // Drivers
+        const dTitle = document.createElement('div');
+        dTitle.className = 'panel-title';
+        dTitle.textContent = `Drivers · After R${round}`;
+        panel.appendChild(dTitle);
+
+        const dTable = buildStandingsTable(['POS', 'DRIVER', 'PTS', 'W']);
+        const dTbody = dTable.querySelector('tbody');
+        drivers.forEach((d, i) => {
+          const colour = colours[d.teamId] || '#888';
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="s-pos${i === 0 ? ' p1' : ''}">${i + 1}</td>
+            <td class="s-name"><span class="team-dot" style="background:${colour}"></span>${d.name.toUpperCase()}</td>
+            <td class="s-pts">${d.points}</td>
+            <td class="s-w">${d.wins}</td>
+          `;
+          dTbody.appendChild(tr);
+        });
+        panel.appendChild(dTable);
+
+        // Constructors
+        if (constructors.length) {
+          const cTitle = document.createElement('div');
+          cTitle.className = 'panel-title';
+          cTitle.textContent = 'Constructors';
+          panel.appendChild(cTitle);
+
+          const cTable = buildStandingsTable(['POS', 'TEAM', 'PTS', 'W']);
+          const cTbody = cTable.querySelector('tbody');
+          constructors.forEach((c, i) => {
+            const colour = colours[c.id] || '#888';
+            const name   = (names[c.id] || c.id).toUpperCase();
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td class="s-pos${i === 0 ? ' p1' : ''}">${i + 1}</td>
+              <td class="s-name"><span class="team-dot" style="background:${colour}"></span>${name}</td>
+              <td class="s-pts">${c.points}</td>
+              <td class="s-w">${c.wins}</td>
+            `;
+            cTbody.appendChild(tr);
+          });
+          panel.appendChild(cTable);
+        }
+      }
+
+      // ── Table helpers ────────────────────────────────────────────────────────
+      function buildTable(headers) {
+        const table = document.createElement('table');
+        table.className = 'results-table';
+        const thead = document.createElement('thead');
+        thead.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+        table.appendChild(thead);
+        table.appendChild(document.createElement('tbody'));
+        return table;
+      }
+
+      function buildStandingsTable(headers) {
+        const table = document.createElement('table');
+        table.className = 'standings-table';
+        const thead = document.createElement('thead');
+        thead.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+        table.appendChild(thead);
+        table.appendChild(document.createElement('tbody'));
+        return table;
+      }
+    })();
+  </script>
+
+  <!-- Race result table — needs getStandings for raw finishOrder -->
+  <script type="module">
+    import {
+      getCircuit, getEventForRound, ensurePastResultsCached,
+      hasRaceResult, getStandings,
+    } from './championship.js';
+    import { TEAMS } from './data.js';
+    import { initRace, cars } from './state.js';
+    import { runRace, initStrategies, setCurrentCircuit, runQualifyingSession } from './simulation.js';
+
+    (async () => {
+      const params = new URLSearchParams(location.search);
+      const season = parseInt(params.get('season'), 10) || 1;
+      const round  = parseInt(params.get('round'),  10) || 1;
+      const type   = params.get('type');
+      if (type !== 'race') return;
+
+      const teamColours = Object.fromEntries(TEAMS.map(t => [t.id, t.colour]));
+      const teamNames   = Object.fromEntries(TEAMS.map(t => [t.id, t.name]));
+      const engByTeam   = Object.fromEntries(TEAMS.map(t => [t.id, t.engine]));
+      const engineNames = { honda: 'Honda', ferrari: 'Ferrari', megatron: 'Megatron', ford: 'Ford' };
+
+      function teamDisplay(teamId) {
+        const base = (teamNames[teamId] || teamId).toUpperCase();
+        const eng  = engineNames[engByTeam[teamId]];
+        if (!eng) return base;
+        const engUp = eng.toUpperCase();
+        return base.includes(engUp) ? base : `${base}-${engUp}`;
+      }
+
+      const simFns = { initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession };
+      await ensurePastResultsCached(season, simFns);
+
+      const container = document.getElementById('results-container');
       if (!hasRaceResult(season, round)) {
         container.innerHTML = '<p style="color:var(--lo);font-size:11px;padding:20px 0">No result available yet.</p>';
         return;
@@ -252,14 +483,14 @@
       const table = document.createElement('table');
       table.className = 'results-table';
       table.innerHTML = `<thead><tr>
-        <th>POS</th><th>DRIVER</th><th>TEAM</th><th>GAP</th><th>STOPS</th><th>STATUS</th>
+        <th>POS</th><th>DRIVER</th><th>TEAM</th><th>GAP</th><th>PIT</th><th>STATUS</th>
       </tr></thead>`;
       const tbody = document.createElement('tbody');
 
       entries.forEach(e => {
         const colour = teamColours[e.teamId] || '#888';
         const pos    = e.retired ? 'R' : e.position;
-        const pCls   = e.retired ? 'col-pos dnf' : (e.position === 1 ? 'col-pos p1' : 'col-pos');
+        const pCls   = e.retired ? 'dnf' : (e.position === 1 ? 'p1' : '');
 
         let gapStr = '';
         if (!e.retired) {
@@ -278,7 +509,7 @@
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="${pCls}">${pos}</td>
+          <td class="col-pos ${pCls}">${pos}</td>
           <td class="col-name"><span class="team-dot" style="background:${colour}"></span>${e.driverName.toUpperCase()}</td>
           <td class="col-team">${teamDisplay(e.teamId)}</td>
           <td class="col-gap${e.position === 1 && !e.retired ? ' leader' : ''}">${gapStr}</td>
@@ -289,62 +520,9 @@
       });
 
       table.appendChild(tbody);
+      container.innerHTML = '';
       container.appendChild(table);
-    }
-
-    // ── Qualifying result table ────────────────────────────────────────────────
-    function renderQuali() {
-      const results = loadQualiResults(season, round);
-      if (!results) {
-        container.innerHTML = '<p style="color:var(--lo);font-size:11px;padding:20px 0">No result available yet.</p>';
-        return;
-      }
-
-      const table = document.createElement('table');
-      table.className = 'results-table';
-      table.innerHTML = `<thead><tr>
-        <th>POS</th><th>DRIVER</th><th>TEAM</th><th>LAP TIME</th><th>GAP</th>
-      </tr></thead>`;
-      const tbody = document.createElement('tbody');
-
-      // Sort by gridPosition, retired at the back
-      const sorted = [...results].sort((a, b) => {
-        if (a.retired && !b.retired) return 1;
-        if (!a.retired && b.retired) return -1;
-        return (a.gridPosition || 99) - (b.gridPosition || 99);
-      });
-
-      const poleEntry = sorted.find(r => !r.retired && r.lapTime);
-      const poleTime  = poleEntry ? poleEntry.lapTime : null;
-
-      sorted.forEach(r => {
-        const colour = teamColours[r.teamId] || '#888';
-        const pos    = r.retired ? '—' : r.gridPosition;
-        const pCls   = r.retired ? 'col-pos dnf' : (r.gridPosition === 1 ? 'col-pos p1' : 'col-pos');
-
-        let timeHtml = '<span class="no-time">NO TIME</span>';
-        let gapStr   = '';
-        if (!r.retired && r.lapTime) {
-          const m   = Math.floor(r.lapTime / 60);
-          const s   = (r.lapTime % 60).toFixed(3).padStart(6, '0');
-          timeHtml  = `${m}:${s}`;
-          gapStr    = r.gridPosition === 1 ? '—' : (poleTime ? `+${(r.lapTime - poleTime).toFixed(3)}` : '');
-        }
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="${pCls}">${pos}</td>
-          <td class="col-name"><span class="team-dot" style="background:${colour}"></span>${r.driverName.toUpperCase()}</td>
-          <td class="col-team">${teamDisplay(r.teamId)}</td>
-          <td class="col-time${r.gridPosition === 1 && !r.retired ? ' pole' : ''}">${timeHtml}</td>
-          <td class="col-gap${r.gridPosition === 1 ? ' leader' : ''}">${gapStr}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      table.appendChild(tbody);
-      container.appendChild(table);
-    }
+    })();
   </script>
 
 </body>

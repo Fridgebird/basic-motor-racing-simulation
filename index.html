@@ -180,6 +180,13 @@
       opacity: 0.5;
     }
 
+    .btn-spoiler {
+      color: var(--lo);
+      border-color: var(--dim);
+      border-style: dashed;
+    }
+    .btn-spoiler:hover { color: var(--mid); border-color: var(--lo); }
+
     /* Separator between quali and race button groups */
     .btn-separator {
       display: inline-block;
@@ -232,9 +239,6 @@
   <!-- ── Topbar ──────────────────────────────────────────────────────────────── -->
   <div id="topbar">
     <div class="b-flat">Simple <em>Motor Racing</em></div>
-    <nav class="topbar-nav">
-      <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
-    </nav>
   </div>
 
   <!-- ── Dev bar ──────────────────────────────────────────────────────────────── -->
@@ -351,24 +355,26 @@
       const qualiOffset = seasonStart + qualiIdx;
       const raceOffset  = seasonStart + raceIdx;
 
-      const qualiAvail = qualiOffset < todayOffset;
-      const raceAvail  = raceOffset  < todayOffset;
-      // Also allow access on the exact day
-      const qualiToday = qualiOffset === todayOffset;
-      const raceToday  = raceOffset  === todayOffset;
-
-      const qualiUnlocked = qualiAvail || qualiToday;
-      const raceUnlocked  = raceAvail  || raceToday;
+      // Unlocked = today or earlier for both Watch and Result
+      const qualiUnlocked = qualiOffset <= todayOffset;
+      const raceUnlocked  = raceOffset  <= todayOffset;
+      const qualiToday    = qualiOffset === todayOffset;
+      const raceToday     = raceOffset  === todayOffset;
 
       const isUpcoming = !qualiUnlocked;
 
       // Build button HTML
-      function btn(label, href, isWatch, unlocked) {
-        if (!unlocked) {
-          return `<span class="btn-cal btn-locked">${label}</span>`;
+      function watchBtn(href, unlocked) {
+        if (!unlocked) return `<span class="btn-cal btn-watch btn-locked">WATCH</span>`;
+        return `<a href="${href}" class="btn-cal btn-watch">WATCH</a>`;
+      }
+      function resultBtn(href, unlocked, isToday) {
+        if (!unlocked) return `<span class="btn-cal btn-locked">RESULT</span>`;
+        if (isToday) {
+          // Spoiler warning for today's result
+          return `<a href="${href}" class="btn-cal btn-spoiler" onclick="return confirm('Show today\\'s result? This contains spoilers.')">RESULT</a>`;
         }
-        const cls = isWatch ? 'btn-cal btn-watch' : 'btn-cal';
-        return `<a href="${href}" class="${cls}">${label}</a>`;
+        return `<a href="${href}" class="btn-cal">RESULT</a>`;
       }
 
       const qualiResultHref = `results.html?season=${season}&round=${round}&type=qualifying`;
@@ -393,14 +399,14 @@
         </td>
         <td class="cal-actions">
           <div class="action-btns">
-            ${btn('RESULT', qualiResultHref, false, qualiAvail)}
-            ${btn('WATCH', qualiWatchHref, true, qualiUnlocked)}
+            ${watchBtn(qualiWatchHref, qualiUnlocked)}
+            ${resultBtn(qualiResultHref, qualiUnlocked, qualiToday)}
           </div>
         </td>
         <td class="cal-actions">
           <div class="action-btns">
-            ${btn('RESULT', raceResultHref, false, raceAvail)}
-            ${btn('WATCH', raceWatchHref, true, raceUnlocked)}
+            ${watchBtn(raceWatchHref, raceUnlocked)}
+            ${resultBtn(raceResultHref, raceUnlocked, raceToday)}
           </div>
         </td>
       `;

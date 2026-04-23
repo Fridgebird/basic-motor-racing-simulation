@@ -274,9 +274,14 @@ export function hasRaceResult(season, round) {
  * Safe to call on any page — idempotent (skips already-cached rounds).
  * Never computes today's or future events, so it cannot spoil upcoming races.
  *
+ * Simulation functions must be passed in from the caller (avoids dynamic imports
+ * and ensures correct module binding for the cars[] live export from state.js).
+ *
  * @param {number} season
+ * @param {{ initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession }} simFns
  */
-export async function ensurePastResultsCached(season) {
+export async function ensurePastResultsCached(season, simFns) {
+  const { initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession } = simFns;
   const todayOffset = getTodayDayOffset();
   const seasonStart = (season - 1) * SEASON_SCHEDULE.length;
 
@@ -291,8 +296,6 @@ export async function ensurePastResultsCached(season) {
 
     if (entry.eventType === 'qualifying') {
       if (!loadQualiResults(season, entry.round)) {
-        const { initRace }                         = await import('./state.js');
-        const { runQualifyingSession, setCurrentCircuit } = await import('./simulation.js');
         setCurrentCircuit(circuit);
         const rng     = initRace(seed, null, circuit);
         const results = await runQualifyingSession(rng, circuit);
@@ -301,8 +304,6 @@ export async function ensurePastResultsCached(season) {
     } else {
       if (!hasRaceResult(season, entry.round)) {
         const qualiResults = loadQualiResults(season, entry.round);
-        const { initRace, cars }                              = await import('./state.js');
-        const { runRace, initStrategies, setCurrentCircuit } = await import('./simulation.js');
         setCurrentCircuit(circuit);
         const rng = initRace(seed, qualiResults, circuit);
         initStrategies(rng);
@@ -332,6 +333,64 @@ export async function ensurePastResultsCached(season) {
       }
     }
   }
+}
+
+/**
+ * Compute championship standings through a specific round.
+ * Used by results.html to show the correct snapshot for any historical race.
+ *
+ * @param {number} season
+ * @param {number} maxRound  — only count races where round <= maxRound
+ * @returns {{ drivers: Array, constructors: Array }}
+ */
+export function getStandingsThroughRound(season, maxRound) {
+  const state = loadChampionshipState();
+  const s     = state.seasons[season] || { races: {} };
+
+  const drivers      = {};
+  const constructors = {};
+
+  Object.entries(s.races).forEach(([roundStr, finishOrder]) => {
+    if (parseInt(roundStr, 10) > maxRound) return;
+
+    // Driver totals
+    finishOrder.forEach(entry => {
+      const pts = entry.points || 0;
+      if (!drivers[entry.driverName]) {
+        drivers[entry.driverName] = { points: 0, wins: 0, podiums: 0, teamId: entry.teamId };
+      }
+      drivers[entry.driverName].points += pts;
+      if (entry.position === 1) drivers[entry.driverName].wins    += 1;
+      if (entry.position <= 3)  drivers[entry.driverName].podiums += 1;
+    });
+
+    // Constructor totals — top 2 scorers per team per race
+    const byTeam = {};
+    finishOrder.forEach(entry => {
+      if (!byTeam[entry.teamId]) byTeam[entry.teamId] = [];
+      byTeam[entry.teamId].push(entry);
+    });
+    Object.entries(byTeam).forEach(([teamId, entries]) => {
+      entries
+        .filter(e => (e.points || 0) > 0)
+        .slice(0, 2)
+        .forEach(e => {
+          if (!constructors[teamId]) constructors[teamId] = { points: 0, wins: 0 };
+          constructors[teamId].points += (e.points || 0);
+          if (e.position === 1) constructors[teamId].wins += 1;
+        });
+    });
+  });
+
+  const driversList = Object.entries(drivers)
+    .map(([name, d]) => ({ name, ...d }))
+    .sort((a, b) => b.points - a.points || b.wins - a.wins);
+
+  const constructorsList = Object.entries(constructors)
+    .map(([id, c]) => ({ id, ...c }))
+    .sort((a, b) => b.points - a.points || b.wins - a.wins);
+
+  return { drivers: driversList, constructors: constructorsList };
 }
 
 // ─── Championship state localStorage ─────────────────────────────────────────

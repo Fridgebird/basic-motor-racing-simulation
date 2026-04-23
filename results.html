@@ -221,13 +221,12 @@
   <script type="module">
     import {
       getCircuit, getEventForRound, ensurePastResultsCached,
-      hasRaceResult, loadQualiResults, getStandingsThroughRound,
+      hasRaceResult, loadQualiResults, getStandings, getStandingsThroughRound,
     } from './championship.js';
     import { TEAMS } from './data.js';
     import { initRace, cars } from './state.js';
     import { runRace, initStrategies, setCurrentCircuit, runQualifyingSession } from './simulation.js';
 
-    // Wrap in async IIFE so early exits don't use return at module level
     (async () => {
       const params  = new URLSearchParams(location.search);
       const season  = parseInt(params.get('season'), 10) || 1;
@@ -247,8 +246,6 @@
       document.title = `${circuit.eventName} ${typeLabel} — Simple Motor Racing`;
 
       const simFns = { initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession };
-
-      // Compute any missing past results
       await ensurePastResultsCached(season, simFns);
 
       document.getElementById('loading-msg').style.display = 'none';
@@ -298,17 +295,49 @@
           return;
         }
 
-        const { races }  = { races: getStandingsThroughRound(season, round) };
-        // Use stored race entry directly via championship state
-        // getStandingsThroughRound returns computed totals, not raw race entries.
-        // We need the raw finishOrder for the table — load it from getStandings.
-        const { getStandings } = { getStandings: null }; // not available, use workaround below
-        // Actually load raw from localStorage via the state we have:
-        // We'll call getStandingsThroughRound which doesn't return raw races.
-        // Instead, use the fact that ensurePastResultsCached has stored via addRaceResult.
-        // We import getStandings above — but we didn't import it. Let's do it.
-        // Refactor: import getStandings and use races[round] from it.
-        el.innerHTML = '<p style="color:var(--lo);font-size:11px;padding:8px 0">Loading…</p>';
+        const { races } = getStandings(season);
+        const entries   = races[round];
+        if (!entries) {
+          el.innerHTML = '<p style="color:var(--lo);font-size:11px;padding:20px 0">No result available yet.</p>';
+          return;
+        }
+
+        const table = buildTable(['POS', 'DRIVER', 'TEAM', 'GAP', 'PIT', 'STATUS']);
+        const tbody = table.querySelector('tbody');
+
+        entries.forEach(e => {
+          const colour = colours[e.teamId] || '#888';
+          const pos    = e.retired ? 'R' : e.position;
+          const pCls   = e.retired ? 'dnf' : (e.position === 1 ? 'p1' : '');
+
+          let gapStr = '';
+          if (!e.retired) {
+            gapStr = e.position === 1 ? '—' : (e.gap != null ? `+${e.gap.toFixed(3)}` : '');
+          } else {
+            gapStr = e.lapsCompleted != null ? `DNF L${e.lapsCompleted}` : 'DNF';
+          }
+
+          const stops = e.stops != null ? e.stops : '–';
+          let statusHtml = '';
+          if (e.retired) {
+            const cls = e.dnfReason === 'crash' ? 'status-crash' : 'status-mech';
+            const lbl = e.dnfReason === 'crash' ? 'CRASH' : 'MECH';
+            statusHtml = `<span class="${cls}">${lbl}</span>`;
+          }
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="col-pos ${pCls}">${pos}</td>
+            <td class="col-name"><span class="team-dot" style="background:${colour}"></span>${e.driverName.toUpperCase()}</td>
+            <td class="col-team">${displayTeam(e.teamId)}</td>
+            <td class="col-gap${e.position === 1 && !e.retired ? ' leader' : ''}">${gapStr}</td>
+            <td class="col-stops">${stops}</td>
+            <td class="col-status">${statusHtml}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        el.appendChild(table);
       }
 
       // ── Qualifying result table ──────────────────────────────────────────────
@@ -319,10 +348,7 @@
           return;
         }
 
-        const table = buildTable(
-          ['POS', 'DRIVER', 'TEAM', 'LAP TIME', 'GAP'],
-          ['col-pos', 'col-name', 'col-team', 'col-time', 'col-gap']
-        );
+        const table = buildTable(['POS', 'DRIVER', 'TEAM', 'LAP TIME', 'GAP']);
         const tbody = table.querySelector('tbody');
 
         const sorted = [...results].sort((a, b) => {
@@ -434,94 +460,6 @@
         table.appendChild(document.createElement('tbody'));
         return table;
       }
-    })();
-  </script>
-
-  <!-- Race result table — needs getStandings for raw finishOrder -->
-  <script type="module">
-    import {
-      getCircuit, getEventForRound, ensurePastResultsCached,
-      hasRaceResult, getStandings,
-    } from './championship.js';
-    import { TEAMS } from './data.js';
-    import { initRace, cars } from './state.js';
-    import { runRace, initStrategies, setCurrentCircuit, runQualifyingSession } from './simulation.js';
-
-    (async () => {
-      const params = new URLSearchParams(location.search);
-      const season = parseInt(params.get('season'), 10) || 1;
-      const round  = parseInt(params.get('round'),  10) || 1;
-      const type   = params.get('type');
-      if (type !== 'race') return;
-
-      const teamColours = Object.fromEntries(TEAMS.map(t => [t.id, t.colour]));
-      const teamNames   = Object.fromEntries(TEAMS.map(t => [t.id, t.name]));
-      const engByTeam   = Object.fromEntries(TEAMS.map(t => [t.id, t.engine]));
-      const engineNames = { honda: 'Honda', ferrari: 'Ferrari', megatron: 'Megatron', ford: 'Ford' };
-
-      function teamDisplay(teamId) {
-        const base = (teamNames[teamId] || teamId).toUpperCase();
-        const eng  = engineNames[engByTeam[teamId]];
-        if (!eng) return base;
-        const engUp = eng.toUpperCase();
-        return base.includes(engUp) ? base : `${base}-${engUp}`;
-      }
-
-      const simFns = { initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession };
-      await ensurePastResultsCached(season, simFns);
-
-      const container = document.getElementById('results-container');
-      if (!hasRaceResult(season, round)) {
-        container.innerHTML = '<p style="color:var(--lo);font-size:11px;padding:20px 0">No result available yet.</p>';
-        return;
-      }
-
-      const { races } = getStandings(season);
-      const entries   = races[round];
-      if (!entries) return;
-
-      const table = document.createElement('table');
-      table.className = 'results-table';
-      table.innerHTML = `<thead><tr>
-        <th>POS</th><th>DRIVER</th><th>TEAM</th><th>GAP</th><th>PIT</th><th>STATUS</th>
-      </tr></thead>`;
-      const tbody = document.createElement('tbody');
-
-      entries.forEach(e => {
-        const colour = teamColours[e.teamId] || '#888';
-        const pos    = e.retired ? 'R' : e.position;
-        const pCls   = e.retired ? 'dnf' : (e.position === 1 ? 'p1' : '');
-
-        let gapStr = '';
-        if (!e.retired) {
-          gapStr = e.position === 1 ? '—' : (e.gap != null ? `+${e.gap.toFixed(3)}` : '');
-        } else {
-          gapStr = e.lapsCompleted != null ? `DNF L${e.lapsCompleted}` : 'DNF';
-        }
-
-        const stops = e.stops != null ? e.stops : '–';
-        let statusHtml = '';
-        if (e.retired) {
-          const cls = e.dnfReason === 'crash' ? 'status-crash' : 'status-mech';
-          const lbl = e.dnfReason === 'crash' ? 'CRASH' : 'MECH';
-          statusHtml = `<span class="${cls}">${lbl}</span>`;
-        }
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="col-pos ${pCls}">${pos}</td>
-          <td class="col-name"><span class="team-dot" style="background:${colour}"></span>${e.driverName.toUpperCase()}</td>
-          <td class="col-team">${teamDisplay(e.teamId)}</td>
-          <td class="col-gap${e.position === 1 && !e.retired ? ' leader' : ''}">${gapStr}</td>
-          <td class="col-stops">${stops}</td>
-          <td class="col-status">${statusHtml}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      table.appendChild(tbody);
-      container.innerHTML = '';
-      container.appendChild(table);
     })();
   </script>
 

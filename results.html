@@ -230,7 +230,7 @@
     import { initRace, cars } from './state.js';
     import { runRace, initStrategies, setCurrentCircuit, runQualifyingSession } from './simulation.js';
 
-    (async () => {
+    (async () => { try {
       const params  = new URLSearchParams(location.search);
       const season  = parseInt(params.get('season'), 10) || 1;
       const round   = parseInt(params.get('round'),  10) || 1;
@@ -508,6 +508,10 @@
         table.appendChild(document.createElement('tbody'));
         return table;
       }
+    } catch (err) {
+      document.getElementById('loading-msg').textContent = `Error: ${err.message}`;
+      console.error(err);
+    }
     })();
   </script>
 

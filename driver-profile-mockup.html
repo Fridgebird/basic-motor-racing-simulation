@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Driver Profile — Simple Motor Racing</title>
+  <style>
+    @font-face {
+      font-family: 'Square';
+      src: url('Square.ttf') format('truetype');
+      font-weight: normal;
+    }
+    @font-face {
+      font-family: 'Square';
+      src: url('Squareo.ttf') format('truetype');
+      font-weight: bold;
+    }
+
+    :root {
+      --bg:      #0d1117;
+      --bg-deep: #080c12;
+      --bg-mid:  #0a0f18;
+      --border:  #1e2f44;
+      --hi:      #ffffff;
+      --mid:     #8ab4d4;
+      --lo:      #4a6a88;
+      --dim:     #2a4055;
+      --accent:  #cc2233;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--mid);
+      font-family: 'Square', 'Courier New', monospace;
+      font-size: 12px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Topbar ── */
+    #topbar {
+      width: 100%;
+      height: 44px;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-bottom: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+    }
+    .b-flat { font-size: 15px; color: var(--hi); letter-spacing: 0.04em; flex-shrink: 0; }
+    .b-flat em { font-style: normal; color: var(--mid); }
+    .topbar-nav { display: flex; gap: 16px; margin-left: auto; margin-right: 16px; }
+    .topbar-nav-link { color: var(--lo); text-decoration: none; font-size: 10px; letter-spacing: 0.08em; }
+    .topbar-nav-link:hover { color: var(--mid); }
+
+    /* ── Info bar ── */
+    #info-bar {
+      width: 100%;
+      background: var(--bg-mid);
+      border-bottom: 1px solid var(--border);
+      padding: 6px 16px;
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--lo);
+      text-transform: uppercase;
+    }
+
+    /* ── Page body ── */
+    #page {
+      width: 100%;
+      max-width: 700px;
+      padding: 24px 16px;
+    }
+
+    /* ── Driver nav ── */
+    #driver-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .nav-btn {
+      font-family: inherit;
+      font-size: 9px;
+      letter-spacing: 1px;
+      color: var(--lo);
+      background: none;
+      border: 1px solid var(--border);
+      padding: 5px 12px;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+    .nav-btn:hover:not(:disabled) { color: var(--hi); border-color: var(--mid); }
+    .nav-btn:disabled { opacity: 0.25; cursor: default; }
+    #driver-counter {
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--dim);
+    }
+
+    /* ── Profile card ── */
+    #profile-card {
+      display: flex;
+      gap: 28px;
+      align-items: flex-start;
+      border: 1px solid var(--border);
+      background: var(--bg-mid);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    /* ── Portrait ── */
+    #portrait {
+      width: 128px;
+      height: 128px;
+      flex-shrink: 0;
+      background-repeat: no-repeat;
+      border: 1px solid var(--border);
+      /* image-rendering: pixelated; */ /* uncomment to get a crisper retro feel */
+    }
+
+    /* ── Driver details ── */
+    #driver-details { flex: 1; min-width: 0; }
+
+    #driver-name {
+      font-size: 20px;
+      letter-spacing: 3px;
+      color: var(--hi);
+      margin-bottom: 4px;
+    }
+    #driver-meta {
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--lo);
+      margin-bottom: 16px;
+    }
+
+    .team-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .team-dot {
+      width: 3px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+    .team-name {
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: var(--mid);
+    }
+
+    /* ── Stat pills ── */
+    .stats-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .stat-block { display: flex; flex-direction: column; gap: 3px; }
+    .stat-value { font-size: 18px; color: var(--hi); letter-spacing: 1px; }
+    .stat-label { font-size: 8px; letter-spacing: 2px; color: var(--lo); text-transform: uppercase; }
+
+    /* ── Season history ── */
+    #season-history { border: 1px solid var(--border); }
+    .history-header {
+      padding: 6px 12px;
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--lo);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-deep);
+    }
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .history-table th {
+      font-size: 9px;
+      letter-spacing: 1px;
+      color: var(--lo);
+      text-align: left;
+      padding: 5px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .history-table td {
+      padding: 6px 12px;
+      font-size: 11px;
+      color: var(--mid);
+      border-bottom: 1px solid var(--dim);
+    }
+    .history-table tr:last-child td { border-bottom: none; }
+    .history-table td.h-pos  { color: var(--hi); width: 36px; }
+    .history-table td.h-pts  { color: var(--hi); text-align: right; }
+    .history-table td.h-wins { color: var(--lo); text-align: right; }
+    .history-table td.h-team { color: var(--mid); }
+    .champ-marker { color: var(--accent); font-size: 10px; margin-left: 4px; }
+
+    @media (max-width: 500px) {
+      #profile-card { flex-direction: column; }
+      #portrait { width: 100%; height: 0; padding-bottom: 100%; position: relative; }
+      /* On very small screens the portrait stretches; acceptable for mockup */
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Topbar ── -->
+  <div id="topbar">
+    <span class="b-flat">Simple <em>Motor Racing</em></span>
+    <nav class="topbar-nav">
+      <a href="index.html" class="topbar-nav-link">CALENDAR</a>
+    </nav>
+  </div>
+
+  <!-- ── Info bar ── -->
+  <div id="info-bar">Driver Profile</div>
+
+  <!-- ── Page ── -->
+  <div id="page">
+
+    <!-- Prev / Next -->
+    <div id="driver-nav">
+      <button class="nav-btn" id="btn-prev">← Prev Driver</button>
+      <span id="driver-counter">1 / 9</span>
+      <button class="nav-btn" id="btn-next">Next Driver →</button>
+    </div>
+
+    <!-- Profile card -->
+    <div id="profile-card">
+      <div id="portrait"></div>
+      <div id="driver-details">
+        <div id="driver-name">—</div>
+        <div id="driver-meta">—</div>
+        <div class="team-line">
+          <div class="team-dot" id="team-dot"></div>
+          <div class="team-name" id="team-name">—</div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-block">
+            <div class="stat-value" id="stat-seasons">—</div>
+            <div class="stat-label">Seasons</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-value" id="stat-races">—</div>
+            <div class="stat-label">Races</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-value" id="stat-wins">—</div>
+            <div class="stat-label">Wins</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-value" id="stat-podiums">—</div>
+            <div class="stat-label">Podiums</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-value" id="stat-poles">—</div>
+            <div class="stat-label">Poles</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-value" id="stat-pts">—</div>
+            <div class="stat-label">Points</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Season history -->
+    <div id="season-history">
+      <div class="history-header">Season History</div>
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>SEASON</th>
+            <th>TEAM</th>
+            <th>POS</th>
+            <th style="text-align:right">PTS</th>
+            <th style="text-align:right">W</th>
+          </tr>
+        </thead>
+        <tbody id="history-body"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    // ── Driver data (sheet 1, 9 drivers) ──────────────────────────────────────
+    // sprite: { sheet, row, col } — sheet 1 = driver_sprites_1950_1.png
+    // Each cell is 1/3 of the image. background-position: col*50% row*50%
+
+    const DRIVERS = [
+      {
+        name:        'Marco Ferrini',
+        meta:        'Italy · Age 34 · Skill 82 · Consistency 78',
+        team:        'Scuderia Rosso · Ferrari-Ferrari',
+        teamColour:  '#e8001c',
+        sprite:      { sheet: 1, row: 0, col: 0 },
+        stats:       { seasons: 3, races: 24, wins: 2, podiums: 7, poles: 1, pts: 186 },
+        history: [
+          { season: 1, team: 'Scuderia Rosso · Ferrari',   pos: 4,  pts: 62, wins: 0 },
+          { season: 2, team: 'Scuderia Rosso · Ferrari',   pos: 3,  pts: 71, wins: 1, champ: false },
+          { season: 3, team: 'Scuderia Rosso · Ferrari',   pos: 2,  pts: 53, wins: 1 },
+        ],
+      },
+      {
+        name:        'Elena Vasquez',
+        meta:        'Spain · Age 28 · Skill 75 · Consistency 88',
+        team:        'Iberia Racing · Ford-Ford',
+        teamColour:  '#f5a800',
+        sprite:      { sheet: 1, row: 0, col: 1 },
+        stats:       { seasons: 2, races: 16, wins: 0, podiums: 2, poles: 0, pts: 74 },
+        history: [
+          { season: 2, team: 'Iberia Racing · Ford',       pos: 9,  pts: 18, wins: 0 },
+          { season: 3, team: 'Iberia Racing · Ford',       pos: 7,  pts: 56, wins: 0 },
+        ],
+      },
+      {
+        name:        'Kenji Tanaka',
+        meta:        'Japan · Age 31 · Skill 79 · Consistency 85',
+        team:        'Pacific Works · Honda-Honda',
+        teamColour:  '#0090d0',
+        sprite:      { sheet: 1, row: 0, col: 2 },
+        stats:       { seasons: 3, races: 24, wins: 1, podiums: 4, poles: 2, pts: 141 },
+        history: [
+          { season: 1, team: 'Pacific Works · Honda',      pos: 6,  pts: 33, wins: 0 },
+          { season: 2, team: 'Pacific Works · Honda',      pos: 5,  pts: 58, wins: 1 },
+          { season: 3, team: 'Pacific Works · Honda',      pos: 6,  pts: 50, wins: 0 },
+        ],
+      },
+      {
+        name:        'Joseph Okafor',
+        meta:        'Nigeria · Age 29 · Skill 77 · Consistency 80',
+        team:        'Lagos Motorsport · Ford-Ford',
+        teamColour:  '#009900',
+        sprite:      { sheet: 1, row: 1, col: 0 },
+        stats:       { seasons: 2, races: 16, wins: 0, podiums: 1, poles: 0, pts: 59 },
+        history: [
+          { season: 2, team: 'Lagos Motorsport · Ford',    pos: 11, pts: 14, wins: 0 },
+          { season: 3, team: 'Lagos Motorsport · Ford',    pos: 8,  pts: 45, wins: 0 },
+        ],
+      },
+      {
+        name:        'Klaus Brandt',
+        meta:        'Germany · Age 42 · Skill 88 · Consistency 92',
+        team:        'Brandt Werke · Porsche-Porsche',
+        teamColour:  '#808080',
+        sprite:      { sheet: 1, row: 1, col: 1 },
+        stats:       { seasons: 3, races: 24, wins: 7, podiums: 16, poles: 5, pts: 312 },
+        history: [
+          { season: 1, team: 'Brandt Werke · Porsche',     pos: 1,  pts: 118, wins: 4, champ: true },
+          { season: 2, team: 'Brandt Werke · Porsche',     pos: 2,  pts: 104, wins: 2 },
+          { season: 3, team: 'Brandt Werke · Porsche',     pos: 1,  pts: 90,  wins: 1, champ: true },
+        ],
+      },
+      {
+        name:        'Ingrid Larsen',
+        meta:        'Sweden · Age 26 · Skill 73 · Consistency 84',
+        team:        'Nordic Grand Prix · Cosworth-Cosworth',
+        teamColour:  '#005b99',
+        sprite:      { sheet: 1, row: 1, col: 2 },
+        stats:       { seasons: 1, races: 8, wins: 0, podiums: 1, poles: 0, pts: 28 },
+        history: [
+          { season: 3, team: 'Nordic GP · Cosworth',       pos: 12, pts: 28, wins: 0 },
+        ],
+      },
+      {
+        name:        'Carlos Mendoza',
+        meta:        'Argentina · Age 38 · Skill 84 · Consistency 74',
+        team:        'Río Plata Racing · Alfa-Alfa',
+        teamColour:  '#cc0000',
+        sprite:      { sheet: 1, row: 2, col: 0 },
+        stats:       { seasons: 3, races: 24, wins: 3, podiums: 9, poles: 3, pts: 241 },
+        history: [
+          { season: 1, team: 'Río Plata · Alfa',           pos: 2,  pts: 88,  wins: 2 },
+          { season: 2, team: 'Río Plata · Alfa',           pos: 1,  pts: 96,  wins: 1, champ: true },
+          { season: 3, team: 'Río Plata · Alfa',           pos: 3,  pts: 57,  wins: 0 },
+        ],
+      },
+      {
+        name:        'Harpreet Singh',
+        meta:        'India · Age 33 · Skill 71 · Consistency 90',
+        team:        'Maharaja Motorsport · BRM-BRM',
+        teamColour:  '#ff6600',
+        sprite:      { sheet: 1, row: 2, col: 1 },
+        stats:       { seasons: 2, races: 16, wins: 0, podiums: 0, poles: 0, pts: 31 },
+        history: [
+          { season: 2, team: 'Maharaja Motorsport · BRM',  pos: 14, pts: 8,  wins: 0 },
+          { season: 3, team: 'Maharaja Motorsport · BRM',  pos: 13, pts: 23, wins: 0 },
+        ],
+      },
+      {
+        name:        'Finn O\'Brien',
+        meta:        'Ireland · Age 23 · Skill 69 · Consistency 62',
+        team:        'Celtic Racing · Cosworth-Cosworth',
+        teamColour:  '#009966',
+        sprite:      { sheet: 1, row: 2, col: 2 },
+        stats:       { seasons: 1, races: 8, wins: 0, podiums: 0, poles: 0, pts: 12 },
+        history: [
+          { season: 3, team: 'Celtic Racing · Cosworth',   pos: 16, pts: 12, wins: 0 },
+        ],
+      },
+    ];
+
+    // ── Sprite rendering ───────────────────────────────────────────────────────
+    function sheetFile(n) {
+      return `driver_sprites_1950_${n}.png`;
+    }
+
+    function spriteStyle(sprite) {
+      const x = sprite.col * 50;  // 0%, 50%, 100%
+      const y = sprite.row * 50;
+      return `background-image: url('${sheetFile(sprite.sheet)}');
+              background-size: 300% 300%;
+              background-position: ${x}% ${y}%;`;
+    }
+
+    // ── Render ─────────────────────────────────────────────────────────────────
+    let current = 0;
+
+    function render() {
+      const d = DRIVERS[current];
+
+      document.getElementById('portrait').style.cssText        = spriteStyle(d.sprite);
+      document.getElementById('driver-name').textContent       = d.name.toUpperCase();
+      document.getElementById('driver-meta').textContent       = d.meta;
+      document.getElementById('team-dot').style.background     = d.teamColour;
+      document.getElementById('team-name').textContent         = d.team.toUpperCase();
+      document.getElementById('stat-seasons').textContent      = d.stats.seasons;
+      document.getElementById('stat-races').textContent        = d.stats.races;
+      document.getElementById('stat-wins').textContent         = d.stats.wins;
+      document.getElementById('stat-podiums').textContent      = d.stats.podiums;
+      document.getElementById('stat-poles').textContent        = d.stats.poles;
+      document.getElementById('stat-pts').textContent          = d.stats.pts;
+      document.getElementById('driver-counter').textContent    = `${current + 1} / ${DRIVERS.length}`;
+      document.getElementById('btn-prev').disabled             = current === 0;
+      document.getElementById('btn-next').disabled             = current === DRIVERS.length - 1;
+
+      // Season history
+      const tbody = document.getElementById('history-body');
+      tbody.innerHTML = '';
+      d.history.forEach(h => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="h-pos">S${h.season}</td>
+          <td class="h-team">${h.team.toUpperCase()}${h.champ ? '<span class="champ-marker">★</span>' : ''}</td>
+          <td class="h-pos">${h.pos}</td>
+          <td class="h-pts">${h.pts}</td>
+          <td class="h-wins">${h.wins}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('info-bar').textContent = `Driver Profile · ${d.name}`;
+    }
+
+    document.getElementById('btn-prev').addEventListener('click', () => { current--; render(); });
+    document.getElementById('btn-next').addEventListener('click', () => { current++; render(); });
+
+    render();
+  </script>
+
+</body>
+</html>

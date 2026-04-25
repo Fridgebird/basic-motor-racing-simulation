@@ -230,7 +230,7 @@
     import { initRace, cars } from './state.js';
     import { runRace, initStrategies, setCurrentCircuit, runQualifyingSession } from './simulation.js';
 
-    (async () => { try {
+    (async () => {
       const params  = new URLSearchParams(location.search);
       const season  = parseInt(params.get('season'), 10) || 1;
       const round   = parseInt(params.get('round'),  10) || 1;
@@ -263,7 +263,7 @@
       const engineNames = { honda: 'Honda', ferrari: 'Ferrari', megatron: 'Megatron', ford: 'Ford' };
       const POINTS_TABLE = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 
-      function teamDisplay(teamId) {
+      function displayTeam(teamId) {
         const base = (teamNames[teamId] || teamId).toUpperCase();
         const eng  = engineNames[engByTeam[teamId]];
         if (!eng) return base;
@@ -280,9 +280,9 @@
 
       // ── Render result ────────────────────────────────────────────────────────
       if (type === 'qualifying') {
-        renderQuali(container, teamColours, teamDisplay);
+        renderQuali(container, teamColours, displayTeam);
       } else {
-        renderRace(container, teamColours, teamDisplay);
+        renderRace(container, teamColours, displayTeam);
         renderChampionship(season, round, teamColours, teamNames);
       }
 
@@ -507,13 +507,6 @@
         table.appendChild(document.createElement('tbody'));
         return table;
       }
-    } catch (err) {
-      const msg = document.getElementById('loading-msg');
-      msg.textContent = `Error: ${err.message}`;
-      msg.style.display = 'block';
-      document.getElementById('main').style.display = 'none';
-      console.error(err);
-    }
     })();
   </script>
 

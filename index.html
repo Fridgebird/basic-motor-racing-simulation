@@ -82,12 +82,29 @@
       border-bottom: 1px solid var(--border);
       margin-bottom: 14px;
     }
+    #season-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
     #season-title {
       font-size: 9px;
       letter-spacing: 3px;
       color: var(--mid);
       text-transform: uppercase;
+      flex: 1;
     }
+    .season-nav-btn {
+      font-family: inherit;
+      font-size: 9px;
+      letter-spacing: 1px;
+      color: var(--lo);
+      background: none;
+      border: 1px solid var(--border);
+      padding: 3px 8px;
+      cursor: pointer;
+    }
+    .season-nav-btn:hover { color: var(--hi); border-color: var(--mid); }
 
     /* ── Calendar table ──────────────────────────────────────────────────────── */
     #calendar-wrap {
@@ -254,7 +271,9 @@
 
   <!-- ── Season header ────────────────────────────────────────────────────────── -->
   <div id="season-header">
+    <button id="season-prev" class="season-nav-btn" style="display:none">← S?</button>
     <span id="season-title">–</span>
+    <button id="season-next" class="season-nav-btn" style="display:none">S? →</button>
   </div>
 
   <!-- ── Calendar ─────────────────────────────────────────────────────────────── -->
@@ -293,12 +312,25 @@
     // ── Resolve context ────────────────────────────────────────────────────────
     const todayOffset  = getTodayDayOffset();
     const currentEvent = getCurrentEvent();
-    const season       = currentEvent.season;
     const schedLen     = SEASON_SCHEDULE.length;
-    const seasonStart  = (season - 1) * schedLen;
 
-    // ── Season header ──────────────────────────────────────────────────────────
-    document.getElementById('season-title').textContent = `Season ${season} — Calendar`;
+    let viewSeason = currentEvent.season;
+
+    // ── Season header + nav ────────────────────────────────────────────────────
+    const prevBtn   = document.getElementById('season-prev');
+    const nextBtn   = document.getElementById('season-next');
+    const titleEl   = document.getElementById('season-title');
+
+    function updateSeasonHeader() {
+      titleEl.textContent   = `Season ${viewSeason} — Calendar`;
+      prevBtn.textContent   = `← S${viewSeason - 1}`;
+      nextBtn.textContent   = `S${viewSeason + 1} →`;
+      prevBtn.style.display = viewSeason > 1 ? 'inline-block' : 'none';
+      nextBtn.style.display = viewSeason < currentEvent.season ? 'inline-block' : 'none';
+    }
+
+    prevBtn.addEventListener('click', () => { viewSeason--; updateSeasonHeader(); buildCalendar(viewSeason); });
+    nextBtn.addEventListener('click', () => { viewSeason++; updateSeasonHeader(); buildCalendar(viewSeason); });
 
     // ── Dev bar ────────────────────────────────────────────────────────────────
     const devBar = document.getElementById('dev-bar');
@@ -332,87 +364,89 @@
     }
 
     // ── Build calendar rows (one per round) ───────────────────────────────────
-    const tbody = document.getElementById('calendar-body');
-
-    // Group schedule by round
-    const rounds = [];
-    SEASON_SCHEDULE.forEach(entry => {
-      let round = rounds.find(r => r.round === entry.round);
-      if (!round) {
-        round = { round: entry.round, circuitId: entry.circuitId, quali: null, race: null };
-        rounds.push(round);
+    function watchBtn(href, unlocked) {
+      if (!unlocked) return `<span class="btn-cal btn-watch btn-locked">WATCH</span>`;
+      return `<a href="${href}" class="btn-cal btn-watch">WATCH</a>`;
+    }
+    function resultBtn(href, unlocked, isToday) {
+      if (!unlocked) return `<span class="btn-cal btn-locked">RESULT</span>`;
+      if (isToday) {
+        return `<a href="${href}" class="btn-cal btn-spoiler" onclick="return confirm('Show today\\'s result? This contains spoilers.')">RESULT</a>`;
       }
-      if (entry.eventType === 'qualifying') round.quali = entry;
-      else round.race = entry;
-    });
+      return `<a href="${href}" class="btn-cal">RESULT</a>`;
+    }
 
-    rounds.forEach(roundData => {
-      const { round, circuitId } = roundData;
-      const circuit = CIRCUITS[circuitId];
+    function buildCalendar(s) {
+      const seasonStart = (s - 1) * schedLen;
+      const tbody = document.getElementById('calendar-body');
+      tbody.innerHTML = '';
 
-      const qualiIdx    = SEASON_SCHEDULE.findIndex(e => e.round === round && e.eventType === 'qualifying');
-      const raceIdx     = SEASON_SCHEDULE.findIndex(e => e.round === round && e.eventType === 'race');
-      const qualiOffset = seasonStart + qualiIdx;
-      const raceOffset  = seasonStart + raceIdx;
-
-      // Unlocked = today or earlier for both Watch and Result
-      const qualiUnlocked = qualiOffset <= todayOffset;
-      const raceUnlocked  = raceOffset  <= todayOffset;
-      const qualiToday    = qualiOffset === todayOffset;
-      const raceToday     = raceOffset  === todayOffset;
-
-      const isUpcoming = !qualiUnlocked;
-
-      // Build button HTML
-      function watchBtn(href, unlocked) {
-        if (!unlocked) return `<span class="btn-cal btn-watch btn-locked">WATCH</span>`;
-        return `<a href="${href}" class="btn-cal btn-watch">WATCH</a>`;
-      }
-      function resultBtn(href, unlocked, isToday) {
-        if (!unlocked) return `<span class="btn-cal btn-locked">RESULT</span>`;
-        if (isToday) {
-          // Spoiler warning for today's result
-          return `<a href="${href}" class="btn-cal btn-spoiler" onclick="return confirm('Show today\\'s result? This contains spoilers.')">RESULT</a>`;
+      // Group schedule by round
+      const rounds = [];
+      SEASON_SCHEDULE.forEach(entry => {
+        let round = rounds.find(r => r.round === entry.round);
+        if (!round) {
+          round = { round: entry.round, circuitId: entry.circuitId };
+          rounds.push(round);
         }
-        return `<a href="${href}" class="btn-cal">RESULT</a>`;
-      }
+      });
 
-      const qualiResultHref = `results.html?season=${season}&round=${round}&type=qualifying`;
-      const qualiWatchHref  = `qualifying.html?season=${season}&round=${round}`;
-      const raceResultHref  = `results.html?season=${season}&round=${round}&type=race`;
-      const raceWatchHref   = `race.html?season=${season}&round=${round}`;
-      const circuitHref     = `circuit.html?circuitId=${circuitId}`;
+      rounds.forEach(roundData => {
+        const { round, circuitId } = roundData;
+        const circuit = CIRCUITS[circuitId];
 
-      const tr = document.createElement('tr');
-      tr.className = `cal-row${isUpcoming ? ' upcoming' : ''}`;
+        const qualiIdx    = SEASON_SCHEDULE.findIndex(e => e.round === round && e.eventType === 'qualifying');
+        const raceIdx     = SEASON_SCHEDULE.findIndex(e => e.round === round && e.eventType === 'race');
+        const qualiOffset = seasonStart + qualiIdx;
+        const raceOffset  = seasonStart + raceIdx;
 
-      tr.innerHTML = `
-        <td class="cal-round">R${round}</td>
-        <td class="cal-event">
-          <div class="event-name">${circuit.eventName}</div>
-        </td>
-        <td class="cal-circuit">
-          <span class="circuit-name-text">${circuit.name}</span>
-        </td>
-        <td class="cal-info">
-          <a href="${circuitHref}" class="btn-cal btn-info" title="Circuit info">ⓘ</a>
-        </td>
-        <td class="cal-actions">
-          <div class="action-btns">
-            ${watchBtn(qualiWatchHref, qualiUnlocked)}
-            ${resultBtn(qualiResultHref, qualiUnlocked, qualiToday)}
-          </div>
-        </td>
-        <td class="cal-actions">
-          <div class="action-btns">
-            ${watchBtn(raceWatchHref, raceUnlocked)}
-            ${resultBtn(raceResultHref, raceUnlocked, raceToday)}
-          </div>
-        </td>
-      `;
+        const qualiUnlocked = qualiOffset <= todayOffset;
+        const raceUnlocked  = raceOffset  <= todayOffset;
+        const qualiToday    = qualiOffset === todayOffset;
+        const raceToday     = raceOffset  === todayOffset;
+        const isUpcoming    = !qualiUnlocked;
 
-      tbody.appendChild(tr);
-    });
+        const qualiResultHref = `results.html?season=${s}&round=${round}&type=qualifying`;
+        const qualiWatchHref  = `qualifying.html?season=${s}&round=${round}`;
+        const raceResultHref  = `results.html?season=${s}&round=${round}&type=race`;
+        const raceWatchHref   = `race.html?season=${s}&round=${round}`;
+        const circuitHref     = `circuit.html?circuitId=${circuitId}`;
+
+        const tr = document.createElement('tr');
+        tr.className = `cal-row${isUpcoming ? ' upcoming' : ''}`;
+
+        tr.innerHTML = `
+          <td class="cal-round">R${round}</td>
+          <td class="cal-event">
+            <div class="event-name">${circuit.eventName}</div>
+          </td>
+          <td class="cal-circuit">
+            <span class="circuit-name-text">${circuit.name}</span>
+          </td>
+          <td class="cal-info">
+            <a href="${circuitHref}" class="btn-cal btn-info" title="Circuit info">ⓘ</a>
+          </td>
+          <td class="cal-actions">
+            <div class="action-btns">
+              ${watchBtn(qualiWatchHref, qualiUnlocked)}
+              ${resultBtn(qualiResultHref, qualiUnlocked, qualiToday)}
+            </div>
+          </td>
+          <td class="cal-actions">
+            <div class="action-btns">
+              ${watchBtn(raceWatchHref, raceUnlocked)}
+              ${resultBtn(raceResultHref, raceUnlocked, raceToday)}
+            </div>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ── Initial render ─────────────────────────────────────────────────────────
+    updateSeasonHeader();
+    buildCalendar(viewSeason);
   </script>
 
 </body>

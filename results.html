@@ -172,6 +172,26 @@
     .standings-table td.s-w      { color: var(--lo); text-align: right; width: 24px; }
     .s-team { font-size: 9px; color: var(--lo); letter-spacing: 0.04em; margin-top: 1px; }
 
+    /* ── Champion banner ── */
+    .champion-banner {
+      margin-top: 20px;
+      padding: 12px 4px;
+      border-top: 1px solid var(--mid);
+      text-align: center;
+    }
+    .champion-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--lo);
+      text-transform: uppercase;
+    }
+    .champion-name {
+      font-size: 14px;
+      letter-spacing: 2px;
+      color: var(--accent);
+      margin-top: 4px;
+    }
+
     /* ── Footer ── */
     .results-footer {
       display: flex;
@@ -484,6 +504,20 @@
             cTbody.appendChild(tr);
           });
           panel.appendChild(cTable);
+        }
+
+        // Champion declaration — shown only on the final round result
+        const lastRound = Math.max(...SEASON_SCHEDULE.map(e => e.round));
+        if (round === lastRound && drivers.length && constructors.length) {
+          const banner = document.createElement('div');
+          banner.className = 'champion-banner';
+          banner.innerHTML = `
+            <div class="champion-label">Season ${season} · Drivers' World Champion</div>
+            <div class="champion-name">${drivers[0].name.toUpperCase()}</div>
+            <div class="champion-label" style="margin-top:12px">Season ${season} · Constructors' Champion</div>
+            <div class="champion-name">${displayTeam(constructors[0].id)}</div>
+          `;
+          panel.appendChild(banner);
         }
       }
 

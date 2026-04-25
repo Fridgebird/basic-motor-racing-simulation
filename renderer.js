@@ -249,7 +249,7 @@ export class Renderer {
       lapSector = lap > 0 ? `LAP ${lap} / ${currentCircuit.totalLaps}   S${sector}` : '';
     } else if (displayCars.length === 0 || lap === 0) {
       status    = 'PRE-RACE';
-      lapSector = '';
+      lapSector = currentCircuit ? `${currentCircuit.totalLaps} LAPS` : '';
     } else if (lap >= currentCircuit.totalLaps && sector >= 3) {
       status    = `FINISHED · ${running} CLASSIFIED`;
       lapSector = `LAP ${currentCircuit.totalLaps} / ${currentCircuit.totalLaps}`;

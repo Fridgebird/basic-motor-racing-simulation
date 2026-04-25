@@ -85,6 +85,11 @@
     #result-col  { flex: 1; min-width: 0; }
     #champ-col   { width: 260px; flex-shrink: 0; }
 
+    @media (max-width: 600px) {
+      #main      { flex-direction: column; gap: 20px; padding: 12px 8px; }
+      #champ-col { width: 100%; }
+    }
+
     .panel-title {
       font-size: 9px;
       color: var(--lo);

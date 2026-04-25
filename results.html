@@ -345,7 +345,7 @@
           return;
         }
 
-        const table = buildTable(['POS', 'DRIVER', 'TEAM', 'GAP', 'PIT', 'PTS', 'STATUS']);
+        const table = buildTable(['POS', 'DRIVER', 'TEAM', 'GAP', 'PIT', 'STATUS', 'PTS']);
         const tbody = table.querySelector('tbody');
 
         entries.forEach((e, i) => {
@@ -376,8 +376,8 @@
             <td class="col-team">${displayTeam(e.teamId)}</td>
             <td class="col-gap${e.position === 1 && !e.retired ? ' leader' : ''}">${gapStr}</td>
             <td class="col-stops">${stops}</td>
-            <td class="col-pts">${pts}</td>
             <td class="col-status">${statusHtml}</td>
+            <td class="col-pts">${pts}</td>
           `;
           tbody.appendChild(tr);
         });

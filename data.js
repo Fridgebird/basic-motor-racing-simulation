@@ -682,7 +682,7 @@ export const CIRCUITS = {
     eventName:          'Moroccan Grand Prix',
     lengthKm:           7.620,
     totalLaps:          60,
-    trackAbrasiveness:  0.80,
+    trackAbrasiveness:  0.60,
     fuelCapacity:       100,
     baseFuelBurnPerLap: 1.45,  // 60 laps × 1.45 × 1.15 turbo = 100.1 kg — just over tank
     pitLaneTime:        20,    // slower pit lane on street circuit
@@ -734,7 +734,7 @@ export const CIRCUITS = {
     eventName:          'Austrian Grand Prix',
     lengthKm:           3.188,
     totalLaps:          68,
-    trackAbrasiveness:  0.60,
+    trackAbrasiveness:  0.50,
     fuelCapacity:       100,
     baseFuelBurnPerLap: 1.25,  // 68 laps × 1.25 × 1.15 turbo = 97.75 kg — within tank
     pitLaneTime:        17,

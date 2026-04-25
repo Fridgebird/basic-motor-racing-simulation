@@ -288,7 +288,7 @@ export async function ensurePastResultsCached(season, simFns) {
   for (let idx = 0; idx < SEASON_SCHEDULE.length; idx++) {
     const entry     = SEASON_SCHEDULE[idx];
     const absOffset = seasonStart + idx;
-    if (absOffset >= todayOffset) break;   // skip today and future
+    if (absOffset > todayOffset) break;    // skip future events only
 
     const event   = getEventForRound(season, entry.round, entry.eventType);
     const circuit = CIRCUITS[entry.circuitId];

@@ -655,13 +655,6 @@ export class Renderer {
       const verb   = wheelToWheelVerb(entry.sector);
       detail   = `${entry.car.toUpperCase()} ${verb} ${ev.passed.toUpperCase()}${posStr}`;
 
-    } else if (ev.type === 'silent_pass') {
-      tag      = 'PASS';
-      tagClass = 'tag-pass';
-      const posStr = ev.position != null ? ` for ${ordinal(ev.position)}` : '';
-      const verb   = silentPassVerb();
-      detail   = `${entry.car.toUpperCase()} ${verb} ${ev.passed.toUpperCase()}${posStr}`;
-
     } else {
       return null;
     }

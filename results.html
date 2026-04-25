@@ -123,7 +123,8 @@
     .col-team       { color: var(--lo); }
     .col-gap        { font-variant-numeric: tabular-nums; }
     .col-gap.leader { color: var(--lo); }
-    .col-stops      { width: 44px; text-align: center; color: var(--lo); }
+    .col-stops      { width: 36px; text-align: center; color: var(--lo); }
+    .col-pts        { width: 36px; text-align: right; color: var(--hi); }
     .col-status     { width: 56px; }
     .col-time       { font-variant-numeric: tabular-nums; }
     .col-time.pole  { color: var(--hi); }
@@ -169,6 +170,7 @@
     .standings-table td.s-name   { color: var(--hi); }
     .standings-table td.s-pts    { color: var(--hi); text-align: right; }
     .standings-table td.s-w      { color: var(--lo); text-align: right; width: 24px; }
+    .s-team { font-size: 9px; color: var(--lo); letter-spacing: 0.04em; margin-top: 1px; }
 
     /* ── Footer ── */
     .results-footer {
@@ -222,8 +224,9 @@
     import {
       getCircuit, getEventForRound, ensurePastResultsCached,
       hasRaceResult, loadQualiResults, getStandings, getStandingsThroughRound,
+      getTodayDayOffset,
     } from './championship.js';
-    import { TEAMS } from './data.js';
+    import { TEAMS, SEASON_SCHEDULE } from './data.js';
     import { initRace, cars } from './state.js';
     import { runRace, initStrategies, setCurrentCircuit, runQualifyingSession } from './simulation.js';
 
@@ -276,6 +279,37 @@
       }
 
       // ── Footer ───────────────────────────────────────────────────────────────
+      const totalRounds = Math.max(...SEASON_SCHEDULE.map(e => e.round));
+      const todayOffset = getTodayDayOffset();
+
+      function roundDayOffset(r) {
+        const ev = getEventForRound(season, r, type);
+        return ev ? ev.dayOffset : Infinity;
+      }
+
+      function navBtn(r) {
+        if (r < 1 || r > totalRounds) return null;
+        if (roundDayOffset(r) > todayOffset) return null; // future — no result yet
+        const isToday = roundDayOffset(r) === todayOffset;
+        const href    = `results.html?season=${season}&round=${r}&type=${type}`;
+        const btn     = document.createElement('a');
+        btn.className = 'footer-btn';
+        if (isToday) {
+          btn.href = '#';
+          btn.addEventListener('click', e => {
+            e.preventDefault();
+            if (confirm('Show today\'s result? This contains spoilers.')) location.href = href;
+          });
+        } else {
+          btn.href = href;
+        }
+        return btn;
+      }
+
+      const prevBtn = navBtn(round - 1);
+      const nextBtn = navBtn(round + 1);
+      if (prevBtn) { prevBtn.textContent = `← R${round - 1}`; footer.appendChild(prevBtn); }
+
       const backA = Object.assign(document.createElement('a'), {
         href: 'index.html', className: 'footer-btn', textContent: '← CALENDAR',
       });
@@ -287,8 +321,18 @@
         href: watchHref, className: 'footer-btn primary', textContent: watchLabel,
       });
       footer.append(backA, watchA);
+      if (nextBtn) { nextBtn.textContent = `R${round + 1} →`; footer.appendChild(nextBtn); }
 
       // ── Race result table ────────────────────────────────────────────────────
+      function formatGap(secs) {
+        if (secs < 60) return `+${secs.toFixed(3)}`;
+        const m = Math.floor(secs / 60);
+        const s = (secs % 60).toFixed(3).padStart(6, '0');
+        return `+${m}:${s}`;
+      }
+
+      const POINTS_TABLE = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
+
       function renderRace(el, colours, displayTeam) {
         if (!hasRaceResult(season, round)) {
           el.innerHTML = '<p style="color:var(--lo);font-size:11px;padding:20px 0">No result available yet.</p>';
@@ -302,22 +346,23 @@
           return;
         }
 
-        const table = buildTable(['POS', 'DRIVER', 'TEAM', 'GAP', 'PIT', 'STATUS']);
+        const table = buildTable(['POS', 'DRIVER', 'TEAM', 'GAP', 'PIT', 'PTS', 'STATUS']);
         const tbody = table.querySelector('tbody');
 
-        entries.forEach(e => {
+        entries.forEach((e, i) => {
           const colour = colours[e.teamId] || '#888';
           const pos    = e.retired ? 'R' : e.position;
           const pCls   = e.retired ? 'dnf' : (e.position === 1 ? 'p1' : '');
 
           let gapStr = '';
           if (!e.retired) {
-            gapStr = e.position === 1 ? '—' : (e.gap != null ? `+${e.gap.toFixed(3)}` : '');
+            gapStr = e.position === 1 ? '—' : (e.gap != null ? formatGap(e.gap) : '');
           } else {
             gapStr = e.lapsCompleted != null ? `DNF L${e.lapsCompleted}` : 'DNF';
           }
 
           const stops = e.stops != null ? e.stops : '–';
+          const pts   = !e.retired ? (POINTS_TABLE[i] ?? '') : '';
           let statusHtml = '';
           if (e.retired) {
             const cls = e.dnfReason === 'crash' ? 'status-crash' : 'status-mech';
@@ -332,6 +377,7 @@
             <td class="col-team">${displayTeam(e.teamId)}</td>
             <td class="col-gap${e.position === 1 && !e.retired ? ' leader' : ''}">${gapStr}</td>
             <td class="col-stops">${stops}</td>
+            <td class="col-pts">${pts}</td>
             <td class="col-status">${statusHtml}</td>
           `;
           tbody.appendChild(tr);
@@ -407,7 +453,10 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td class="s-pos${i === 0 ? ' p1' : ''}">${i + 1}</td>
-            <td class="s-name"><span class="team-dot" style="background:${colour}"></span>${d.name.toUpperCase()}</td>
+            <td class="s-name">
+              <span class="team-dot" style="background:${colour}"></span>${d.name.toUpperCase()}
+              <div class="s-team">${displayTeam(d.teamId)}</div>
+            </td>
             <td class="s-pts">${d.points}</td>
             <td class="s-w">${d.wins}</td>
           `;
@@ -426,11 +475,10 @@
           const cTbody = cTable.querySelector('tbody');
           constructors.forEach((c, i) => {
             const colour = colours[c.id] || '#888';
-            const name   = (names[c.id] || c.id).toUpperCase();
             const tr = document.createElement('tr');
             tr.innerHTML = `
               <td class="s-pos${i === 0 ? ' p1' : ''}">${i + 1}</td>
-              <td class="s-name"><span class="team-dot" style="background:${colour}"></span>${name}</td>
+              <td class="s-name"><span class="team-dot" style="background:${colour}"></span>${displayTeam(c.id)}</td>
               <td class="s-pts">${c.points}</td>
               <td class="s-w">${c.wins}</td>
             `;

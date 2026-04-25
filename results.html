@@ -261,6 +261,7 @@
       const teamNames   = Object.fromEntries(TEAMS.map(t => [t.id, t.name]));
       const engByTeam   = Object.fromEntries(TEAMS.map(t => [t.id, t.engine]));
       const engineNames = { honda: 'Honda', ferrari: 'Ferrari', megatron: 'Megatron', ford: 'Ford' };
+      const POINTS_TABLE = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 
       function teamDisplay(teamId) {
         const base = (teamNames[teamId] || teamId).toUpperCase();
@@ -268,6 +269,13 @@
         if (!eng) return base;
         const engUp = eng.toUpperCase();
         return base.includes(engUp) ? base : `${base}-${engUp}`;
+      }
+
+      function formatGap(secs) {
+        if (secs < 60) return `+${secs.toFixed(3)}`;
+        const m = Math.floor(secs / 60);
+        const s = (secs % 60).toFixed(3).padStart(6, '0');
+        return `+${m}:${s}`;
       }
 
       // ── Render result ────────────────────────────────────────────────────────
@@ -324,15 +332,6 @@
       if (nextBtn) { nextBtn.textContent = `R${round + 1} →`; footer.appendChild(nextBtn); }
 
       // ── Race result table ────────────────────────────────────────────────────
-      function formatGap(secs) {
-        if (secs < 60) return `+${secs.toFixed(3)}`;
-        const m = Math.floor(secs / 60);
-        const s = (secs % 60).toFixed(3).padStart(6, '0');
-        return `+${m}:${s}`;
-      }
-
-      const POINTS_TABLE = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
-
       function renderRace(el, colours, displayTeam) {
         if (!hasRaceResult(season, round)) {
           el.innerHTML = '<p style="color:var(--lo);font-size:11px;padding:20px 0">No result available yet.</p>';
@@ -509,7 +508,10 @@
         return table;
       }
     } catch (err) {
-      document.getElementById('loading-msg').textContent = `Error: ${err.message}`;
+      const msg = document.getElementById('loading-msg');
+      msg.textContent = `Error: ${err.message}`;
+      msg.style.display = 'block';
+      document.getElementById('main').style.display = 'none';
       console.error(err);
     }
     })();

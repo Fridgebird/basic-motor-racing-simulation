@@ -630,9 +630,9 @@ export const CIRCUITS = {
     eventName:          'French Grand Prix',
     lengthKm:           8.302,
     totalLaps:          75,
-    trackAbrasiveness:  0.25,
-    fuelCapacity:       100,
-    baseFuelBurnPerLap: 1.15,  // 75 laps × 1.15 × 1.15 turbo = 99.2 kg — borderline for turbos
+    trackAbrasiveness:  0.12,
+    fuelCapacity:       110,
+    baseFuelBurnPerLap: 1.15,  // 75 laps × 1.15 × 1.15 turbo = 99.2 kg — within 110 kg tank, no-stop viable
     pitLaneTime:        16,
     baseTyreChangeTime: 7,
     fuelRigRate:        0.12,
@@ -734,7 +734,7 @@ export const CIRCUITS = {
     eventName:          'Austrian Grand Prix',
     lengthKm:           3.188,
     totalLaps:          68,
-    trackAbrasiveness:  0.90,
+    trackAbrasiveness:  0.60,
     fuelCapacity:       100,
     baseFuelBurnPerLap: 1.25,  // 68 laps × 1.25 × 1.15 turbo = 97.75 kg — within tank
     pitLaneTime:        17,

@@ -454,8 +454,8 @@
     .c-detail { color: var(--mid); }
 
     .tag-pit   { color: #e8c400; }
-    .tag-out   { color: #cc44ff; }
-    .tag-crash { color: #cc44ff; }
+    .tag-out   { color: #ff4444; }
+    .tag-crash { color: #ff4444; }
     .tag-dmg   { color: #ff8800; }
     .tag-spin  { color: #ff8800; }
     .tag-pass  { color: #00cc77; }
@@ -762,6 +762,13 @@
     if (circuitNameEl) {
       circuitNameEl.textContent =
         `S${event.season} R${event.round} · ${circuit.eventName} — Race`;
+    }
+
+    // Show lap count pre-race in the meta element
+    const metaEl = document.getElementById('meta-lap-sector');
+    if (metaEl) {
+      metaEl.textContent   = `${circuit.totalLaps} LAPS`;
+      metaEl.style.visibility = 'visible';
     }
 
     // ── Day-gating ─────────────────────────────────────────────────────────────

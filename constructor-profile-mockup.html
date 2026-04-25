@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Constructor Profile — Simple Motor Racing</title>
+  <style>
+    @font-face { font-family:'Square'; src:url('Square.ttf') format('truetype'); font-weight:normal; }
+    @font-face { font-family:'Square'; src:url('Squareo.ttf') format('truetype'); font-weight:bold; }
+
+    :root {
+      --bg:#0d1117; --bg-deep:#080c12; --bg-mid:#0a0f18; --border:#1e2f44;
+      --hi:#ffffff; --mid:#8ab4d4; --lo:#4a6a88; --dim:#2a4055; --accent:#cc2233;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--mid); font-family:'Square','Courier New',monospace; font-size:12px; min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+
+    #topbar { width:100%; height:44px; background:var(--bg-deep); border:1px solid var(--border); border-bottom:2px solid var(--accent); display:flex; align-items:center; padding:0 16px; }
+    .b-flat { font-size:15px; color:var(--hi); letter-spacing:0.04em; flex-shrink:0; }
+    .b-flat em { font-style:normal; color:var(--mid); }
+    .topbar-nav { display:flex; gap:16px; margin-left:auto; margin-right:16px; }
+    .topbar-nav-link { color:var(--lo); text-decoration:none; font-size:10px; letter-spacing:0.08em; }
+    .topbar-nav-link:hover { color:var(--mid); }
+
+    #info-bar { width:100%; background:var(--bg-mid); border-bottom:1px solid var(--border); padding:6px 16px; font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
+
+    #page { width:100%; max-width:760px; padding:24px 16px; }
+
+    #team-nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    .nav-btn { font-family:inherit; font-size:9px; letter-spacing:1px; color:var(--lo); background:none; border:1px solid var(--border); padding:5px 12px; cursor:pointer; text-transform:uppercase; }
+    .nav-btn:hover:not(:disabled) { color:var(--hi); border-color:var(--mid); }
+    .nav-btn:disabled { opacity:0.25; cursor:default; }
+    #team-counter { font-size:9px; letter-spacing:2px; color:var(--dim); }
+
+    /* ── Profile card ──────────────────────────────────────────────────── */
+    #profile-card {
+      border:1px solid var(--border);
+      background:var(--bg-mid);
+      margin-bottom:20px;
+      overflow:hidden;
+    }
+
+    /* Car image — full width, dark background to set off the car */
+    #car-wrap {
+      width:100%;
+      background:#1a1a1a;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:12px 0;
+    }
+    #car-sprite {
+      width:360px;
+      height:180px;
+      background-repeat:no-repeat;
+      image-rendering:auto;
+    }
+
+    /* Team name + meta strip */
+    #team-header {
+      display:flex;
+      align-items:center;
+      gap:0;
+      padding:16px 20px 12px;
+      border-bottom:1px solid var(--border);
+    }
+    #livery-bar {
+      width:4px;
+      align-self:stretch;
+      flex-shrink:0;
+      margin-right:16px;
+      border-radius:1px;
+    }
+    #team-name { font-size:18px; letter-spacing:2px; color:var(--hi); margin-bottom:4px; }
+    #team-meta { font-size:9px; letter-spacing:2px; color:var(--lo); }
+
+    /* Stats row */
+    #team-stats {
+      display:flex;
+      gap:0;
+      padding:16px 20px;
+      border-bottom:1px solid var(--border);
+      flex-wrap:wrap;
+      gap:24px;
+    }
+    .stat-block { display:flex; flex-direction:column; gap:3px; }
+    .stat-value { font-size:18px; color:var(--hi); letter-spacing:1px; }
+    .stat-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
+
+    /* Current drivers */
+    #drivers-section {
+      padding:14px 20px;
+    }
+    .section-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; margin-bottom:10px; }
+    #driver-list { display:flex; gap:20px; flex-wrap:wrap; }
+    .driver-chip {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      background:var(--bg-deep);
+      border:1px solid var(--border);
+      padding:6px 12px;
+    }
+    .driver-chip-dot { width:3px; height:16px; flex-shrink:0; }
+    .driver-chip-name { font-size:11px; color:var(--hi); }
+    .driver-chip-nat { font-size:9px; letter-spacing:1px; color:var(--lo); }
+
+    /* ── Season history table ───────────────────────────────────────────── */
+    #season-history { border:1px solid var(--border); }
+    .history-header { padding:6px 12px; font-size:9px; letter-spacing:2px; color:var(--lo); border-bottom:1px solid var(--border); background:var(--bg-deep); }
+    .history-table { width:100%; border-collapse:collapse; }
+    .history-table th { font-size:9px; letter-spacing:1px; color:var(--lo); text-align:left; padding:5px 12px; border-bottom:1px solid var(--border); }
+    .history-table td { padding:6px 12px; font-size:11px; color:var(--mid); border-bottom:1px solid var(--dim); }
+    .history-table tr:last-child td { border-bottom:none; }
+    .history-table td.h-season { color:var(--hi); width:50px; }
+    .history-table td.h-pos    { color:var(--hi); width:36px; }
+    .history-table td.h-pts    { color:var(--hi); text-align:right; }
+    .history-table td.h-wins   { color:var(--lo); text-align:right; }
+    .champ-marker { color:var(--accent); font-size:10px; margin-left:4px; }
+
+    @media (max-width:520px) {
+      #car-sprite { width:100%; height:auto; aspect-ratio:2/1; max-width:360px; }
+      #team-stats { gap:16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="topbar">
+    <span class="b-flat">Simple <em>Motor Racing</em></span>
+    <nav class="topbar-nav"><a href="index.html" class="topbar-nav-link">CALENDAR</a></nav>
+  </div>
+  <div id="info-bar">Constructor Profile</div>
+
+  <div id="page">
+    <div id="team-nav">
+      <button class="nav-btn" id="btn-prev">← Prev</button>
+      <span id="team-counter"></span>
+      <button class="nav-btn" id="btn-next">Next →</button>
+    </div>
+
+    <div id="profile-card">
+      <div id="car-wrap">
+        <div id="car-sprite"></div>
+      </div>
+      <div id="team-header">
+        <div id="livery-bar"></div>
+        <div>
+          <div id="team-name">—</div>
+          <div id="team-meta">—</div>
+        </div>
+      </div>
+      <div id="team-stats">
+        <div class="stat-block"><div class="stat-value" id="s-seasons">—</div><div class="stat-label">Seasons</div></div>
+        <div class="stat-block"><div class="stat-value" id="s-races">—</div><div class="stat-label">Races</div></div>
+        <div class="stat-block"><div class="stat-value" id="s-wins">—</div><div class="stat-label">Wins</div></div>
+        <div class="stat-block"><div class="stat-value" id="s-podiums">—</div><div class="stat-label">Podiums</div></div>
+        <div class="stat-block"><div class="stat-value" id="s-poles">—</div><div class="stat-label">Poles</div></div>
+        <div class="stat-block"><div class="stat-value" id="s-titles">—</div><div class="stat-label">Titles</div></div>
+      </div>
+      <div id="drivers-section">
+        <div class="section-label">Current Drivers</div>
+        <div id="driver-list"></div>
+      </div>
+    </div>
+
+    <div id="season-history">
+      <div class="history-header">CONSTRUCTORS' CHAMPIONSHIP HISTORY</div>
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th class="h-season">SEASON</th>
+            <th class="h-pos">POS</th>
+            <th>DRIVERS</th>
+            <th class="h-pts">PTS</th>
+            <th class="h-wins">WINS</th>
+          </tr>
+        </thead>
+        <tbody id="history-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // ── Sprite sheet ────────────────────────────────────────────────────────────
+    // car_sprites_1950_1.png: 3 columns × 4 rows, 12 cars total
+    // Image: 1619 × 971px → each cell ~540 × 243px
+    const SHEET = 'car_sprites_1950_1.png';
+
+    // spr(row, col): row 0–3, col 0–2
+    function spr(row, col) {
+      const x = (col * 100 / 2).toFixed(2); // 0 / 50 / 100
+      const y = (row * 100 / 3).toFixed(4); // 0 / 33.33 / 66.67 / 100
+      return `background-image:url('${SHEET}');background-size:300% 400%;background-position:${x}% ${y}%;`;
+    }
+
+    // ── Team data ────────────────────────────────────────────────────────────────
+    // Cars mapped by visual colour in sprite sheet (row, col):
+    //   Row 0: dark green (0,0) · gold (0,1) · red (0,2)
+    //   Row 1: yellow (1,0) · white (1,1) · mid-blue (1,2)
+    //   Row 2: silver (2,0) · orange (2,1) · teal (2,2)
+    //   Row 3: pink (3,0) · purple (3,1) · emerald (3,2)
+
+    const TEAMS = [
+      {
+        name: 'HARTWELL RACING',
+        nationality: 'British',
+        colour: '#1b5e36',
+        sprite: spr(0, 0),
+        drivers: [
+          { name: 'T. Ashworth',  nat: 'GBR' },
+          { name: 'M. Calloway',  nat: 'GBR' },
+        ],
+        stats: { seasons: 1, races: 8, wins: 2, podiums: 5, poles: 1, titles: 0 },
+        history: [
+          { season: 1, pos: 3, drivers: 'Ashworth / Calloway', pts: 84, wins: 2 },
+        ],
+      },
+      {
+        name: 'FLINDERS RACING DEVELOPMENTS',
+        nationality: 'Australian',
+        colour: '#c9901a',
+        sprite: spr(0, 1),
+        drivers: [
+          { name: 'B. Flinders',  nat: 'AUS' },
+          { name: 'D. McAlister', nat: 'AUS' },
+        ],
+        stats: { seasons: 1, races: 8, wins: 0, podiums: 2, poles: 0, titles: 0 },
+        history: [
+          { season: 1, pos: 7, drivers: 'Flinders / McAlister', pts: 34, wins: 0 },
+        ],
+      },
+      {
+        name: 'SCUDERIA FERROSSO',
+        nationality: 'Italian',
+        colour: '#cc2233',
+        sprite: spr(0, 2),
+        drivers: [
+          { name: 'A. Nannini',   nat: 'ITA' },
+          { name: 'L. Zanardi',   nat: 'ITA' },
+        ],
+        stats: { seasons: 1, races: 8, wins: 4, podiums: 10, poles: 3, titles: 1 },
+        history: [
+          { season: 1, pos: 1, drivers: 'Nannini / Zanardi', pts: 148, wins: 4, champ: true },
+        ],
+      },
+      {
+        name: 'VETTURA CORSE',
+        nationality: 'Italian',
+        colour: '#d4b800',
+        sprite: spr(1, 0),
+        drivers: [
+          { name: 'G. Colombo',   nat: 'ITA' },
+          { name: 'F. Renaldi',   nat: 'ITA' },
+        ],
+        stats: { seasons: 1, races: 8, wins: 1, podiums: 4, poles: 1, titles: 0 },
+        history: [
+          { season: 1, pos: 4, drivers: 'Colombo / Renaldi', pts: 72, wins: 1 },
+        ],
+      },
+      {
+        name: 'KAISERWERKE GP',
+        nationality: 'German',
+        colour: '#c0c0c0',
+        sprite: spr(1, 1),
+        drivers: [
+          { name: 'H. Brandt',    nat: 'DEU' },
+          { name: 'K. Schäfer',   nat: 'DEU' },
+        ],
+        stats: { seasons: 1, races: 8, wins: 1, podiums: 3, poles: 2, titles: 0 },
+        history: [
+          { season: 1, pos: 5, drivers: 'Brandt / Schäfer', pts: 61, wins: 1 },
+        ],
+      },
+      {
+        name: 'ÉCURIE MISTRAL',
+        nationality: 'French',
+        colour: '#2e78b8',
+        sprite: spr(1, 2),
+        drivers: [
+          { name: 'J. Beaumont',  nat: 'FRA' },
+          { name: 'C. Delacroix', nat: 'FRA' },
+        ],
+        stats: { seasons: 1, races: 8, wins: 0, podiums: 2, poles: 0, titles: 0 },
+        history: [
+          { season: 1, pos: 6, drivers: 'Beaumont / Delacroix', pts: 48, wins: 0 },
+        ],
+      },
+      {
+        name: 'ALPENRING MOTORSPORT',
+        nationality: 'Austrian',
+        colour: '#909090',
+        sprite: spr(2, 0),
+        drivers: [
+          { name: 'F. Hofer',     nat: 'AUT' },
+          { name: 'E. Waldner',   nat: 'AUT' },
+        ],
+        stats: { seasons: 1, races: 8, wins: 0, podiums: 1, poles: 0, titles: 0 },
+        history: [
+          { season: 1, pos: 9, drivers: 'Hofer / Waldner', pts: 18, wins: 0 },
+        ],
+      },
+      {
+        name: 'DELTA BRAVO RACING',
+        nationality: 'British',
+        colour: '#d4580e',
+        sprite: spr(2, 1),
+        drivers: [
+          { name: 'N. Briggs',    nat: 'GBR' },
+          { name: 'P. Holloway',  nat: 'GBR' },
+        ],
+        stats: { seasons: 1, races: 8, wins: 0, podiums: 3, poles: 1, titles: 0 },
+        history: [
+          { season: 1, pos: 8, drivers: 'Briggs / Holloway', pts: 26, wins: 0 },
+        ],
+      },
+      {
+        name: 'EAGLECREST RACING',
+        nationality: 'American',
+        colour: '#1a8882',
+        sprite: spr(2, 2),
+        drivers: [
+          { name: 'C. Hargrove',  nat: 'USA' },
+          { name: 'R. Whitfield', nat: 'USA' },
+        ],
+        stats: { seasons: 1, races: 8, wins: 0, podiums: 1, poles: 0, titles: 0 },
+        history: [
+          { season: 1, pos: 10, drivers: 'Hargrove / Whitfield', pts: 14, wins: 0 },
+        ],
+      },
+      {
+        name: 'SAKURA GRAND PRIX',
+        nationality: 'Japanese',
+        colour: '#d4889a',
+        sprite: spr(3, 0),
+        drivers: [
+          { name: 'K. Nakamura',  nat: 'JPN' },
+          { name: 'Y. Tanaka',    nat: 'JPN' },
+        ],
+        stats: { seasons: 1, races: 8, wins: 0, podiums: 0, poles: 0, titles: 0 },
+        history: [
+          { season: 1, pos: 11, drivers: 'Nakamura / Tanaka', pts: 6, wins: 0 },
+        ],
+      },
+      {
+        name: 'SANTOS AUTOMOTIVE',
+        nationality: 'Brazilian',
+        colour: '#7a3aaa',
+        sprite: spr(3, 1),
+        drivers: [
+          { name: 'R. Santos',    nat: 'BRA' },
+          { name: 'M. Ferreira',  nat: 'BRA' },
+        ],
+        stats: { seasons: 1, races: 8, wins: 0, podiums: 0, poles: 0, titles: 0 },
+        history: [
+          { season: 1, pos: 12, drivers: 'Santos / Ferreira', pts: 2, wins: 0 },
+        ],
+      },
+      {
+        name: "O'CONNELL RACING",
+        nationality: 'Irish',
+        colour: '#0d7a38',
+        sprite: spr(3, 2),
+        drivers: [
+          { name: "S. O'Connell", nat: 'IRL' },
+          { name: 'F. Gallagher', nat: 'IRL' },
+        ],
+        stats: { seasons: 1, races: 8, wins: 0, podiums: 1, poles: 0, titles: 0 },
+        history: [
+          { season: 1, pos: 2, drivers: "O'Connell / Gallagher", pts: 110, wins: 0 },
+        ],
+      },
+    ];
+
+    // ── Render ────────────────────────────────────────────────────────────────────
+    let idx = 0;
+
+    function render() {
+      const t = TEAMS[idx];
+
+      document.getElementById('team-counter').textContent = `${idx + 1} / ${TEAMS.length}`;
+      document.getElementById('btn-prev').disabled = idx === 0;
+      document.getElementById('btn-next').disabled = idx === TEAMS.length - 1;
+
+      document.getElementById('car-sprite').style.cssText = t.sprite;
+      document.getElementById('livery-bar').style.background = t.colour;
+      document.getElementById('team-name').textContent = t.name;
+      document.getElementById('team-meta').textContent = `${t.nationality.toUpperCase()} · Est. 1950`;
+
+      document.getElementById('s-seasons').textContent  = t.stats.seasons;
+      document.getElementById('s-races').textContent    = t.stats.races;
+      document.getElementById('s-wins').textContent     = t.stats.wins;
+      document.getElementById('s-podiums').textContent  = t.stats.podiums;
+      document.getElementById('s-poles').textContent    = t.stats.poles;
+      document.getElementById('s-titles').textContent   = t.stats.titles;
+
+      const driverList = document.getElementById('driver-list');
+      driverList.innerHTML = '';
+      t.drivers.forEach(d => {
+        const chip = document.createElement('div');
+        chip.className = 'driver-chip';
+        chip.innerHTML = `
+          <div class="driver-chip-dot" style="background:${t.colour}"></div>
+          <div>
+            <div class="driver-chip-name">${d.name}</div>
+            <div class="driver-chip-nat">${d.nat}</div>
+          </div>
+        `;
+        driverList.appendChild(chip);
+      });
+
+      const tbody = document.getElementById('history-body');
+      tbody.innerHTML = '';
+      t.history.forEach(h => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="h-season">${h.season}</td>
+          <td class="h-pos">${h.pos}${h.champ ? '<span class="champ-marker">★</span>' : ''}</td>
+          <td>${h.drivers}</td>
+          <td class="h-pts">${h.pts}</td>
+          <td class="h-wins">${h.wins}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.title = `${t.name} — Simple Motor Racing`;
+    }
+
+    document.getElementById('btn-prev').addEventListener('click', () => { idx--; render(); });
+    document.getElementById('btn-next').addEventListener('click', () => { idx++; render(); });
+
+    render();
+  </script>
+
+</body>
+</html>

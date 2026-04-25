@@ -41,7 +41,6 @@
       align-items: center;
     }
 
-    /* ── Topbar ── */
     #topbar {
       width: 100%;
       height: 44px;
@@ -58,7 +57,6 @@
     .topbar-nav-link { color: var(--lo); text-decoration: none; font-size: 10px; letter-spacing: 0.08em; }
     .topbar-nav-link:hover { color: var(--mid); }
 
-    /* ── Info bar ── */
     #info-bar {
       width: 100%;
       background: var(--bg-mid);
@@ -70,14 +68,12 @@
       text-transform: uppercase;
     }
 
-    /* ── Page body ── */
     #page {
       width: 100%;
       max-width: 700px;
       padding: 24px 16px;
     }
 
-    /* ── Driver nav ── */
     #driver-nav {
       display: flex;
       justify-content: space-between;
@@ -97,13 +93,8 @@
     }
     .nav-btn:hover:not(:disabled) { color: var(--hi); border-color: var(--mid); }
     .nav-btn:disabled { opacity: 0.25; cursor: default; }
-    #driver-counter {
-      font-size: 9px;
-      letter-spacing: 2px;
-      color: var(--dim);
-    }
+    #driver-counter { font-size: 9px; letter-spacing: 2px; color: var(--dim); }
 
-    /* ── Profile card ── */
     #profile-card {
       display: flex;
       gap: 28px;
@@ -114,17 +105,14 @@
       margin-bottom: 20px;
     }
 
-    /* ── Portrait ── */
     #portrait {
       width: 128px;
       height: 128px;
       flex-shrink: 0;
       background-repeat: no-repeat;
       border: 1px solid var(--border);
-      /* image-rendering: pixelated; */ /* uncomment to get a crisper retro feel */
     }
 
-    /* ── Driver details ── */
     #driver-details { flex: 1; min-width: 0; }
 
     #driver-name {
@@ -146,28 +134,14 @@
       gap: 8px;
       margin-bottom: 16px;
     }
-    .team-dot {
-      width: 3px;
-      height: 16px;
-      flex-shrink: 0;
-    }
-    .team-name {
-      font-size: 10px;
-      letter-spacing: 1px;
-      color: var(--mid);
-    }
+    .team-dot { width: 3px; height: 16px; flex-shrink: 0; }
+    .team-name { font-size: 10px; letter-spacing: 1px; color: var(--mid); }
 
-    /* ── Stat pills ── */
-    .stats-row {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
+    .stats-row { display: flex; gap: 16px; flex-wrap: wrap; }
     .stat-block { display: flex; flex-direction: column; gap: 3px; }
     .stat-value { font-size: 18px; color: var(--hi); letter-spacing: 1px; }
     .stat-label { font-size: 8px; letter-spacing: 2px; color: var(--lo); text-transform: uppercase; }
 
-    /* ── Season history ── */
     #season-history { border: 1px solid var(--border); }
     .history-header {
       padding: 6px 12px;
@@ -177,10 +151,7 @@
       border-bottom: 1px solid var(--border);
       background: var(--bg-deep);
     }
-    .history-table {
-      width: 100%;
-      border-collapse: collapse;
-    }
+    .history-table { width: 100%; border-collapse: collapse; }
     .history-table th {
       font-size: 9px;
       letter-spacing: 1px;
@@ -199,19 +170,15 @@
     .history-table td.h-pos  { color: var(--hi); width: 36px; }
     .history-table td.h-pts  { color: var(--hi); text-align: right; }
     .history-table td.h-wins { color: var(--lo); text-align: right; }
-    .history-table td.h-team { color: var(--mid); }
     .champ-marker { color: var(--accent); font-size: 10px; margin-left: 4px; }
 
     @media (max-width: 500px) {
       #profile-card { flex-direction: column; }
-      #portrait { width: 100%; height: 0; padding-bottom: 100%; position: relative; }
-      /* On very small screens the portrait stretches; acceptable for mockup */
     }
   </style>
 </head>
 <body>
 
-  <!-- ── Topbar ── -->
   <div id="topbar">
     <span class="b-flat">Simple <em>Motor Racing</em></span>
     <nav class="topbar-nav">
@@ -219,20 +186,15 @@
     </nav>
   </div>
 
-  <!-- ── Info bar ── -->
   <div id="info-bar">Driver Profile</div>
 
-  <!-- ── Page ── -->
   <div id="page">
-
-    <!-- Prev / Next -->
     <div id="driver-nav">
-      <button class="nav-btn" id="btn-prev">← Prev Driver</button>
-      <span id="driver-counter">1 / 9</span>
-      <button class="nav-btn" id="btn-next">Next Driver →</button>
+      <button class="nav-btn" id="btn-prev">← Prev</button>
+      <span id="driver-counter"></span>
+      <button class="nav-btn" id="btn-next">Next →</button>
     </div>
 
-    <!-- Profile card -->
     <div id="profile-card">
       <div id="portrait"></div>
       <div id="driver-details">
@@ -243,35 +205,16 @@
           <div class="team-name" id="team-name">—</div>
         </div>
         <div class="stats-row">
-          <div class="stat-block">
-            <div class="stat-value" id="stat-seasons">—</div>
-            <div class="stat-label">Seasons</div>
-          </div>
-          <div class="stat-block">
-            <div class="stat-value" id="stat-races">—</div>
-            <div class="stat-label">Races</div>
-          </div>
-          <div class="stat-block">
-            <div class="stat-value" id="stat-wins">—</div>
-            <div class="stat-label">Wins</div>
-          </div>
-          <div class="stat-block">
-            <div class="stat-value" id="stat-podiums">—</div>
-            <div class="stat-label">Podiums</div>
-          </div>
-          <div class="stat-block">
-            <div class="stat-value" id="stat-poles">—</div>
-            <div class="stat-label">Poles</div>
-          </div>
-          <div class="stat-block">
-            <div class="stat-value" id="stat-pts">—</div>
-            <div class="stat-label">Points</div>
-          </div>
+          <div class="stat-block"><div class="stat-value" id="stat-seasons">—</div><div class="stat-label">Seasons</div></div>
+          <div class="stat-block"><div class="stat-value" id="stat-races">—</div><div class="stat-label">Races</div></div>
+          <div class="stat-block"><div class="stat-value" id="stat-wins">—</div><div class="stat-label">Wins</div></div>
+          <div class="stat-block"><div class="stat-value" id="stat-podiums">—</div><div class="stat-label">Podiums</div></div>
+          <div class="stat-block"><div class="stat-value" id="stat-poles">—</div><div class="stat-label">Poles</div></div>
+          <div class="stat-block"><div class="stat-value" id="stat-pts">—</div><div class="stat-label">Points</div></div>
         </div>
       </div>
     </div>
 
-    <!-- Season history -->
     <div id="season-history">
       <div class="history-header">Season History</div>
       <table class="history-table">
@@ -287,177 +230,137 @@
         <tbody id="history-body"></tbody>
       </table>
     </div>
-
   </div>
 
   <script>
-    // ── Driver data (sheet 1, 9 drivers) ──────────────────────────────────────
-    // sprite: { sheet, row, col } — sheet 1 = driver_sprites_1950_1.png
-    // Each cell is 1/3 of the image. background-position: col*50% row*50%
+    // Sprite formula for 8×8 grid from driver_sprites_1950_8x8_1.png
+    // background-size: 800% 800%
+    // background-position: col*(100/7)%  row*(100/7)%
+    function spriteStyle(row, col) {
+      const n = 8;
+      const x = (col * 100 / (n - 1)).toFixed(4);
+      const y = (row * 100 / (n - 1)).toFixed(4);
+      return `background-image:url('driver_sprites_1950_8x8_1.png');background-size:${n*100}% ${n*100}%;background-position:${x}% ${y}%;`;
+    }
 
+    // 64 drivers — row/col index into the 8×8 sheet
     const DRIVERS = [
-      {
-        name:        'Marco Ferrini',
-        meta:        'Italy · Age 34 · Skill 82 · Consistency 78',
-        team:        'Scuderia Rosso · Ferrari-Ferrari',
-        teamColour:  '#e8001c',
-        sprite:      { sheet: 1, row: 0, col: 0 },
-        stats:       { seasons: 3, races: 24, wins: 2, podiums: 7, poles: 1, pts: 186 },
-        history: [
-          { season: 1, team: 'Scuderia Rosso · Ferrari',   pos: 4,  pts: 62, wins: 0 },
-          { season: 2, team: 'Scuderia Rosso · Ferrari',   pos: 3,  pts: 71, wins: 1, champ: false },
-          { season: 3, team: 'Scuderia Rosso · Ferrari',   pos: 2,  pts: 53, wins: 1 },
-        ],
-      },
-      {
-        name:        'Elena Vasquez',
-        meta:        'Spain · Age 28 · Skill 75 · Consistency 88',
-        team:        'Iberia Racing · Ford-Ford',
-        teamColour:  '#f5a800',
-        sprite:      { sheet: 1, row: 0, col: 1 },
-        stats:       { seasons: 2, races: 16, wins: 0, podiums: 2, poles: 0, pts: 74 },
-        history: [
-          { season: 2, team: 'Iberia Racing · Ford',       pos: 9,  pts: 18, wins: 0 },
-          { season: 3, team: 'Iberia Racing · Ford',       pos: 7,  pts: 56, wins: 0 },
-        ],
-      },
-      {
-        name:        'Kenji Tanaka',
-        meta:        'Japan · Age 31 · Skill 79 · Consistency 85',
-        team:        'Pacific Works · Honda-Honda',
-        teamColour:  '#0090d0',
-        sprite:      { sheet: 1, row: 0, col: 2 },
-        stats:       { seasons: 3, races: 24, wins: 1, podiums: 4, poles: 2, pts: 141 },
-        history: [
-          { season: 1, team: 'Pacific Works · Honda',      pos: 6,  pts: 33, wins: 0 },
-          { season: 2, team: 'Pacific Works · Honda',      pos: 5,  pts: 58, wins: 1 },
-          { season: 3, team: 'Pacific Works · Honda',      pos: 6,  pts: 50, wins: 0 },
-        ],
-      },
-      {
-        name:        'Joseph Okafor',
-        meta:        'Nigeria · Age 29 · Skill 77 · Consistency 80',
-        team:        'Lagos Motorsport · Ford-Ford',
-        teamColour:  '#009900',
-        sprite:      { sheet: 1, row: 1, col: 0 },
-        stats:       { seasons: 2, races: 16, wins: 0, podiums: 1, poles: 0, pts: 59 },
-        history: [
-          { season: 2, team: 'Lagos Motorsport · Ford',    pos: 11, pts: 14, wins: 0 },
-          { season: 3, team: 'Lagos Motorsport · Ford',    pos: 8,  pts: 45, wins: 0 },
-        ],
-      },
-      {
-        name:        'Klaus Brandt',
-        meta:        'Germany · Age 42 · Skill 88 · Consistency 92',
-        team:        'Brandt Werke · Porsche-Porsche',
-        teamColour:  '#808080',
-        sprite:      { sheet: 1, row: 1, col: 1 },
-        stats:       { seasons: 3, races: 24, wins: 7, podiums: 16, poles: 5, pts: 312 },
-        history: [
-          { season: 1, team: 'Brandt Werke · Porsche',     pos: 1,  pts: 118, wins: 4, champ: true },
-          { season: 2, team: 'Brandt Werke · Porsche',     pos: 2,  pts: 104, wins: 2 },
-          { season: 3, team: 'Brandt Werke · Porsche',     pos: 1,  pts: 90,  wins: 1, champ: true },
-        ],
-      },
-      {
-        name:        'Ingrid Larsen',
-        meta:        'Sweden · Age 26 · Skill 73 · Consistency 84',
-        team:        'Nordic Grand Prix · Cosworth-Cosworth',
-        teamColour:  '#005b99',
-        sprite:      { sheet: 1, row: 1, col: 2 },
-        stats:       { seasons: 1, races: 8, wins: 0, podiums: 1, poles: 0, pts: 28 },
-        history: [
-          { season: 3, team: 'Nordic GP · Cosworth',       pos: 12, pts: 28, wins: 0 },
-        ],
-      },
-      {
-        name:        'Carlos Mendoza',
-        meta:        'Argentina · Age 38 · Skill 84 · Consistency 74',
-        team:        'Río Plata Racing · Alfa-Alfa',
-        teamColour:  '#cc0000',
-        sprite:      { sheet: 1, row: 2, col: 0 },
-        stats:       { seasons: 3, races: 24, wins: 3, podiums: 9, poles: 3, pts: 241 },
-        history: [
-          { season: 1, team: 'Río Plata · Alfa',           pos: 2,  pts: 88,  wins: 2 },
-          { season: 2, team: 'Río Plata · Alfa',           pos: 1,  pts: 96,  wins: 1, champ: true },
-          { season: 3, team: 'Río Plata · Alfa',           pos: 3,  pts: 57,  wins: 0 },
-        ],
-      },
-      {
-        name:        'Harpreet Singh',
-        meta:        'India · Age 33 · Skill 71 · Consistency 90',
-        team:        'Maharaja Motorsport · BRM-BRM',
-        teamColour:  '#ff6600',
-        sprite:      { sheet: 1, row: 2, col: 1 },
-        stats:       { seasons: 2, races: 16, wins: 0, podiums: 0, poles: 0, pts: 31 },
-        history: [
-          { season: 2, team: 'Maharaja Motorsport · BRM',  pos: 14, pts: 8,  wins: 0 },
-          { season: 3, team: 'Maharaja Motorsport · BRM',  pos: 13, pts: 23, wins: 0 },
-        ],
-      },
-      {
-        name:        'Finn O\'Brien',
-        meta:        'Ireland · Age 23 · Skill 69 · Consistency 62',
-        team:        'Celtic Racing · Cosworth-Cosworth',
-        teamColour:  '#009966',
-        sprite:      { sheet: 1, row: 2, col: 2 },
-        stats:       { seasons: 1, races: 8, wins: 0, podiums: 0, poles: 0, pts: 12 },
-        history: [
-          { season: 3, team: 'Celtic Racing · Cosworth',   pos: 16, pts: 12, wins: 0 },
-        ],
-      },
+      // ── Row 0 ──
+      { name:'Luca Romani',           meta:'Italy · Age 34 · Skill 82 · Consistency 78', team:'Scuderia Rosso · Ferrari',      colour:'#e8001c', row:0,col:0, stats:{seasons:3,races:24,wins:3,podiums:9,poles:2,pts:228}, history:[{s:1,t:'Scuderia Rosso',p:4,pts:62,w:0},{s:2,t:'Scuderia Rosso',p:2,pts:91,w:2},{s:3,t:'Scuderia Rosso',p:3,pts:75,w:1}] },
+      { name:'Marie Delacroix',       meta:'France · Age 29 · Skill 76 · Consistency 85', team:'Équipe Bleue · Matra',         colour:'#003caa', row:0,col:1, stats:{seasons:2,races:16,wins:0,podiums:3,poles:1,pts:89},  history:[{s:2,t:'Équipe Bleue',p:8,pts:31,w:0},{s:3,t:'Équipe Bleue',p:6,pts:58,w:0}] },
+      { name:'Yuki Hashimoto',        meta:'Japan · Age 27 · Skill 79 · Consistency 88', team:'Pacific Works · Honda',         colour:'#0090d0', row:0,col:2, stats:{seasons:2,races:16,wins:1,podiums:4,poles:1,pts:112}, history:[{s:2,t:'Pacific Works',p:6,pts:44,w:0},{s:3,t:'Pacific Works',p:4,pts:68,w:1}] },
+      { name:'Peter Vandenbergh',     meta:'Belgium · Age 36 · Skill 80 · Consistency 82', team:'Lowlands GP · Cosworth',     colour:'#ffcc00', row:0,col:3, stats:{seasons:3,races:24,wins:1,podiums:5,poles:0,pts:159}, history:[{s:1,t:'Lowlands GP',p:7,pts:38,w:0},{s:2,t:'Lowlands GP',p:5,pts:61,w:1},{s:3,t:'Lowlands GP',p:5,pts:60,w:0}] },
+      { name:'Rui Ferreira',          meta:'Portugal · Age 31 · Skill 74 · Consistency 79', team:'Lusitania Racing · Ford',    colour:'#006600', row:0,col:4, stats:{seasons:2,races:16,wins:0,podiums:1,poles:0,pts:67},  history:[{s:2,t:'Lusitania Racing',p:10,pts:22,w:0},{s:3,t:'Lusitania Racing',p:8,pts:45,w:0}] },
+      { name:'Dmitri Volkov',         meta:'USSR · Age 38 · Skill 77 · Consistency 83', team:'Soviet Autoworks · Lada',        colour:'#8b0000', row:0,col:5, stats:{seasons:3,races:24,wins:0,podiums:2,poles:0,pts:98},  history:[{s:1,t:'Soviet Autoworks',p:9,pts:22,w:0},{s:2,t:'Soviet Autoworks',p:8,pts:38,w:0},{s:3,t:'Soviet Autoworks',p:7,pts:38,w:0}] },
+      { name:'Fatima Al-Rashid',      meta:'Morocco · Age 26 · Skill 72 · Consistency 86', team:'Atlas Racing · Ford',        colour:'#cc6600', row:0,col:6, stats:{seasons:1,races:8,wins:0,podiums:0,poles:0,pts:19},   history:[{s:3,t:'Atlas Racing',p:15,pts:19,w:0}] },
+      { name:'Anders Lindqvist',      meta:'Sweden · Age 33 · Skill 81 · Consistency 80', team:'Nordic GP · Cosworth',        colour:'#005b99', row:0,col:7, stats:{seasons:3,races:24,wins:2,podiums:6,poles:2,pts:198}, history:[{s:1,t:'Nordic GP',p:5,pts:54,w:1},{s:2,t:'Nordic GP',p:4,pts:72,w:1},{s:3,t:'Nordic GP',p:4,pts:72,w:0}] },
+
+      // ── Row 1 ──
+      { name:'Jean-Pierre Moreau',    meta:'France · Age 40 · Skill 85 · Consistency 87', team:'Équipe Bleue · Matra',        colour:'#003caa', row:1,col:0, stats:{seasons:3,races:24,wins:5,podiums:13,poles:4,pts:287}, history:[{s:1,t:'Équipe Bleue',p:2,pts:98,w:2},{s:2,t:'Équipe Bleue',p:1,pts:112,w:3,champ:true},{s:3,t:'Équipe Bleue',p:3,pts:77,w:0}] },
+      { name:'Tomas Novak',           meta:'Czechoslovakia · Age 32 · Skill 75 · Consistency 81', team:'Bohemia Works · Skoda', colour:'#800000', row:1,col:1, stats:{seasons:2,races:16,wins:0,podiums:1,poles:0,pts:55}, history:[{s:2,t:'Bohemia Works',p:12,pts:14,w:0},{s:3,t:'Bohemia Works',p:9,pts:41,w:0}] },
+      { name:'Karim Benali',          meta:'Algeria · Age 28 · Skill 71 · Consistency 77', team:'Atlas Racing · Ford',         colour:'#cc6600', row:1,col:2, stats:{seasons:1,races:8,wins:0,podiums:0,poles:0,pts:14},   history:[{s:3,t:'Atlas Racing',p:17,pts:14,w:0}] },
+      { name:'Dieter Hoffmann',       meta:'Germany · Age 35 · Skill 83 · Consistency 84', team:'Brandt Werke · Porsche',     colour:'#999999', row:1,col:3, stats:{seasons:3,races:24,wins:4,podiums:10,poles:3,pts:263}, history:[{s:1,t:'Brandt Werke',p:3,pts:81,w:1},{s:2,t:'Brandt Werke',p:2,pts:98,w:2},{s:3,t:'Brandt Werke',p:2,pts:84,w:1}] },
+      { name:'Roberto Esposito',      meta:'Italy · Age 30 · Skill 78 · Consistency 76', team:'Scuderia Rosso · Ferrari',      colour:'#e8001c', row:1,col:4, stats:{seasons:2,races:16,wins:1,podiums:4,poles:1,pts:134}, history:[{s:2,t:'Scuderia Rosso',p:5,pts:55,w:0},{s:3,t:'Scuderia Rosso',p:4,pts:79,w:1}] },
+      { name:'Miguel Reyes',          meta:'Mexico · Age 37 · Skill 76 · Consistency 73', team:'Azteca GP · Ford',             colour:'#009933', row:1,col:5, stats:{seasons:3,races:24,wins:0,podiums:2,poles:0,pts:89},  history:[{s:1,t:'Azteca GP',p:10,pts:19,w:0},{s:2,t:'Azteca GP',p:9,pts:28,w:0},{s:3,t:'Azteca GP',p:8,pts:42,w:0}] },
+      { name:'Hiroshi Watanabe',      meta:'Japan · Age 29 · Skill 74 · Consistency 89', team:'Pacific Works · Honda',         colour:'#0090d0', row:1,col:6, stats:{seasons:2,races:16,wins:0,podiums:2,poles:0,pts:71},  history:[{s:2,t:'Pacific Works',p:9,pts:26,w:0},{s:3,t:'Pacific Works',p:7,pts:45,w:0}] },
+      { name:'Greta Müller',          meta:'Germany · Age 25 · Skill 70 · Consistency 83', team:'Brandt Werke · Porsche',      colour:'#999999', row:1,col:7, stats:{seasons:1,races:8,wins:0,podiums:0,poles:0,pts:22},   history:[{s:3,t:'Brandt Werke',p:14,pts:22,w:0}] },
+
+      // ── Row 2 ──
+      { name:'Frank Morrison',        meta:'Britain · Age 33 · Skill 80 · Consistency 79', team:'Celtic Racing · Cosworth',   colour:'#009966', row:2,col:0, stats:{seasons:3,races:24,wins:2,podiums:7,poles:1,pts:188}, history:[{s:1,t:'Celtic Racing',p:6,pts:42,w:0},{s:2,t:'Celtic Racing',p:4,pts:74,w:1},{s:3,t:'Celtic Racing',p:4,pts:72,w:1}] },
+      { name:'Nils Bergström',        meta:'Sweden · Age 31 · Skill 77 · Consistency 85', team:'Nordic GP · Cosworth',        colour:'#005b99', row:2,col:1, stats:{seasons:2,races:16,wins:0,podiums:3,poles:0,pts:95},  history:[{s:2,t:'Nordic GP',p:7,pts:37,w:0},{s:3,t:'Nordic GP',p:6,pts:58,w:0}] },
+      { name:'Isabella Conti',        meta:'Italy · Age 27 · Skill 73 · Consistency 88', team:'Scuderia Rosso · Ferrari',      colour:'#e8001c', row:2,col:2, stats:{seasons:1,races:8,wins:0,podiums:1,poles:0,pts:31},   history:[{s:3,t:'Scuderia Rosso',p:11,pts:31,w:0}] },
+      { name:'Ahmed Hassan',          meta:'Egypt · Age 34 · Skill 72 · Consistency 80', team:'Pharaoh Racing · Ford',         colour:'#cc9900', row:2,col:3, stats:{seasons:2,races:16,wins:0,podiums:0,poles:0,pts:38},  history:[{s:2,t:'Pharaoh Racing',p:14,pts:10,w:0},{s:3,t:'Pharaoh Racing',p:12,pts:28,w:0}] },
+      { name:'Victor Dubois',         meta:'France · Age 39 · Skill 79 · Consistency 77', team:'Équipe Bleue · Matra',        colour:'#003caa', row:2,col:4, stats:{seasons:3,races:24,wins:1,podiums:5,poles:0,pts:162}, history:[{s:1,t:'Équipe Bleue',p:7,pts:37,w:0},{s:2,t:'Équipe Bleue',p:6,pts:51,w:0},{s:3,t:'Équipe Bleue',p:5,pts:74,w:1}] },
+      { name:'Colin McAllister',      meta:'Scotland · Age 36 · Skill 81 · Consistency 82', team:'Caledonian Racing · Ford',  colour:'#336633', row:2,col:5, stats:{seasons:3,races:24,wins:1,podiums:4,poles:2,pts:171}, history:[{s:1,t:'Caledonian Racing',p:6,pts:40,w:0},{s:2,t:'Caledonian Racing',p:5,pts:62,w:1},{s:3,t:'Caledonian Racing',p:5,pts:69,w:0}] },
+      { name:'Paulo da Silva',        meta:'Brazil · Age 24 · Skill 68 · Consistency 71', team:'Rio Racing · Ford',            colour:'#009900', row:2,col:6, stats:{seasons:1,races:8,wins:0,podiums:0,poles:0,pts:8},    history:[{s:3,t:'Rio Racing',p:21,pts:8,w:0}] },
+      { name:'Günter Braun',          meta:'Germany · Age 41 · Skill 76 · Consistency 84', team:'Brandt Werke · Porsche',     colour:'#999999', row:2,col:7, stats:{seasons:3,races:24,wins:0,podiums:2,poles:0,pts:104}, history:[{s:1,t:'Brandt Werke',p:8,pts:28,w:0},{s:2,t:'Brandt Werke',p:7,pts:36,w:0},{s:3,t:'Brandt Werke',p:7,pts:40,w:0}] },
+
+      // ── Row 3 ──
+      { name:'Patrick Brennan',       meta:'Ireland · Age 28 · Skill 74 · Consistency 78', team:'Celtic Racing · Cosworth',  colour:'#009966', row:3,col:0, stats:{seasons:1,races:8,wins:0,podiums:1,poles:0,pts:29},   history:[{s:3,t:'Celtic Racing',p:12,pts:29,w:0}] },
+      { name:'Ines Aguirre',          meta:'Argentina · Age 30 · Skill 77 · Consistency 86', team:'Río Plata · Alfa',        colour:'#cc0000', row:3,col:1, stats:{seasons:2,races:16,wins:0,podiums:2,poles:0,pts:81},  history:[{s:2,t:'Río Plata',p:9,pts:28,w:0},{s:3,t:'Río Plata',p:7,pts:53,w:0}] },
+      { name:'Stavros Papadopoulos', meta:'Greece · Age 35 · Skill 73 · Consistency 80', team:'Hellenic Racing · Ford',       colour:'#4488cc', row:3,col:2, stats:{seasons:2,races:16,wins:0,podiums:0,poles:0,pts:42},  history:[{s:2,t:'Hellenic Racing',p:13,pts:12,w:0},{s:3,t:'Hellenic Racing',p:11,pts:30,w:0}] },
+      { name:'Lars Svensson',         meta:'Sweden · Age 32 · Skill 78 · Consistency 83', team:'Nordic GP · Cosworth',       colour:'#005b99', row:3,col:3, stats:{seasons:2,races:16,wins:1,podiums:3,poles:1,pts:108}, history:[{s:2,t:'Nordic GP',p:7,pts:41,w:0},{s:3,t:'Nordic GP',p:5,pts:67,w:1}] },
+      { name:'Domenico Ricci',        meta:'Italy · Age 37 · Skill 80 · Consistency 75', team:'Scuderia Rosso · Ferrari',     colour:'#e8001c', row:3,col:4, stats:{seasons:3,races:24,wins:1,podiums:5,poles:1,pts:176}, history:[{s:1,t:'Scuderia Rosso',p:7,pts:34,w:0},{s:2,t:'Scuderia Rosso',p:5,pts:63,w:0},{s:3,t:'Scuderia Rosso',p:4,pts:79,w:1}] },
+      { name:'Boris Sokolov',         meta:'USSR · Age 33 · Skill 71 · Consistency 81', team:'Soviet Autoworks · Lada',       colour:'#8b0000', row:3,col:5, stats:{seasons:2,races:16,wins:0,podiums:0,poles:0,pts:33},  history:[{s:2,t:'Soviet Autoworks',p:15,pts:8,w:0},{s:3,t:'Soviet Autoworks',p:13,pts:25,w:0}] },
+      { name:'Takeshi Yamamoto',      meta:'Japan · Age 26 · Skill 75 · Consistency 84', team:'Pacific Works · Honda',        colour:'#0090d0', row:3,col:6, stats:{seasons:1,races:8,wins:0,podiums:1,poles:0,pts:33},   history:[{s:3,t:'Pacific Works',p:10,pts:33,w:0}] },
+      { name:'Anne-Sophie Laurent',   meta:'France · Age 28 · Skill 72 · Consistency 87', team:'Équipe Bleue · Matra',       colour:'#003caa', row:3,col:7, stats:{seasons:1,races:8,wins:0,podiums:0,poles:0,pts:16},   history:[{s:3,t:'Équipe Bleue',p:18,pts:16,w:0}] },
+
+      // ── Row 4 ──
+      { name:'Eduardo Vargas',        meta:'Chile · Age 29 · Skill 73 · Consistency 79', team:'Andean Racing · Ford',         colour:'#660099', row:4,col:0, stats:{seasons:1,races:8,wins:0,podiums:0,poles:0,pts:11},   history:[{s:3,t:'Andean Racing',p:20,pts:11,w:0}] },
+      { name:'Franz Weber',           meta:'Austria · Age 38 · Skill 79 · Consistency 82', team:'Brandt Werke · Porsche',    colour:'#999999', row:4,col:1, stats:{seasons:3,races:24,wins:1,podiums:4,poles:0,pts:152}, history:[{s:1,t:'Brandt Werke',p:8,pts:29,w:0},{s:2,t:'Brandt Werke',p:6,pts:52,w:0},{s:3,t:'Brandt Werke',p:5,pts:71,w:1}] },
+      { name:'Nadia Petrov',          meta:'USSR · Age 27 · Skill 70 · Consistency 85', team:'Soviet Autoworks · Lada',       colour:'#8b0000', row:4,col:2, stats:{seasons:1,races:8,wins:0,podiums:0,poles:0,pts:9},    history:[{s:3,t:'Soviet Autoworks',p:22,pts:9,w:0}] },
+      { name:'Gurdev Patel',          meta:'India · Age 32 · Skill 69 · Consistency 88', team:'Maharaja Motorsport · BRM',   colour:'#ff6600', row:4,col:3, stats:{seasons:2,races:16,wins:0,podiums:0,poles:0,pts:28},  history:[{s:2,t:'Maharaja Motorsport',p:17,pts:6,w:0},{s:3,t:'Maharaja Motorsport',p:14,pts:22,w:0}] },
+      { name:'Diego Morales',         meta:'Colombia · Age 25 · Skill 71 · Consistency 74', team:'Andean Racing · Ford',     colour:'#660099', row:4,col:4, stats:{seasons:1,races:8,wins:0,podiums:0,poles:0,pts:14},   history:[{s:3,t:'Andean Racing',p:19,pts:14,w:0}] },
+      { name:'Sven Johansson',        meta:'Sweden · Age 34 · Skill 76 · Consistency 80', team:'Nordic GP · Cosworth',       colour:'#005b99', row:4,col:5, stats:{seasons:2,races:16,wins:0,podiums:2,poles:0,pts:82},  history:[{s:2,t:'Nordic GP',p:8,pts:30,w:0},{s:3,t:'Nordic GP',p:6,pts:52,w:0}] },
+      { name:'Brigitte Fontaine',     meta:'France · Age 30 · Skill 74 · Consistency 86', team:'Équipe Bleue · Matra',       colour:'#003caa', row:4,col:6, stats:{seasons:1,races:8,wins:0,podiums:1,poles:0,pts:27},   history:[{s:3,t:'Équipe Bleue',p:13,pts:27,w:0}] },
+      { name:'Mikhail Petrov',        meta:'USSR · Age 36 · Skill 72 · Consistency 78', team:'Soviet Autoworks · Lada',      colour:'#8b0000', row:4,col:7, stats:{seasons:3,races:24,wins:0,podiums:1,poles:0,pts:76},  history:[{s:1,t:'Soviet Autoworks',p:12,pts:14,w:0},{s:2,t:'Soviet Autoworks',p:11,pts:24,w:0},{s:3,t:'Soviet Autoworks',p:9,pts:38,w:0}] },
+
+      // ── Row 5 ──
+      { name:'Samuel Adeyemi',        meta:'Nigeria · Age 28 · Skill 75 · Consistency 81', team:'Lagos Motorsport · Ford',   colour:'#009900', row:5,col:0, stats:{seasons:1,races:8,wins:0,podiums:0,poles:0,pts:21},   history:[{s:3,t:'Lagos Motorsport',p:16,pts:21,w:0}] },
+      { name:'Luciano Barbieri',      meta:'Italy · Age 33 · Skill 77 · Consistency 79', team:'Scuderia Rosso · Ferrari',    colour:'#e8001c', row:5,col:1, stats:{seasons:2,races:16,wins:0,podiums:2,poles:0,pts:86},  history:[{s:2,t:'Scuderia Rosso',p:8,pts:32,w:0},{s:3,t:'Scuderia Rosso',p:6,pts:54,w:0}] },
+      { name:'Henri Beaumont',        meta:'France · Age 41 · Skill 82 · Consistency 86', team:'Équipe Bleue · Matra',       colour:'#003caa', row:5,col:2, stats:{seasons:3,races:24,wins:3,podiums:8,poles:2,pts:231}, history:[{s:1,t:'Équipe Bleue',p:3,pts:77,w:1},{s:2,t:'Équipe Bleue',p:3,pts:83,w:1},{s:3,t:'Équipe Bleue',p:3,pts:71,w:1}] },
+      { name:'Andrei Kuznetsov',      meta:'USSR · Age 30 · Skill 70 · Consistency 82', team:'Soviet Autoworks · Lada',      colour:'#8b0000', row:5,col:3, stats:{seasons:1,races:8,wins:0,podiums:0,poles:0,pts:17},   history:[{s:3,t:'Soviet Autoworks',p:17,pts:17,w:0}] },
+      { name:'Rosalind Ashworth',     meta:'Britain · Age 27 · Skill 76 · Consistency 87', team:'Celtic Racing · Cosworth', colour:'#009966', row:5,col:4, stats:{seasons:1,races:8,wins:0,podiums:1,poles:0,pts:34},   history:[{s:3,t:'Celtic Racing',p:9,pts:34,w:0}] },
+      { name:'Fernando Castilla',     meta:'Spain · Age 32 · Skill 78 · Consistency 83', team:'Iberia Racing · Ford',        colour:'#f5a800', row:5,col:5, stats:{seasons:2,races:16,wins:0,podiums:2,poles:0,pts:88},  history:[{s:2,t:'Iberia Racing',p:8,pts:33,w:0},{s:3,t:'Iberia Racing',p:6,pts:55,w:0}] },
+      { name:'Makoto Fujiwara',       meta:'Japan · Age 31 · Skill 74 · Consistency 85', team:'Pacific Works · Honda',       colour:'#0090d0', row:5,col:6, stats:{seasons:2,races:16,wins:0,podiums:1,poles:0,pts:61},  history:[{s:2,t:'Pacific Works',p:11,pts:19,w:0},{s:3,t:'Pacific Works',p:8,pts:42,w:0}] },
+      { name:'Jan Kowalski',          meta:'Poland · Age 35 · Skill 73 · Consistency 80', team:'Warszawa Racing · Ford',     colour:'#cc0044', row:5,col:7, stats:{seasons:2,races:16,wins:0,podiums:0,poles:0,pts:45},  history:[{s:2,t:'Warszawa Racing',p:13,pts:13,w:0},{s:3,t:'Warszawa Racing',p:11,pts:32,w:0}] },
+
+      // ── Row 6 ──
+      { name:'Giorgio Mancini',       meta:'Italy · Age 44 · Skill 84 · Consistency 89', team:'Scuderia Rosso · Ferrari',    colour:'#e8001c', row:6,col:0, stats:{seasons:3,races:24,wins:6,podiums:14,poles:5,pts:303}, history:[{s:1,t:'Scuderia Rosso',p:1,pts:111,w:3,champ:true},{s:2,t:'Scuderia Rosso',p:2,pts:103,w:2},{s:3,t:'Scuderia Rosso',p:2,pts:89,w:1}] },
+      { name:'Olaf Eriksen',          meta:'Norway · Age 30 · Skill 75 · Consistency 82', team:'Nordic GP · Cosworth',       colour:'#005b99', row:6,col:1, stats:{seasons:1,races:8,wins:0,podiums:0,poles:0,pts:23},   history:[{s:3,t:'Nordic GP',p:14,pts:23,w:0}] },
+      { name:'Carmen Ruiz',           meta:'Spain · Age 26 · Skill 71 · Consistency 84', team:'Iberia Racing · Ford',        colour:'#f5a800', row:6,col:2, stats:{seasons:1,races:8,wins:0,podiums:0,poles:0,pts:15},   history:[{s:3,t:'Iberia Racing',p:18,pts:15,w:0}] },
+      { name:'Alexei Morozov',        meta:'USSR · Age 37 · Skill 69 · Consistency 77', team:'Soviet Autoworks · Lada',      colour:'#8b0000', row:6,col:3, stats:{seasons:3,races:24,wins:0,podiums:0,poles:0,pts:57},  history:[{s:1,t:'Soviet Autoworks',p:14,pts:8,w:0},{s:2,t:'Soviet Autoworks',p:12,pts:18,w:0},{s:3,t:'Soviet Autoworks',p:10,pts:31,w:0}] },
+      { name:'Stefan Bauer',          meta:'Germany · Age 29 · Skill 78 · Consistency 81', team:'Brandt Werke · Porsche',    colour:'#999999', row:6,col:4, stats:{seasons:2,races:16,wins:1,podiums:3,poles:0,pts:105}, history:[{s:2,t:'Brandt Werke',p:6,pts:43,w:0},{s:3,t:'Brandt Werke',p:5,pts:62,w:1}] },
+      { name:'Kwabena Mensah',        meta:'Ghana · Age 27 · Skill 73 · Consistency 83', team:'Lagos Motorsport · Ford',     colour:'#009900', row:6,col:5, stats:{seasons:1,races:8,wins:0,podiums:0,poles:0,pts:18},   history:[{s:3,t:'Lagos Motorsport',p:16,pts:18,w:0}] },
+      { name:'Christophe Girard',     meta:'France · Age 34 · Skill 77 · Consistency 80', team:'Équipe Bleue · Matra',      colour:'#003caa', row:6,col:6, stats:{seasons:2,races:16,wins:0,podiums:2,poles:0,pts:80},  history:[{s:2,t:'Équipe Bleue',p:9,pts:27,w:0},{s:3,t:'Équipe Bleue',p:7,pts:53,w:0}] },
+      { name:'Miroslav Horak',        meta:'Czechoslovakia · Age 31 · Skill 72 · Consistency 79', team:'Bohemia Works · Skoda', colour:'#800000', row:6,col:7, stats:{seasons:1,races:8,wins:0,podiums:0,poles:0,pts:12}, history:[{s:3,t:'Bohemia Works',p:20,pts:12,w:0}] },
+
+      // ── Row 7 ──
+      { name:'Julio Hernandez',       meta:'Argentina · Age 35 · Skill 80 · Consistency 76', team:'Río Plata · Alfa',       colour:'#cc0000', row:7,col:0, stats:{seasons:3,races:24,wins:2,podiums:6,poles:1,pts:187}, history:[{s:1,t:'Río Plata',p:6,pts:39,w:0},{s:2,t:'Río Plata',p:5,pts:63,w:1},{s:3,t:'Río Plata',p:4,pts:85,w:1}] },
+      { name:'Wilhelm Schreiber',     meta:'Germany · Age 39 · Skill 76 · Consistency 84', team:'Brandt Werke · Porsche',   colour:'#999999', row:7,col:1, stats:{seasons:3,races:24,wins:0,podiums:3,poles:0,pts:119}, history:[{s:1,t:'Brandt Werke',p:9,pts:24,w:0},{s:2,t:'Brandt Werke',p:7,pts:40,w:0},{s:3,t:'Brandt Werke',p:6,pts:55,w:0}] },
+      { name:'Sebastiano Greco',      meta:'Italy · Age 28 · Skill 74 · Consistency 78', team:'Scuderia Rosso · Ferrari',   colour:'#e8001c', row:7,col:2, stats:{seasons:1,races:8,wins:0,podiums:0,poles:0,pts:20},   history:[{s:3,t:'Scuderia Rosso',p:15,pts:20,w:0}] },
+      { name:'Rodrigo Lima',          meta:'Brazil · Age 26 · Skill 72 · Consistency 75', team:'Rio Racing · Ford',          colour:'#009900', row:7,col:3, stats:{seasons:1,races:8,wins:0,podiums:0,poles:0,pts:13},   history:[{s:3,t:'Rio Racing',p:19,pts:13,w:0}] },
+      { name:'Pieter de Vries',       meta:'Netherlands · Age 33 · Skill 79 · Consistency 83', team:'Lowlands GP · Cosworth', colour:'#ffcc00', row:7,col:4, stats:{seasons:2,races:16,wins:1,podiums:3,poles:1,pts:107}, history:[{s:2,t:'Lowlands GP',p:7,pts:38,w:0},{s:3,t:'Lowlands GP',p:5,pts:69,w:1}] },
+      { name:'Yusuf Okonkwo',         meta:'Nigeria · Age 29 · Skill 70 · Consistency 80', team:'Lagos Motorsport · Ford',  colour:'#009900', row:7,col:5, stats:{seasons:1,races:8,wins:0,podiums:0,poles:0,pts:10},   history:[{s:3,t:'Lagos Motorsport',p:22,pts:10,w:0}] },
+      { name:'Bruno Castellan',       meta:'France · Age 36 · Skill 75 · Consistency 82', team:'Équipe Bleue · Matra',      colour:'#003caa', row:7,col:6, stats:{seasons:2,races:16,wins:0,podiums:1,poles:0,pts:65},  history:[{s:2,t:'Équipe Bleue',p:10,pts:22,w:0},{s:3,t:'Équipe Bleue',p:8,pts:43,w:0}] },
+      { name:'Alistair Drummond',     meta:'Scotland · Age 31 · Skill 78 · Consistency 81', team:'Caledonian Racing · Ford', colour:'#336633', row:7,col:7, stats:{seasons:2,races:16,wins:0,podiums:2,poles:0,pts:88},  history:[{s:2,t:'Caledonian Racing',p:8,pts:34,w:0},{s:3,t:'Caledonian Racing',p:6,pts:54,w:0}] },
     ];
 
-    // ── Sprite rendering ───────────────────────────────────────────────────────
-    function sheetFile(n) {
-      return `driver_sprites_1950_${n}.png`;
-    }
-
-    function spriteStyle(sprite) {
-      const x = sprite.col * 50;  // 0%, 50%, 100%
-      const y = sprite.row * 50;
-      return `background-image: url('${sheetFile(sprite.sheet)}');
-              background-size: 300% 300%;
-              background-position: ${x}% ${y}%;`;
-    }
-
-    // ── Render ─────────────────────────────────────────────────────────────────
     let current = 0;
 
     function render() {
       const d = DRIVERS[current];
+      const portrait = document.getElementById('portrait');
+      portrait.style.cssText = spriteStyle(d.row, d.col) + 'width:128px;height:128px;flex-shrink:0;background-repeat:no-repeat;border:1px solid var(--border);';
 
-      document.getElementById('portrait').style.cssText        = spriteStyle(d.sprite);
-      document.getElementById('driver-name').textContent       = d.name.toUpperCase();
-      document.getElementById('driver-meta').textContent       = d.meta;
-      document.getElementById('team-dot').style.background     = d.teamColour;
-      document.getElementById('team-name').textContent         = d.team.toUpperCase();
-      document.getElementById('stat-seasons').textContent      = d.stats.seasons;
-      document.getElementById('stat-races').textContent        = d.stats.races;
-      document.getElementById('stat-wins').textContent         = d.stats.wins;
-      document.getElementById('stat-podiums').textContent      = d.stats.podiums;
-      document.getElementById('stat-poles').textContent        = d.stats.poles;
-      document.getElementById('stat-pts').textContent          = d.stats.pts;
-      document.getElementById('driver-counter').textContent    = `${current + 1} / ${DRIVERS.length}`;
-      document.getElementById('btn-prev').disabled             = current === 0;
-      document.getElementById('btn-next').disabled             = current === DRIVERS.length - 1;
+      document.getElementById('driver-name').textContent    = d.name.toUpperCase();
+      document.getElementById('driver-meta').textContent    = d.meta;
+      document.getElementById('team-dot').style.background  = d.colour;
+      document.getElementById('team-name').textContent      = d.team.toUpperCase();
+      document.getElementById('stat-seasons').textContent   = d.stats.seasons;
+      document.getElementById('stat-races').textContent     = d.stats.races;
+      document.getElementById('stat-wins').textContent      = d.stats.wins;
+      document.getElementById('stat-podiums').textContent   = d.stats.podiums;
+      document.getElementById('stat-poles').textContent     = d.stats.poles;
+      document.getElementById('stat-pts').textContent       = d.stats.pts;
+      document.getElementById('driver-counter').textContent = `${current + 1} / ${DRIVERS.length}`;
+      document.getElementById('btn-prev').disabled          = current === 0;
+      document.getElementById('btn-next').disabled          = current === DRIVERS.length - 1;
+      document.getElementById('info-bar').textContent       = `Driver Profile · ${d.name}`;
 
-      // Season history
       const tbody = document.getElementById('history-body');
       tbody.innerHTML = '';
       d.history.forEach(h => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="h-pos">S${h.season}</td>
-          <td class="h-team">${h.team.toUpperCase()}${h.champ ? '<span class="champ-marker">★</span>' : ''}</td>
-          <td class="h-pos">${h.pos}</td>
+          <td class="h-pos">S${h.s}</td>
+          <td class="h-team">${h.t.toUpperCase()}${h.champ ? '<span class="champ-marker">★</span>' : ''}</td>
+          <td class="h-pos">${h.p}</td>
           <td class="h-pts">${h.pts}</td>
-          <td class="h-wins">${h.wins}</td>
+          <td class="h-wins">${h.w}</td>
         `;
         tbody.appendChild(tr);
       });
-
-      document.getElementById('info-bar').textContent = `Driver Profile · ${d.name}`;
     }
 
     document.getElementById('btn-prev').addEventListener('click', () => { current--; render(); });

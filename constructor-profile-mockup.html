@@ -51,8 +51,8 @@
       padding:12px 0;
     }
     #car-sprite {
-      width:360px;
-      height:180px;
+      width:280px;
+      height:280px;
       background-repeat:no-repeat;
       image-rendering:auto;
     }
@@ -184,30 +184,29 @@
 
   <script>
     // ── Sprite sheet ────────────────────────────────────────────────────────────
-    // car_sprites_1950_1.png: 3 columns × 4 rows, 12 cars total
-    // Image: 1619 × 971px → each cell ~540 × 243px
-    const SHEET = 'car_sprites_1950_1.png';
+    // car_sprites_1930_1.png: 4 columns × 3 rows, 12 cars total
+    // Image: 1254 × 1254px → each cell ~313 × 418px
+    const SHEET = 'car_sprites_1930_1.png';
 
-    // spr(row, col): row 0–3, col 0–2
+    // spr(row, col): row 0–2, col 0–3
     function spr(row, col) {
-      const x = (col * 100 / 2).toFixed(2); // 0 / 50 / 100
-      const y = (row * 100 / 3).toFixed(4); // 0 / 33.33 / 66.67 / 100
-      return `background-image:url('${SHEET}');background-size:300% 400%;background-position:${x}% ${y}%;`;
+      const x = (col * 100 / 3).toFixed(4); // 0 / 33.33 / 66.67 / 100
+      const y = (row * 100 / 2).toFixed(2);  // 0 / 50 / 100
+      return `background-image:url('${SHEET}');background-size:400% 300%;background-position:${x}% ${y}%;`;
     }
 
     // ── Team data ────────────────────────────────────────────────────────────────
     // Cars mapped by visual colour in sprite sheet (row, col):
-    //   Row 0: dark green (0,0) · gold (0,1) · red (0,2)
-    //   Row 1: yellow (1,0) · white (1,1) · mid-blue (1,2)
-    //   Row 2: silver (2,0) · orange (2,1) · teal (2,2)
-    //   Row 3: pink (3,0) · purple (3,1) · emerald (3,2)
+    //   Row 0: dark green #5 (0,0) · gold #19 (0,1) · red #27 (0,2) · yellow #11 (0,3)
+    //   Row 1: white #10 (1,0) · blue #3 (1,1) · silver #22 (1,2) · orange #7 (1,3)
+    //   Row 2: teal #15 (2,0) · pink #18 (2,1) · maroon #23 (2,2) · olive #25 (2,3)
 
     const TEAMS = [
       {
         name: 'HARTWELL RACING',
         nationality: 'British',
         colour: '#1b5e36',
-        sprite: spr(0, 0),
+        sprite: spr(0, 0),  // dark green #5
         drivers: [
           { name: 'T. Ashworth',  nat: 'GBR' },
           { name: 'M. Calloway',  nat: 'GBR' },
@@ -221,7 +220,7 @@
         name: 'FLINDERS RACING DEVELOPMENTS',
         nationality: 'Australian',
         colour: '#c9901a',
-        sprite: spr(0, 1),
+        sprite: spr(0, 1),  // gold #19
         drivers: [
           { name: 'B. Flinders',  nat: 'AUS' },
           { name: 'D. McAlister', nat: 'AUS' },
@@ -235,7 +234,7 @@
         name: 'SCUDERIA FERROSSO',
         nationality: 'Italian',
         colour: '#cc2233',
-        sprite: spr(0, 2),
+        sprite: spr(0, 2),  // red #27
         drivers: [
           { name: 'A. Nannini',   nat: 'ITA' },
           { name: 'L. Zanardi',   nat: 'ITA' },
@@ -249,7 +248,7 @@
         name: 'VETTURA CORSE',
         nationality: 'Italian',
         colour: '#d4b800',
-        sprite: spr(1, 0),
+        sprite: spr(0, 3),  // yellow #11
         drivers: [
           { name: 'G. Colombo',   nat: 'ITA' },
           { name: 'F. Renaldi',   nat: 'ITA' },
@@ -263,7 +262,7 @@
         name: 'KAISERWERKE GP',
         nationality: 'German',
         colour: '#c0c0c0',
-        sprite: spr(1, 1),
+        sprite: spr(1, 0),  // white #10
         drivers: [
           { name: 'H. Brandt',    nat: 'DEU' },
           { name: 'K. Schäfer',   nat: 'DEU' },
@@ -277,7 +276,7 @@
         name: 'ÉCURIE MISTRAL',
         nationality: 'French',
         colour: '#2e78b8',
-        sprite: spr(1, 2),
+        sprite: spr(1, 1),  // blue #3
         drivers: [
           { name: 'J. Beaumont',  nat: 'FRA' },
           { name: 'C. Delacroix', nat: 'FRA' },
@@ -291,7 +290,7 @@
         name: 'ALPENRING MOTORSPORT',
         nationality: 'Austrian',
         colour: '#909090',
-        sprite: spr(2, 0),
+        sprite: spr(1, 2),  // silver #22
         drivers: [
           { name: 'F. Hofer',     nat: 'AUT' },
           { name: 'E. Waldner',   nat: 'AUT' },
@@ -305,7 +304,7 @@
         name: 'DELTA BRAVO RACING',
         nationality: 'British',
         colour: '#d4580e',
-        sprite: spr(2, 1),
+        sprite: spr(1, 3),  // orange #7
         drivers: [
           { name: 'N. Briggs',    nat: 'GBR' },
           { name: 'P. Holloway',  nat: 'GBR' },
@@ -319,7 +318,7 @@
         name: 'EAGLECREST RACING',
         nationality: 'American',
         colour: '#1a8882',
-        sprite: spr(2, 2),
+        sprite: spr(2, 0),  // teal #15
         drivers: [
           { name: 'C. Hargrove',  nat: 'USA' },
           { name: 'R. Whitfield', nat: 'USA' },
@@ -333,7 +332,7 @@
         name: 'SAKURA GRAND PRIX',
         nationality: 'Japanese',
         colour: '#d4889a',
-        sprite: spr(3, 0),
+        sprite: spr(2, 1),  // pink #18
         drivers: [
           { name: 'K. Nakamura',  nat: 'JPN' },
           { name: 'Y. Tanaka',    nat: 'JPN' },
@@ -347,7 +346,7 @@
         name: 'SANTOS AUTOMOTIVE',
         nationality: 'Brazilian',
         colour: '#7a3aaa',
-        sprite: spr(3, 1),
+        sprite: spr(2, 2),  // maroon #23
         drivers: [
           { name: 'R. Santos',    nat: 'BRA' },
           { name: 'M. Ferreira',  nat: 'BRA' },
@@ -361,7 +360,7 @@
         name: "O'CONNELL RACING",
         nationality: 'Irish',
         colour: '#0d7a38',
-        sprite: spr(3, 2),
+        sprite: spr(2, 3),  // olive green #25
         drivers: [
           { name: "S. O'Connell", nat: 'IRL' },
           { name: 'F. Gallagher', nat: 'IRL' },

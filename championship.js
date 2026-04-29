@@ -2,8 +2,8 @@
 //
 // Global world model:
 //   - Season 1 starts on SEASON_1_START (defined in data.js)
-//   - Each entry in SEASON_SCHEDULE consumes one real calendar day
-//   - The schedule wraps: after the last event of season N, season N+1 begins
+//   - Each ROUND consumes one real calendar day; qualifying and race share the same day
+//   - The schedule wraps: after the last round of season N, season N+1 begins
 //   - Every visitor on the same date sees the same event — one global reality
 //
 // Dev mode:
@@ -35,19 +35,21 @@ function daysBetween(fromISO, toISO) {
 
 /**
  * Resolve the current championship event.
- * @param {string} [dateStr] — ISO date override (defaults to today; dev offset applied on top)
- * @returns {{ round, eventType, circuitId, season, eventIndex, dayOffset }}
+ * Qualifying and race share one day per round — this returns the race entry
+ * as the canonical "current event" (qualifying is always available on the same day).
+ * @returns {{ round, eventType, circuitId, season, dayOffset }}
  */
 export function getCurrentEvent() {
-  const dayOffset  = getTodayDayOffset();
-  const len        = SEASON_SCHEDULE.length;
-  const seasonIndex = Math.floor(dayOffset / len);
-  const eventIndex  = ((dayOffset % len) + len) % len;
+  const dayOffset   = getTodayDayOffset();
+  const numRounds   = Math.max(...SEASON_SCHEDULE.map(e => e.round));
+  const seasonIndex = Math.floor(dayOffset / numRounds);
+  const roundIndex  = ((dayOffset % numRounds) + numRounds) % numRounds;
+  const round       = roundIndex + 1;
+  const entry       = SEASON_SCHEDULE.find(e => e.round === round && e.eventType === 'race');
 
   return {
-    ...SEASON_SCHEDULE[eventIndex],
-    season:     seasonIndex + 1,
-    eventIndex,
+    ...entry,
+    season: seasonIndex + 1,
     dayOffset,
   };
 }
@@ -70,13 +72,15 @@ export function getSeedForEvent(event, worldSeed = 0) {
 
 /**
  * Return the event object for a specific season/round/type.
+ * Qualifying and race for the same round share the same dayOffset.
  * Used by qualifying.html and race.html when loaded with URL params.
  */
 export function getEventForRound(season, round, eventType) {
-  const idx = SEASON_SCHEDULE.findIndex(e => e.round === round && e.eventType === eventType);
-  if (idx < 0) return null;
-  const dayOffset = (season - 1) * SEASON_SCHEDULE.length + idx;
-  return { ...SEASON_SCHEDULE[idx], season, eventIndex: idx, dayOffset };
+  const entry = SEASON_SCHEDULE.find(e => e.round === round && e.eventType === eventType);
+  if (!entry) return null;
+  const numRounds = Math.max(...SEASON_SCHEDULE.map(e => e.round));
+  const dayOffset = (season - 1) * numRounds + (round - 1);
+  return { ...entry, season, dayOffset };
 }
 
 /**
@@ -283,54 +287,57 @@ export function hasRaceResult(season, round) {
 export async function ensurePastResultsCached(season, simFns) {
   const { initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession } = simFns;
   const todayOffset = getTodayDayOffset();
-  const seasonStart = (season - 1) * SEASON_SCHEDULE.length;
+  const numRounds   = Math.max(...SEASON_SCHEDULE.map(e => e.round));
+  const seasonStart = (season - 1) * numRounds;
 
-  for (let idx = 0; idx < SEASON_SCHEDULE.length; idx++) {
-    const entry     = SEASON_SCHEDULE[idx];
-    const absOffset = seasonStart + idx;
-    if (absOffset > todayOffset) break;    // skip future events only
+  for (let r = 1; r <= numRounds; r++) {
+    const absOffset = seasonStart + (r - 1);
+    if (absOffset > todayOffset) break;    // skip future rounds
 
-    const event   = getEventForRound(season, entry.round, entry.eventType);
-    const circuit = CIRCUITS[entry.circuitId];
-    const seed    = getSeedForEvent(event, getWorldSeed());
+    const circuitId = SEASON_SCHEDULE.find(e => e.round === r).circuitId;
+    const circuit   = CIRCUITS[circuitId];
 
-    if (entry.eventType === 'qualifying') {
-      if (!loadQualiResults(season, entry.round)) {
-        setCurrentCircuit(circuit);
-        const rng     = initRace(seed, null, circuit);
-        const results = await runQualifyingSession(rng, circuit);
-        saveQualiResults(season, entry.round, results);
-      }
-    } else {
-      if (!hasRaceResult(season, entry.round)) {
-        const qualiResults = loadQualiResults(season, entry.round);
-        setCurrentCircuit(circuit);
-        const rng = initRace(seed, qualiResults, circuit);
-        initStrategies(rng);
-        runRace(rng);
-        const finishers = cars.filter(c => c.status !== 'retired')
-                              .sort((a, b) => a.position - b.position);
-        const leader = finishers[0];
-        const finishOrder = [...cars]
-          .sort((a, b) => {
-            if (a.status === 'retired' && b.status !== 'retired') return 1;
-            if (b.status === 'retired' && a.status !== 'retired') return -1;
-            return a.position - b.position;
-          })
-          .map(car => ({
-            driverName:    car.driver.name,
-            teamId:        car.team.id,
-            position:      car.position,
-            retired:       car.status === 'retired',
-            gap:           (car.status !== 'retired' && leader)
-                             ? +(car.cumulativeTime - leader.cumulativeTime).toFixed(3)
-                             : null,
-            stops:         car.stopsMade,
-            lapsCompleted: car.status === 'retired' ? (car.retiredLap ?? 0) : circuit.totalLaps,
-            dnfReason:     car.retiredReason ?? null,
-          }));
-        addRaceResult(season, entry.round, finishOrder);
-      }
+    // ── Qualifying ─────────────────────────────────────────────────────────
+    if (!loadQualiResults(season, r)) {
+      const qualiEvent = getEventForRound(season, r, 'qualifying');
+      const qualiSeed  = getSeedForEvent(qualiEvent, getWorldSeed());
+      setCurrentCircuit(circuit);
+      const rng     = initRace(qualiSeed, null, circuit);
+      const results = await runQualifyingSession(rng, circuit);
+      saveQualiResults(season, r, results);
+    }
+
+    // ── Race ───────────────────────────────────────────────────────────────
+    if (!hasRaceResult(season, r)) {
+      const raceEvent    = getEventForRound(season, r, 'race');
+      const raceSeed     = getSeedForEvent(raceEvent, getWorldSeed());
+      const qualiResults = loadQualiResults(season, r);
+      setCurrentCircuit(circuit);
+      const rng = initRace(raceSeed, qualiResults, circuit);
+      initStrategies(rng);
+      runRace(rng);
+      const finishers = cars.filter(c => c.status !== 'retired')
+                            .sort((a, b) => a.position - b.position);
+      const leader = finishers[0];
+      const finishOrder = [...cars]
+        .sort((a, b) => {
+          if (a.status === 'retired' && b.status !== 'retired') return 1;
+          if (b.status === 'retired' && a.status !== 'retired') return -1;
+          return a.position - b.position;
+        })
+        .map(car => ({
+          driverName:    car.driver.name,
+          teamId:        car.team.id,
+          position:      car.position,
+          retired:       car.status === 'retired',
+          gap:           (car.status !== 'retired' && leader)
+                           ? +(car.cumulativeTime - leader.cumulativeTime).toFixed(3)
+                           : null,
+          stops:         car.stopsMade,
+          lapsCompleted: car.status === 'retired' ? (car.retiredLap ?? 0) : circuit.totalLaps,
+          dnfReason:     car.retiredReason ?? null,
+        }));
+      addRaceResult(season, r, finishOrder);
     }
   }
 }

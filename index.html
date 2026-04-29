@@ -312,7 +312,7 @@
     // ── Resolve context ────────────────────────────────────────────────────────
     const todayOffset  = getTodayDayOffset();
     const currentEvent = getCurrentEvent();
-    const schedLen     = SEASON_SCHEDULE.length;
+    const numRounds    = Math.max(...SEASON_SCHEDULE.map(e => e.round));
 
     let viewSeason = currentEvent.season;
 
@@ -336,7 +336,7 @@
     const devBar = document.getElementById('dev-bar');
     if (isDevMode()) {
       const todayDateStr  = formatShortDate(getEventDate(todayOffset));
-      const todayEventStr = `${currentEvent.eventType === 'qualifying' ? 'Qualifying' : 'Race'} — R${currentEvent.round} · S${currentEvent.season}`;
+      const todayEventStr = `Race Day — R${currentEvent.round} · S${currentEvent.season}`;
 
       devBar.style.display = 'flex';
       document.getElementById('dev-label').textContent =
@@ -377,7 +377,7 @@
     }
 
     function buildCalendar(s) {
-      const seasonStart = (s - 1) * schedLen;
+      const seasonStart = (s - 1) * numRounds;
       const tbody = document.getElementById('calendar-body');
       tbody.innerHTML = '';
 
@@ -395,10 +395,10 @@
         const { round, circuitId } = roundData;
         const circuit = CIRCUITS[circuitId];
 
-        const qualiIdx    = SEASON_SCHEDULE.findIndex(e => e.round === round && e.eventType === 'qualifying');
-        const raceIdx     = SEASON_SCHEDULE.findIndex(e => e.round === round && e.eventType === 'race');
-        const qualiOffset = seasonStart + qualiIdx;
-        const raceOffset  = seasonStart + raceIdx;
+        // Qualifying and race share the same day — both use round-1 as the offset
+        const sharedOffset = seasonStart + (round - 1);
+        const qualiOffset  = sharedOffset;
+        const raceOffset   = sharedOffset;
 
         const qualiUnlocked = qualiOffset <= todayOffset;
         const raceUnlocked  = raceOffset  <= todayOffset;

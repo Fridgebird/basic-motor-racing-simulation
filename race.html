@@ -726,10 +726,10 @@
   <script type="module">
     import { Renderer, setCurrentCircuit as setRendererCircuit } from './renderer.js';
     import { initRace }              from './state.js';
-    import { tick, isRaceOver, initStrategies, setCurrentCircuit } from './simulation.js';
+    import { tick, isRaceOver, initStrategies, setCurrentCircuit, runQualifyingSession } from './simulation.js';
     import {
       getCurrentEvent, getCircuit, getSeedForEvent, getEventForRound,
-      loadQualiResults, addRaceResult, hasRaceResult, resetWorld,
+      loadQualiResults, saveQualiResults, addRaceResult, hasRaceResult, resetWorld,
       advanceDevEvent, retreatDevEvent, isDevMode, enterDevMode, exitDevMode,
       getTodayDayOffset, getWorldSeed, setWorldSeed,
       getEventDate, formatShortDate,
@@ -783,7 +783,7 @@
       devBar.style.cssText = 'width:100%;max-width:1100px;padding:4px 8px;font-size:11px;color:#4a6a88;background:#080c12;border:1px solid #1e2f44;border-top:none;margin-bottom:4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;';
       devBar.innerHTML = `
         <button id="db-prev" style="padding:2px 8px">◀ PREV</button>
-        <span>DEV · Day ${todayOffset2} · ${todayDateStr} · R${event.round} ${event.eventType === 'qualifying' ? 'Qualifying' : 'Race'} — ${circuit.eventName}</span>
+        <span>DEV · Day ${todayOffset2} · ${todayDateStr} · Race Day R${event.round} — ${circuit.eventName}</span>
         <button id="db-next" style="padding:2px 8px">NEXT ▶</button>
         <span style="color:#2a4055">KEY:</span>
         <input id="db-seed" type="number" value="${worldSeed}" style="width:80px;background:#080c12;color:#8ab4d4;border:1px solid #1e2f44;font-family:inherit;font-size:11px;padding:2px 4px;">
@@ -802,7 +802,19 @@
       devBar.querySelector('#db-exit').addEventListener('click', () => { exitDevMode(); location.href = 'index.html'; });
     }
 
-    // Load qualifying results for this round (if qualifying was completed)
+    // ── Ensure qualifying result exists ────────────────────────────────────────
+    // Qualifying and race share the same day. If the viewer skips qualifying and
+    // comes straight to the race, silently run qualifying with its deterministic
+    // seed so the grid is identical to what watching qualifying would produce.
+    if (!loadQualiResults(event.season, event.round)) {
+      const qualiEvent = getEventForRound(event.season, event.round, 'qualifying');
+      const qualiSeed  = getSeedForEvent(qualiEvent, worldSeed);
+      const qualiRng   = initRace(qualiSeed, null, circuit);
+      const silentResults = await runQualifyingSession(qualiRng, circuit);
+      saveQualiResults(event.season, event.round, silentResults);
+    }
+
+    // Load qualifying results for this round (guaranteed to exist now)
     const qualiResults = loadQualiResults(event.season, event.round);
 
     // ── Renderer ───────────────────────────────────────────────────────────────

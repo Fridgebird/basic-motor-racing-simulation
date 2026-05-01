@@ -282,10 +282,10 @@ export function hasRaceResult(season, round) {
  * and ensures correct module binding for the cars[] live export from state.js).
  *
  * @param {number} season
- * @param {{ initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession }} simFns
+ * @param {{ initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession, getSeasonSnapshot }} simFns
  */
 export async function ensurePastResultsCached(season, simFns) {
-  const { initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession } = simFns;
+  const { initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession, getSeasonSnapshot } = simFns;
   const todayOffset = getTodayDayOffset();
   const numRounds   = Math.max(...SEASON_SCHEDULE.map(e => e.round));
   const seasonStart = (season - 1) * numRounds;
@@ -297,12 +297,15 @@ export async function ensurePastResultsCached(season, simFns) {
     const circuitId = SEASON_SCHEDULE.find(e => e.round === r).circuitId;
     const circuit   = CIRCUITS[circuitId];
 
+    // Resolve season-accurate stats once per round (snapshot is same for whole season)
+    const snapshot = getSeasonSnapshot ? getSeasonSnapshot(season, getWorldSeed()) : null;
+
     // ── Qualifying ─────────────────────────────────────────────────────────
     if (!loadQualiResults(season, r)) {
       const qualiEvent = getEventForRound(season, r, 'qualifying');
       const qualiSeed  = getSeedForEvent(qualiEvent, getWorldSeed());
       setCurrentCircuit(circuit);
-      const rng     = initRace(qualiSeed, null, circuit);
+      const rng     = initRace(qualiSeed, null, circuit, snapshot);
       const results = await runQualifyingSession(rng, circuit);
       saveQualiResults(season, r, results);
     }
@@ -313,7 +316,7 @@ export async function ensurePastResultsCached(season, simFns) {
       const raceSeed     = getSeedForEvent(raceEvent, getWorldSeed());
       const qualiResults = loadQualiResults(season, r);
       setCurrentCircuit(circuit);
-      const rng = initRace(raceSeed, qualiResults, circuit);
+      const rng = initRace(raceSeed, qualiResults, circuit, snapshot);
       initStrategies(rng);
       runRace(rng);
       const finishers = cars.filter(c => c.status !== 'retired')

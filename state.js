@@ -2,7 +2,28 @@
 // Call initRace(seed) once before the simulation starts.
 // All mutable race data lives here; simulation.js reads and writes it each tick.
 
-import { DRIVERS, TEAMS, ENGINES, TYRES, CIRCUIT } from './data.js';
+import { TEAMS, ENGINES, TYRES, CIRCUIT } from './data.js';
+import { DRIVER_POOL } from './drivers.js';
+
+// Build a default DRIVERS array from DRIVER_POOL for standalone races (no season snapshot).
+// Uses base stats directly. race.html should pass a snapshot for season-accurate stats.
+const DEFAULT_DRIVERS = DRIVER_POOL
+  .filter(d => d.startTeam && d.birthYear <= 1910) // S1 roster
+  .map(d => ({
+    id:          d.id,
+    name:        `${d.firstName} ${d.lastName}`,
+    lastName:    d.lastName,
+    team:        d.startTeam,
+    number:      0, // will be overridden by snapshot or kept as placeholder
+    portraitIndex: d.portraitIndex,
+    gender:      d.gender,
+    nationality: d.nationality,
+    birthYear:   d.birthYear,
+    age:         0,
+    skill:       d.baseSkill,
+    consistency: d.baseConsistency,
+    aggression:  d.baseAggression,
+  }));
 
 // Qualifying state — populated by runQualifyingSession() before a race.
 // Persisted to localStorage by championship.js.
@@ -94,9 +115,12 @@ export function updatePositions() {
  *   If provided: grid order and setup values come from qualifying (parc ferme).
  *   If null:     falls back to synthetic qualifying grid (for standalone races).
  * @param {object|null} circuit — Circuit to race on. Defaults to CIRCUIT (montjuic alias).
+ * @param {object|null} snapshot — Season snapshot from worldstate.getSeasonSnapshot().
+ *   If provided: uses snapshot.drivers, snapshot.teams, snapshot.engines, snapshot.tyres.
+ *   If null:     falls back to static data.js values (S1 standalone mode).
  * @returns {function} rng — Seeded PRNG; pass to initStrategies() then tick().
  */
-export function initRace(seed, qualiResults = null, circuit = null) {
+export function initRace(seed, qualiResults = null, circuit = null, snapshot = null) {
 
   // Reset shared state
   raceLog.seed    = seed;
@@ -109,14 +133,20 @@ export function initRace(seed, qualiResults = null, circuit = null) {
   const activeCircuit = circuit || CIRCUIT;
   const rng = createRng(seed);
 
+  // Resolve data sources: use snapshot if provided, otherwise fall back to static data.js
+  const driverList  = snapshot ? snapshot.drivers  : DEFAULT_DRIVERS;
+  const teamSource  = snapshot ? snapshot.teams    : TEAMS;
+  const engineSource = snapshot ? snapshot.engines : ENGINES;
+  const tyreSource  = snapshot ? snapshot.tyres   : TYRES;
+
   // Build lookup map for quick team access
-  const teamMap = Object.fromEntries(TEAMS.map(t => [t.id, t]));
+  const teamMap = Object.fromEntries(teamSource.map(t => [t.id, t]));
 
   // ── Build one car object per driver ────────────────────────────────────────
-  const rawCars = DRIVERS.map(driver => {
+  const rawCars = driverList.map(driver => {
     const team   = teamMap[driver.team];
-    const engine = ENGINES[team.engine];
-    const tyres  = TYRES[team.tyres];
+    const engine = engineSource[team.engine];
+    const tyres  = tyreSource[team.tyres];
 
     // Pre-race setup roll (no practice or qualifying session in v1).
     // Formula: newSetup = base + rng() × (setupAbility/100) × (100 - base)
@@ -139,7 +169,9 @@ export function initRace(seed, qualiResults = null, circuit = null) {
       tyreHistory:  [],        // compounds used so far e.g. ['S','H','M']
 
       // ── Fuel ──────────────────────────────────────────────────────────────
-      fuel: activeCircuit.fuelCapacity,   // kg; full tank at lights-out
+      // fuelCapacity is per-team (resolved by worldstate.js); use team value if available.
+      fuelCapacity: team.fuelCapacity ?? activeCircuit.fuelCapacity ?? 110,
+      fuel: team.fuelCapacity ?? activeCircuit.fuelCapacity ?? 110,  // full tank at lights-out
 
       // ── Setup ─────────────────────────────────────────────────────────────
       setup,    // 0–100; feeds setupFactor = 1.0 + (1 - setup/100) × 0.04

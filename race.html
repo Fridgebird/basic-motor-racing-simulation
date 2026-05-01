@@ -734,6 +734,7 @@
       getTodayDayOffset, getWorldSeed, setWorldSeed,
       getEventDate, formatShortDate,
     } from './championship.js';
+    import { getSeasonSnapshot } from './worldstate.js';
 
     // ── Dev mode entry via ?dev=1 ──────────────────────────────────────────────
     const params = new URLSearchParams(location.search);
@@ -756,6 +757,11 @@
     const raceSeed   = getSeedForEvent(event, worldSeed);
     setCurrentCircuit(circuit);
     setRendererCircuit(circuit);
+
+    // ── Season snapshot ────────────────────────────────────────────────────────
+    // Resolve all team/driver/engine/tyre stats for this season from worldstate.js.
+    // This ensures the simulation uses era-appropriate stats rather than S1 defaults.
+    const snapshot = getSeasonSnapshot(event.season, worldSeed);
 
     // Update info bar with championship context
     const circuitNameEl = document.getElementById('circuit-name');
@@ -809,7 +815,7 @@
     if (!loadQualiResults(event.season, event.round)) {
       const qualiEvent = getEventForRound(event.season, event.round, 'qualifying');
       const qualiSeed  = getSeedForEvent(qualiEvent, worldSeed);
-      const qualiRng   = initRace(qualiSeed, null, circuit);
+      const qualiRng   = initRace(qualiSeed, null, circuit, snapshot);
       const silentResults = await runQualifyingSession(qualiRng, circuit);
       saveQualiResults(event.season, event.round, silentResults);
     }
@@ -878,7 +884,7 @@
     {
       const previewSeed = parseInt(seedInput.value, 10) || raceSeed;
       seedInput.value   = previewSeed;
-      const previewRng  = initRace(previewSeed, qualiResults, circuit);
+      const previewRng  = initRace(previewSeed, qualiResults, circuit, snapshot);
       initStrategies(previewRng);
     }
     renderer.render();
@@ -886,7 +892,7 @@
     seedInput.addEventListener('change', () => {
       if (btnStart.disabled) return;
       const previewSeed = parseInt(seedInput.value, 10) || raceSeed;
-      const previewRng  = initRace(previewSeed, qualiResults, circuit);
+      const previewRng  = initRace(previewSeed, qualiResults, circuit, snapshot);
       initStrategies(previewRng);
       renderer.render();
     });
@@ -895,7 +901,7 @@
     function startRace() {
       const seed = parseInt(seedInput.value, 10) || raceSeed;
 
-      rng    = initRace(seed, qualiResults, circuit);
+      rng    = initRace(seed, qualiResults, circuit, snapshot);
       initStrategies(rng);
       paused = false;
 
@@ -928,7 +934,7 @@
       renderer.reset();
 
       const seed = parseInt(seedInput.value, 10) || raceSeed;
-      rng    = initRace(seed, qualiResults, circuit);
+      rng    = initRace(seed, qualiResults, circuit, snapshot);
       initStrategies(rng);
       paused = false;
 

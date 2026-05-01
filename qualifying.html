@@ -394,6 +394,7 @@
       advanceDevEvent, retreatDevEvent, isDevMode, enterDevMode, exitDevMode,
       getWorldSeed, setWorldSeed, getTodayDayOffset, getEventDate, formatShortDate,
     } from './championship.js';
+    import { getSeasonSnapshot } from './worldstate.js';
 
     // ── Dev mode entry via ?dev=1 ──────────────────────────────────────────────
     const params  = new URLSearchParams(location.search);
@@ -418,6 +419,7 @@
     const worldSeed = getWorldSeed();
     const seed      = getSeedForEvent(event, worldSeed);
     setCurrentCircuit(circuit);
+    const snapshot  = getSeasonSnapshot(event.season, worldSeed);
 
     // Info bar
     document.getElementById('circuit-name').textContent =
@@ -513,7 +515,7 @@
       document.getElementById('session-status').textContent = 'SESSION RUNNING';
 
       // Init cars — rolls setups (qualifying seed)
-      const rng = initRace(activeSeed, null, circuit);
+      const rng = initRace(activeSeed, null, circuit, snapshot);
 
       // Run session with animation
       qualiResults = await runQualifyingSessionAnimated(rng, circuit);
@@ -553,7 +555,7 @@
       btnPause.style.display    = 'block';
       clearOnTrackPanel();
 
-      const rng = initRace(activeSeed, null, circuit);
+      const rng = initRace(activeSeed, null, circuit, snapshot);
       qualiResults = await runQualifyingSessionAnimated(rng, circuit);
       if (!loadQualiResults(event.season, event.round)) {
         saveQualiResults(event.season, event.round, qualiResults);

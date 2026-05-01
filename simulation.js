@@ -96,7 +96,7 @@ export function initStrategies(rng) {
     const burnPerLap     = currentCircuit.baseFuelBurnPerLap * car.engine.fuelBurnRate;
     const fuelMarginLaps = car.team.strategy.fuelMarginLaps;
     const fuelLapsTarget = estLaps + fuelMarginLaps;
-    car.fuel        = Math.min(currentCircuit.fuelCapacity, Math.ceil(fuelLapsTarget * burnPerLap));
+    car.fuel        = Math.min(car.fuelCapacity, Math.ceil(fuelLapsTarget * burnPerLap));
     car.compound    = startCompound;
     car.tyreHistory = [startCompound[0].toUpperCase()];
     car.strategy    = { initialized: true };
@@ -181,8 +181,8 @@ export function tick(rng) {
 
     // ── 4. Fuel factor ──────────────────────────────────────────────────────
     // Formula: 1.0 + (currentFuel / maxFuel) × 0.03
-    // Full tank = 3% slower than empty
-    const fuelFactor = 1.0 + (car.fuel / currentCircuit.fuelCapacity) * 0.03;
+    // Full tank = 3% slower than empty. Uses per-team tank size (not circuit).
+    const fuelFactor = 1.0 + (car.fuel / car.fuelCapacity) * 0.03;
     factors.fuel = +fuelFactor.toFixed(4);
 
     // ── 5. Tyre factor ──────────────────────────────────────────────────────
@@ -261,7 +261,7 @@ export function tick(rng) {
     // Formula: wear += baseWearRate × compoundMult × sectorWearWeight × aggressionMult × fuelWearMult × trackAbrasiveness × dirtyAirMult
     // dirtyAirMult: following in turbulent air increases tyre stress.
     const aggressionMult  = 1.0 + (car.driver.aggression / 100) * AGGRESSION_WEAR_SCALE;
-    const fuelWearMult    = 1.0 + (car.fuel / currentCircuit.fuelCapacity) * FUEL_WEAR_COEFF;
+    const fuelWearMult    = 1.0 + (car.fuel / car.fuelCapacity) * FUEL_WEAR_COEFF;
     const dirtyAirWearMult = 1.0 + proximity * DIRTY_AIR_WEAR_MULT;
     const wearDelta = car.tyres.wearRate
       * compound.wearMultiplier
@@ -500,7 +500,7 @@ function paceDelta(behind, ahead) {
     const effectiveMaxGrip = Math.min(100, car.tyres.maxGrip + compound.gripModifier);
     const grip             = (effectiveMaxGrip / 100) * (1 - car.tyreWear);
     return (1.0 + (1 - grip) * tyreConfig.penaltyCoeff)   // tyreFactor
-         + (1.0 + (car.fuel / currentCircuit.fuelCapacity) * 0.03); // fuelFactor
+         + (1.0 + (car.fuel / car.fuelCapacity) * 0.03); // fuelFactor
   }
   return tyrePlusFuel(ahead) - tyrePlusFuel(behind); // positive = behind is faster
 }
@@ -537,8 +537,8 @@ function estimateStintLaps(car, compound) {
   let fuelWearMult = 1.0;
   if (car.team.strategy.tyreLifeModel === 'fuelCorrected') {
     // Estimate average fuel during a typical stint: ~35% of capacity (mid-range)
-    const estAvgFuel = currentCircuit.fuelCapacity * 0.35;
-    fuelWearMult = 1.0 + (estAvgFuel / currentCircuit.fuelCapacity) * FUEL_WEAR_COEFF;
+    const estAvgFuel = car.fuelCapacity * 0.35;
+    fuelWearMult = 1.0 + (estAvgFuel / car.fuelCapacity) * FUEL_WEAR_COEFF;
   }
 
   const wearPerLap = car.tyres.wearRate
@@ -643,8 +643,8 @@ function crossoverPitBenefits(car) {
   // Precompute the fuelCorrected multiplier once (same model as estimateStintLaps)
   let fuelWearMult = 1.0;
   if (car.team.strategy.tyreLifeModel === 'fuelCorrected') {
-    const estAvgFuel = currentCircuit.fuelCapacity * 0.35;
-    fuelWearMult = 1.0 + (estAvgFuel / currentCircuit.fuelCapacity) * FUEL_WEAR_COEFF;
+    const estAvgFuel = car.fuelCapacity * 0.35;
+    fuelWearMult = 1.0 + (estAvgFuel / car.fuelCapacity) * FUEL_WEAR_COEFF;
   }
 
   // Wear per lap for any compound, using the same model as estimateStintLaps
@@ -756,7 +756,7 @@ function executePitStop(car, rng) {
   const fuelLapsTarget = isLastStint
     ? lapsRemaining + 1
     : estimates[newCompound].estLaps + car.team.strategy.fuelMarginLaps;
-  const fuelTarget = Math.min(currentCircuit.fuelCapacity, Math.ceil(fuelLapsTarget * burnPerLap));
+  const fuelTarget = Math.min(car.fuelCapacity, Math.ceil(fuelLapsTarget * burnPerLap));
   const fuelAdded  = +(Math.max(0, fuelTarget - car.fuel)).toFixed(1);
 
   // ── Stop time: pit lane traversal + max(tyre change, fuelling) ──────────────
@@ -849,7 +849,7 @@ export async function simulateQualiLap(car, rng, circuit, trackEvolution, onSect
 
     const setupFactor   = 1.0 + (1 - car.setup / 100) * 0.04;
 
-    const fuelFactor    = 1.0 + (QUALI_FUEL / circuit.fuelCapacity) * 0.03;
+    const fuelFactor    = 1.0 + (QUALI_FUEL / (car.fuelCapacity ?? 110)) * 0.03;
 
     // Fresh soft tyre with track evolution bonus
     const compound          = COMPOUNDS['soft'];

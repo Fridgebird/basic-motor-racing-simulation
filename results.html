@@ -254,6 +254,7 @@
     import { TEAMS, SEASON_SCHEDULE } from './data.js';
     import { initRace, cars } from './state.js';
     import { runRace, initStrategies, setCurrentCircuit, runQualifyingSession } from './simulation.js';
+    import { getSeasonSnapshot } from './worldstate.js';
 
     (async () => {
       const params  = new URLSearchParams(location.search);
@@ -273,7 +274,7 @@
         `S${season} R${round} · ${circuit.eventName} — ${typeLabel}`;
       document.title = `${circuit.eventName} ${typeLabel} — Simple Motor Racing`;
 
-      const simFns = { initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession };
+      const simFns = { initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession, getSeasonSnapshot };
       await ensurePastResultsCached(season, simFns);
 
       document.getElementById('loading-msg').style.display = 'none';

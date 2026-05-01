@@ -42,7 +42,7 @@ export const DRIVER_POOL = [
   // ── Flinders Racing Developments (Australia) ─────────────────────────────────
   {
     id: 2,
-    firstName: 'William',     lastName: 'Reardon',
+    firstName: 'Bill',     lastName: 'Reardon',
     nationality: 'australian', gender: 'male',
     birthYear: 1898,          startTeam: 'frd',       portraitIndex: 2,
     baseSkill: 65,            baseConsistency: 72,     baseAggression: 78,

@@ -360,9 +360,9 @@ export class Renderer {
 
         const tagDiv = document.createElement('div');
         tagDiv.className = 't-team-tag';
-        const tName = car.team.name.toUpperCase();
+        const tName = car.team.shortName.toUpperCase();
         const eName = car.team.engine.toUpperCase();
-        tagDiv.textContent = tName === eName ? tName : `${tName}-${eName}`;
+        tagDiv.textContent = car.team.isWorks ? tName : `${tName}-${eName}`;
 
         info.appendChild(nameDiv);
         info.appendChild(tagDiv);
@@ -372,10 +372,10 @@ export class Renderer {
         tr.appendChild(driverTd);
       }
 
-      // TEAM — full "MCLAREN-HONDA" concat; hidden on mobile
-      const teamName   = car.team.name.toUpperCase();
+      // TEAM — "SHORTNAME-ENGINE" concat; works teams show shortName only; hidden on mobile
+      const teamName   = car.team.shortName.toUpperCase();
       const engineName = car.team.engine.toUpperCase();
-      const teamEngineLabel = teamName === engineName ? teamName : `${teamName}-${engineName}`;
+      const teamEngineLabel = car.team.isWorks ? teamName : `${teamName}-${engineName}`;
       tr.appendChild(cell(teamEngineLabel, 'col-team hide-mobile'));
 
       // TYRE MFR — single letter: G = Goodyear, P = Pirelli; hidden on mobile
@@ -757,7 +757,7 @@ export class Renderer {
       ctx.fillRect(4, y - 3, 5, 5);
 
       // Label: "12 SEN"
-      const abbr = car.driver.name.replace(/\s+/g, '').toUpperCase().slice(0, 3);
+      const abbr = car.driver.lastName.toUpperCase().slice(0, 3);
       ctx.fillStyle = isLeader ? '#ffffff' : isPitted ? '#2a4055' : '#4a6a88';
       ctx.fillText(`${car.driver.number} ${abbr}`, 13, y);
     }
@@ -894,7 +894,7 @@ export class Renderer {
       const name   = car.driver.name;
       const colour = car.team.colour || '#00ffff';
       const isDash = secondDrivers.has(name);
-      const label  = `${car.driver.number} ${name.replace(/\s+/g, '').toUpperCase().slice(0, 3)}`;
+      const label  = `${car.driver.number} ${car.driver.lastName.toUpperCase().slice(0, 3)}`;
 
       ctx.strokeStyle = colour;
       ctx.lineWidth   = 1.5;

@@ -34,7 +34,7 @@ export const DRIVER_POOL = [
   {
     id: 1,
     firstName: 'Vera',        lastName: 'Whitmore',
-    nationality: 'british',   gender: 'female',
+    nationality: 'french',    gender: 'female',
     birthYear: 1903,          startTeam: 'hartwell',  portraitIndex: 1,
     baseSkill: 72,            baseConsistency: 84,     baseAggression: 52,
   },
@@ -50,7 +50,7 @@ export const DRIVER_POOL = [
   {
     id: 3,
     firstName: 'Agnes',       lastName: 'McAllister',
-    nationality: 'australian', gender: 'female',
+    nationality: 'british',   gender: 'female',
     birthYear: 1905,          startTeam: 'frd',       portraitIndex: 3,
     baseSkill: 62,            baseConsistency: 76,     baseAggression: 58,
   },
@@ -66,7 +66,7 @@ export const DRIVER_POOL = [
   {
     id: 5,
     firstName: 'Rosa',        lastName: 'Lamberti',
-    nationality: 'italian',   gender: 'female',
+    nationality: 'german',    gender: 'female',
     birthYear: 1902,          startTeam: 'ferrosso',  portraitIndex: 5,
     baseSkill: 80,            baseConsistency: 82,     baseAggression: 60,
   },
@@ -98,7 +98,7 @@ export const DRIVER_POOL = [
   {
     id: 9,
     firstName: 'Hildegard',   lastName: 'Vogel',
-    nationality: 'german',    gender: 'female',
+    nationality: 'austrian',  gender: 'female',
     birthYear: 1901,          startTeam: 'kaiserwerke', portraitIndex: 9,
     baseSkill: 76,            baseConsistency: 88,     baseAggression: 48,
   },
@@ -114,7 +114,7 @@ export const DRIVER_POOL = [
   {
     id: 11,
     firstName: 'Marguerite',  lastName: 'Leconte',
-    nationality: 'french',    gender: 'female',
+    nationality: 'belgian',   gender: 'female',
     birthYear: 1904,          startTeam: 'mistral',   portraitIndex: 11,
     baseSkill: 77,            baseConsistency: 86,     baseAggression: 55,
   },
@@ -146,7 +146,7 @@ export const DRIVER_POOL = [
   {
     id: 15,
     firstName: 'Constance',   lastName: 'Baxter',
-    nationality: 'british',   gender: 'female',
+    nationality: 'american',  gender: 'female',
     birthYear: 1907,          startTeam: 'deltaBravo', portraitIndex: 15,
     baseSkill: 67,            baseConsistency: 79,     baseAggression: 58,
   },
@@ -162,7 +162,7 @@ export const DRIVER_POOL = [
   {
     id: 17,
     firstName: 'Dorothy',     lastName: 'Crane',
-    nationality: 'american',  gender: 'female',
+    nationality: 'british',   gender: 'female',
     birthYear: 1903,          startTeam: 'eaglecrest', portraitIndex: 17,
     baseSkill: 69,            baseConsistency: 77,     baseAggression: 63,
   },
@@ -194,7 +194,7 @@ export const DRIVER_POOL = [
   {
     id: 21,
     firstName: 'Isabel',      lastName: 'Nogueira',
-    nationality: 'brazilian', gender: 'female',
+    nationality: 'argentinian', gender: 'female',
     birthYear: 1905,          startTeam: 'santos',    portraitIndex: 21,
     baseSkill: 59,            baseConsistency: 70,     baseAggression: 65,
   },

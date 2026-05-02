@@ -45,6 +45,10 @@ const FAILURE_SCALE = 0.016;
 // Driver aggression scales tyre wear. At 0.4, maximum aggression (100) adds 40% extra wear.
 const AGGRESSION_WEAR_SCALE = 0.4;
 
+// Tyre wear scales with circuit length — a 7km lap wears tyres more than a 3km lap.
+// REFERENCE_CIRCUIT_KM is the fleet average; circuits above/below scale wear proportionally.
+const REFERENCE_CIRCUIT_KM = 5.0;
+
 // Fuel load increases tyre wear — heavier car puts more stress on tyres.
 // At 0.20, a full tank (100kg) adds 20% extra wear vs an empty car.
 const FUEL_WEAR_COEFF = 0.20;
@@ -258,17 +262,19 @@ export function tick(rng) {
     car.currentSectorTimes.push(+sectorTime.toFixed(3));
 
     // ── Tyre wear accumulation ───────────────────────────────────────────────
-    // Formula: wear += baseWearRate × compoundMult × sectorWearWeight × aggressionMult × fuelWearMult × trackAbrasiveness × dirtyAirMult
+    // Formula: wear += baseWearRate × compoundMult × sectorWearWeight × aggressionMult × fuelWearMult × trackAbrasiveness × circuitLengthMult × dirtyAirMult
     // dirtyAirMult: following in turbulent air increases tyre stress.
-    const aggressionMult  = 1.0 + (car.driver.aggression / 100) * AGGRESSION_WEAR_SCALE;
-    const fuelWearMult    = 1.0 + (car.fuel / car.fuelCapacity) * FUEL_WEAR_COEFF;
-    const dirtyAirWearMult = 1.0 + proximity * DIRTY_AIR_WEAR_MULT;
+    const aggressionMult    = 1.0 + (car.driver.aggression / 100) * AGGRESSION_WEAR_SCALE;
+    const fuelWearMult      = 1.0 + (car.fuel / car.fuelCapacity) * FUEL_WEAR_COEFF;
+    const circuitLengthMult = currentCircuit.lengthKm / REFERENCE_CIRCUIT_KM;
+    const dirtyAirWearMult  = 1.0 + proximity * DIRTY_AIR_WEAR_MULT;
     const wearDelta = car.tyres.wearRate
       * compound.wearMultiplier
       * sectorDef.wearWeight
       * aggressionMult
       * fuelWearMult
       * currentCircuit.trackAbrasiveness
+      * circuitLengthMult
       * dirtyAirWearMult;
     car.tyreWear = Math.min(1, car.tyreWear + wearDelta);
 
@@ -546,7 +552,8 @@ function estimateStintLaps(car, compound) {
     * sumWearWeights
     * aggressionMult
     * fuelWearMult
-    * currentCircuit.trackAbrasiveness;
+    * currentCircuit.trackAbrasiveness
+    * (currentCircuit.lengthKm / REFERENCE_CIRCUIT_KM);
 
   return Math.max(5, Math.floor(wearTrigger / wearPerLap));
 }
@@ -654,7 +661,8 @@ function crossoverPitBenefits(car) {
       * sumWearWeights
       * aggressionMult
       * fuelWearMult
-      * currentCircuit.trackAbrasiveness;
+      * currentCircuit.trackAbrasiveness
+      * (currentCircuit.lengthKm / REFERENCE_CIRCUIT_KM);
   }
 
   // tyreFactor at a given wear level — same formula as the main simulation tick

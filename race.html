@@ -297,6 +297,7 @@
     /* Tyre compound pips */
     .pip {
       display: inline-block;
+      box-sizing: border-box;
       width: 6px;
       height: 6px;
       border-radius: 50%;
@@ -305,7 +306,12 @@
     }
     .pip-s { background: #ff3333; }
     .pip-m { background: #e8c400; }
-    .pip-h { background: #888888; }
+    .pip-h { background: #cccccc; }
+    /* Previous stints: hollow ring in compound colour — clearly identifiable even side-by-side */
+    .pip-past { background: transparent; border: 1.5px solid; }
+    .pip-past.pip-s { border-color: #ff3333; }
+    .pip-past.pip-m { border-color: #e8c400; }
+    .pip-past.pip-h { border-color: #cccccc; }
     .tyre-cell { display: flex; align-items: center; gap: 2px; }
     .tyre-laps { color: var(--mid); margin-left: 2px; }
 

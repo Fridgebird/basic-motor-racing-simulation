@@ -224,8 +224,6 @@
     }
     #btn-start-quali:hover, #btn-replay-quali:hover, #btn-rerun-quali:hover, #btn-goto-race:hover, #btn-pause-quali:hover { border-color: var(--lo); color: var(--hi); }
     #btn-start-quali:disabled { opacity: 0.4; cursor: default; }
-    #btn-replay-quali { display: none; color: var(--lo); }
-    #btn-rerun-quali  { display: none; color: var(--lo); }
     #btn-goto-race    { display: none; border-color: var(--lo); }
     #btn-pause-quali  { display: none; }
 
@@ -360,8 +358,6 @@
 
       <button id="btn-start-quali">START QUALIFYING</button>
       <button id="btn-pause-quali">PAUSE</button>
-      <button id="btn-replay-quali">REPLAY QUALIFYING</button>
-      <button id="btn-rerun-quali">RE-RUN QUALIFYING</button>
       <button id="btn-goto-race">GO TO RACE →</button>
     </div>
 
@@ -462,8 +458,6 @@
     const speedSel    = document.getElementById('speed-select');
     const btnStart    = document.getElementById('btn-start-quali');
     const btnPause    = document.getElementById('btn-pause-quali');
-    const btnReplay   = document.getElementById('btn-replay-quali');
-    const btnRerun    = document.getElementById('btn-rerun-quali');
     const btnGotoRace = document.getElementById('btn-goto-race');
     const seedInput   = document.getElementById('seed-input');
 
@@ -492,17 +486,11 @@
     });
 
     // ── Check for cached results ───────────────────────────────────────────────
+    // If results exist, silently store them so clicking Start replays the animation
+    // with the same seed (same result). The result table is available on the calendar page.
     const cached = loadQualiResults(event.season, event.round);
     if (cached) {
-      qualiResults           = cached;
-      sessionDone            = true;
-      seedInput.disabled     = true;
-      renderFinalLeaderboard(cached);
-      document.getElementById('session-status').textContent = 'SESSION COMPLETE';
-      btnStart.style.display   = 'none';
-      btnReplay.style.display  = 'block';
-      btnRerun.style.display   = 'block';
-      btnGotoRace.style.display = 'block';
+      qualiResults = cached;
     }
 
     // ── Start qualifying ───────────────────────────────────────────────────────
@@ -529,46 +517,12 @@
       paused                   = false;
       btnPause.style.display   = 'none';
       document.getElementById('session-status').textContent = 'SESSION COMPLETE';
-      btnReplay.style.display   = 'block';
-      btnRerun.style.display    = 'block';
       btnGotoRace.style.display = 'block';
       clearOnTrackPanel();
     });
 
     btnGotoRace.addEventListener('click', () => {
       window.location.href = `race.html?season=${event.season}&round=${event.round}`;
-    });
-
-    btnReplay.addEventListener('click', async () => {
-      // Re-run animation with same activeSeed (same result) without clearing localStorage
-      sessionDone = false;
-      qualiResults = null;
-      bestSectorTimes = [null, null, null];
-      poleSectorTimes = null;
-      paused = false;
-
-      document.getElementById('quali-tbody').innerHTML = '';
-      document.getElementById('session-status').textContent = 'SESSION RUNNING';
-      btnReplay.style.display   = 'none';
-      btnRerun.style.display    = 'none';
-      btnGotoRace.style.display = 'none';
-      btnPause.style.display    = 'block';
-      clearOnTrackPanel();
-
-      const rng = initRace(activeSeed, null, circuit, snapshot);
-      qualiResults = await runQualifyingSessionAnimated(rng, circuit);
-      if (!loadQualiResults(event.season, event.round)) {
-        saveQualiResults(event.season, event.round, qualiResults);
-      }
-
-      sessionDone              = true;
-      paused                   = false;
-      btnPause.style.display   = 'none';
-      document.getElementById('session-status').textContent = 'SESSION COMPLETE';
-      btnReplay.style.display   = 'block';
-      btnRerun.style.display    = 'block';
-      btnGotoRace.style.display = 'block';
-      clearOnTrackPanel();
     });
 
     btnPause.addEventListener('click', () => {
@@ -579,11 +533,6 @@
       } else {
         document.getElementById('session-status').textContent = 'SESSION RUNNING';
       }
-    });
-
-    btnRerun.addEventListener('click', () => {
-      localStorage.removeItem(`smr_quali_${event.season}_${event.round}`);
-      location.reload();
     });
 
     // ── Animated qualifying session ────────────────────────────────────────────

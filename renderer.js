@@ -424,11 +424,10 @@ export class Renderer {
 
         const history = car.tyreHistory ?? [];
 
-        // Previous compounds: dimmed pip dots
+        // Previous compounds: hollow ring in compound colour
         for (const c of history.slice(0, -1)) {
           const pip = document.createElement('span');
-          pip.className = `pip pip-${c.toLowerCase()}`;
-          pip.style.opacity = '0.35';
+          pip.className = `pip pip-${c.toLowerCase()} pip-past`;
           wrap.appendChild(pip);
         }
 

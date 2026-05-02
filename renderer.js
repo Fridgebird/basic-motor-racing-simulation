@@ -784,8 +784,11 @@ export class Renderer {
     // lapChartData is populated at end of sector 3, so a mid-lap snapshot
     // (sector 1 or 2) only has data through the previous completed lap.
     const displayRace = this._displayRace;
+    // lapChartData[0] is the grid (lap 0); lapChartData[i] = end of lap i.
+    // Replay: sector 3 means lap i is fully recorded, so include up to lap+1 entries.
+    // Mid-lap (sector 1/2): only show through the previous completed lap (lap entries).
     const lapLimit = this.inReplay
-      ? (displayRace.sector === 3 ? displayRace.lap : displayRace.lap - 1)
+      ? (displayRace.sector === 3 ? displayRace.lap + 1 : displayRace.lap)
       : lapChartData.length;
     const lapsRecorded = Math.min(lapChartData.length, lapLimit);
 
@@ -913,7 +916,7 @@ export class Renderer {
         const d     = entry[name];
         if (!d || d.position === null) continue;
 
-        const x = lapX(i + 1);   // lap index is 0-based, lap number is 1-based
+        const x = lapX(i);   // lapChartData[0]=grid(lap 0), lapChartData[i]=lap i
         const y = posY(d.position);
 
         if (!started) {

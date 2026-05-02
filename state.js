@@ -276,6 +276,14 @@ export function initRace(seed, qualiResults = null, circuit = null, snapshot = n
   cars.length = 0;
   cars.push(...rawCars);
 
+  // Push lap-0 (grid) entry so the lap chart starts from starting positions.
+  // This is always the first entry; subsequent entries are appended at end of each lap.
+  const gridEntry = {};
+  for (const car of cars) {
+    gridEntry[car.driver.name] = { position: car.gridPosition, pitCompound: null };
+  }
+  lapChartData.push(gridEntry);
+
   // Return the rng so simulation.js picks up exactly where we left off —
   // no reseeding, no skipped calls, guaranteed replayability.
   return rng;

@@ -734,7 +734,7 @@
       getTodayDayOffset, getWorldSeed, setWorldSeed,
       getEventDate, formatShortDate,
     } from './championship.js';
-    import { getSeasonSnapshot } from './worldstate.js';
+    import { getSeasonSnapshot, getDisplayYear } from './worldstate.js';
 
     // ── Dev mode entry via ?dev=1 ──────────────────────────────────────────────
     const params = new URLSearchParams(location.search);
@@ -767,7 +767,7 @@
     const circuitNameEl = document.getElementById('circuit-name');
     if (circuitNameEl) {
       circuitNameEl.textContent =
-        `S${event.season} R${event.round} · ${circuit.eventName} — Race`;
+        `${getDisplayYear(event.season)} ${circuit.eventName} — Round ${event.round}`;
     }
 
     // ── Day-gating ─────────────────────────────────────────────────────────────

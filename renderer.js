@@ -349,7 +349,7 @@ export class Renderer {
 
         const dot = document.createElement('span');
         dot.className = 'team-dot';
-        dot.style.background = retired ? 'var(--dim)' : (car.team.colour || '#888');
+        dot.style.background = car.team.colour || '#888';
 
         const info = document.createElement('div');
         info.className = 'driver-info';

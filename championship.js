@@ -227,6 +227,10 @@ export function addRaceResult(season, round, finishOrder) {
       if (i === 0) s.constructors[entry.teamId].wins += 1;
     }
   });
+  // Ensure every team that participated appears in standings (even with 0 points)
+  for (const entry of finishOrder) {
+    if (!s.constructors[entry.teamId]) s.constructors[entry.teamId] = { points: 0, wins: 0 };
+  }
 
   saveChampionshipState(state);
 }
@@ -381,11 +385,12 @@ export function getStandingsThroughRound(season, maxRound) {
       byTeam[entry.teamId].push(entry);
     });
     Object.entries(byTeam).forEach(([teamId, entries]) => {
+      // Ensure every team that participated appears in standings (even with 0 points)
+      if (!constructors[teamId]) constructors[teamId] = { points: 0, wins: 0 };
       entries
         .filter(e => (e.points || 0) > 0)
         .slice(0, 2)
         .forEach(e => {
-          if (!constructors[teamId]) constructors[teamId] = { points: 0, wins: 0 };
           constructors[teamId].points += (e.points || 0);
           if (e.position === 1) constructors[teamId].wins += 1;
         });

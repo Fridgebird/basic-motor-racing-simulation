@@ -628,6 +628,7 @@
 
         rawResults.push({
           driverName:       car.driver.name,
+          carNumber:        car.driver.number,
           teamId:           car.team.id,
           setup:            car.setup,
           lapTime:          result.lapTime,
@@ -670,7 +671,7 @@
     }
 
     function showOnTrack(car, drawIndex, total) {
-      document.getElementById('current-driver-name').textContent = car.driver.name.toUpperCase();
+      document.getElementById('current-driver-name').textContent = `${car.driver.number}. ${car.driver.name.toUpperCase()}`;
       const teamName   = car.team.name.toUpperCase();
       const engineName = car.team.engine ? car.team.engine.toUpperCase() : '';
       const teamLabel  = teamName === engineName || !engineName
@@ -811,7 +812,7 @@
         const teamLabel = teamLabels[r.teamId] || '';
         tr.innerHTML = `
           <td class="col-pos${pos === 1 ? ' p1' : ''}">${isFinal ? `P${pos}` : pos}</td>
-          <td></td>
+          <td class="col-num">${r.carNumber ?? ''}</td>
           <td class="col-driver">
             <span class="team-dot-inline" style="background:${colour}"></span>
             ${r.driverName.toUpperCase()}

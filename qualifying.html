@@ -472,7 +472,6 @@
         const eName = t.engine ? t.engine.toUpperCase() : '';
         teamLabels[t.id] = (tName === eName || !eName) ? tName : `${tName}-${eName}`;
       });
-      if (qualiResults) renderFinalLeaderboard(qualiResults);
     });
 
     // Seed: default to championship-derived seed; user can override before session starts

@@ -174,7 +174,8 @@ export function resetWorld() {
   const toRemove = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key && key.startsWith('smr_quali_')) toRemove.push(key);
+    if (key && (key.startsWith('smr_quali_') || key.startsWith('smr_season_summary_')))
+      toRemove.push(key);
   }
   toRemove.forEach(k => localStorage.removeItem(k));
 }
@@ -333,6 +334,7 @@ export async function ensurePastResultsCached(season, simFns) {
           return a.position - b.position;
         })
         .map(car => ({
+          driverId:      car.driver.id,
           driverName:    car.driver.name,
           teamId:        car.team.id,
           position:      car.position,
@@ -346,6 +348,11 @@ export async function ensurePastResultsCached(season, simFns) {
         }));
       addRaceResult(season, r, finishOrder);
     }
+  }
+
+  // Build and cache a compact season summary for profile pages
+  if (!loadSeasonSummary(season)) {
+    saveSeasonSummary(season, buildSeasonSummary(season));
   }
 }
 
@@ -406,6 +413,102 @@ export function getStandingsThroughRound(season, maxRound) {
     .sort((a, b) => b.points - a.points || b.wins - a.wins);
 
   return { drivers: driversList, constructors: constructorsList };
+}
+
+// ─── Season summaries ─────────────────────────────────────────────────────────
+// Compact per-season snapshots used by driver and team profile pages.
+// Written once per season after ensurePastResultsCached finishes all rounds.
+// Keyed by driverId (numeric) so profile lookups are O(seasons), not O(seasons×races).
+
+const SEASON_SUMMARY_KEY = season => `smr_season_summary_${season}`;
+
+export function saveSeasonSummary(season, summary) {
+  localStorage.setItem(SEASON_SUMMARY_KEY(season), JSON.stringify(summary));
+}
+
+export function loadSeasonSummary(season) {
+  const raw = localStorage.getItem(SEASON_SUMMARY_KEY(season));
+  return raw ? JSON.parse(raw) : null;
+}
+
+/**
+ * Build a compact season summary from already-stored race data.
+ * Uses s.drivers/s.constructors for points/wins (correctly filtered) and
+ * scans s.races for raceStarts, retirements, and driverId mappings.
+ */
+function buildSeasonSummary(season) {
+  const state = loadChampionshipState();
+  const s = state.seasons[season] || { races: {}, drivers: {}, constructors: {} };
+
+  // Build name→id map and count raceStarts/retirements from raw results
+  const nameToId  = {};
+  const extraStats = {}; // keyed by driverName
+  for (const raceResult of Object.values(s.races)) {
+    for (const entry of raceResult) {
+      if (entry.driverId != null) nameToId[entry.driverName] = entry.driverId;
+      if (!extraStats[entry.driverName]) extraStats[entry.driverName] = { raceStarts: 0, retirements: 0 };
+      extraStats[entry.driverName].raceStarts  += 1;
+      if (entry.retired) extraStats[entry.driverName].retirements += 1;
+    }
+  }
+
+  // Merge with s.drivers (points/wins/podiums already correct there)
+  const drivers = {};
+  for (const [name, d] of Object.entries(s.drivers)) {
+    const driverId = nameToId[name] ?? null;
+    const key      = driverId ?? name;
+    const extra    = extraStats[name] || { raceStarts: 0, retirements: 0 };
+    drivers[key]   = { driverId, driverName: name, teamId: d.teamId,
+                       wins: d.wins, podiums: d.podiums, points: d.points,
+                       raceStarts: extra.raceStarts, retirements: extra.retirements };
+  }
+
+  const sortedDrivers = Object.values(drivers).sort((a, b) => b.points - a.points || b.wins - a.wins);
+  const sortedTeams   = Object.entries(s.constructors)
+    .map(([teamId, c]) => ({ teamId, ...c }))
+    .sort((a, b) => b.points - a.points || b.wins - a.wins);
+
+  return {
+    season,
+    champion:            sortedDrivers[0] ?? null,
+    constructorChampion: sortedTeams[0]   ?? null,
+    drivers,
+    constructors:        s.constructors,
+  };
+}
+
+/**
+ * Return an array of per-season stats for a driver across all cached summaries.
+ * Each entry: { season, driverName, teamId, wins, podiums, points, raceStarts, retirements }
+ */
+export function getCareerStats(driverId) {
+  const results = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key || !key.startsWith('smr_season_summary_')) continue;
+    const summary = JSON.parse(localStorage.getItem(key));
+    const d = summary.drivers[driverId];
+    if (d) results.push({ season: summary.season, ...d,
+                          champion: summary.champion?.driverId === driverId });
+  }
+  return results.sort((a, b) => a.season - b.season);
+}
+
+/**
+ * Return an array of per-season stats for a constructor across all cached summaries.
+ * Each entry: { season, wins, points, champion }
+ */
+export function getConstructorHistory(teamId) {
+  const results = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key || !key.startsWith('smr_season_summary_')) continue;
+    const summary = JSON.parse(localStorage.getItem(key));
+    const c = summary.constructors[teamId];
+    if (c) results.push({ season: summary.season, ...c,
+                          champion: summary.constructorChampion?.teamId === teamId });
+  }
+  return results.sort((a, b) => a.season - b.season);
 }
 
 // ─── Championship state localStorage ─────────────────────────────────────────

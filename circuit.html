@@ -210,11 +210,6 @@
       <div class="stat-grid" id="strategy-stats"></div>
     </div>
 
-    <div class="info-section">
-      <div class="section-title">Lap Record</div>
-      <div class="stat-grid" id="lap-record-stats"></div>
-    </div>
-
     <div class="footer-nav" id="footer-nav"></div>
   </div>
 
@@ -312,11 +307,6 @@
     setStats('strategy-stats', [
       ['Fuel load',   fuelLoad(circuit.baseFuelBurnPerLap)],
       ['Pit lane',    `~${circuit.pitLaneTime}s traversal`],
-    ]);
-
-    // ── Lap record ────────────────────────────────────────────────────────────────
-    setStats('lap-record-stats', [
-      ['Record', `No lap record set — Season ${season ?? 1}`],
     ]);
 
     // ── Footer nav ────────────────────────────────────────────────────────────────

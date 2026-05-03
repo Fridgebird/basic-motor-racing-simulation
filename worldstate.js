@@ -315,8 +315,9 @@ function retirementProbability(age) {
 }
 
 function teamMinSkill(team) {
-  // Better-funded teams have higher minimum acceptable skill
-  return Math.round(50 + (team.fundingLevel / 100) * 30);
+  // Only truly poor performers at established teams get dropped.
+  // Range 40–60: avoids firing developing drivers who haven't peaked yet.
+  return Math.round(40 + (team.fundingLevel / 100) * 20);
 }
 
 /** Returns the active driver roster for the start of a season: Array<{driverId, teamId}>. */
@@ -347,9 +348,11 @@ function applySeasonEndTransitions(roster, season, worldSeed, entered) {
     const team       = TEAMS.find(t => t.id === entry.teamId);
     const stats      = getDriverStats(entry.driverId, season - 1, worldSeed);
 
-    // Performance-based firing (checked first)
+    // Performance-based firing — only applies to drivers 28+ (fully developed).
+    // Young drivers are still on the arc toward their peak; firing them early
+    // drains the grid because there are never enough same-season rookies to replace them.
     const minSkill = teamMinSkill(team);
-    if (stats.skill < minSkill) return false; // fired
+    if (age >= 28 && stats.skill < minSkill) return false; // fired
 
     // Age-based retirement
     const retireProb = retirementProbability(age);

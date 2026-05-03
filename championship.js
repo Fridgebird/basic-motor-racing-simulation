@@ -244,8 +244,14 @@ export function getStandings(season) {
   const state = loadChampionshipState();
   const s = state.seasons[season] || { races: {}, drivers: {}, constructors: {} };
 
+  // Build name→driverId map from stored race entries
+  const nameToId = {};
+  Object.values(s.races || {}).forEach(entries =>
+    entries.forEach(e => { if (e.driverId != null) nameToId[e.driverName] = e.driverId; })
+  );
+
   const drivers = Object.entries(s.drivers)
-    .map(([name, d]) => ({ name, ...d }))
+    .map(([name, d]) => ({ name, driverId: nameToId[name] ?? null, ...d }))
     .sort((a, b) => b.points - a.points || b.wins - a.wins);
 
   const constructors = Object.entries(s.constructors)
@@ -370,12 +376,14 @@ export function getStandingsThroughRound(season, maxRound) {
 
   const drivers      = {};
   const constructors = {};
+  const nameToId     = {};
 
   Object.entries(s.races).forEach(([roundStr, finishOrder]) => {
     if (parseInt(roundStr, 10) > maxRound) return;
 
     // Driver totals
     finishOrder.forEach(entry => {
+      if (entry.driverId != null) nameToId[entry.driverName] = entry.driverId;
       const pts = entry.points || 0;
       if (!drivers[entry.driverName]) {
         drivers[entry.driverName] = { points: 0, wins: 0, podiums: 0, teamId: entry.teamId };
@@ -405,7 +413,7 @@ export function getStandingsThroughRound(season, maxRound) {
   });
 
   const driversList = Object.entries(drivers)
-    .map(([name, d]) => ({ name, ...d }))
+    .map(([name, d]) => ({ name, driverId: nameToId[name] ?? null, ...d }))
     .sort((a, b) => b.points - a.points || b.wins - a.wins);
 
   const constructorsList = Object.entries(constructors)

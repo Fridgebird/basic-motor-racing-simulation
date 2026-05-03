@@ -298,6 +298,11 @@
         return base.includes(engUp) ? base : `${base}-${engUp}`;
       }
 
+      function driverLink(driverId, name) {
+        if (driverId == null) return name.toUpperCase();
+        return `<a href="driver.html?id=${driverId}&season=${season}" style="color:inherit;text-decoration:none">${name.toUpperCase()}</a>`;
+      }
+
       function formatGap(secs) {
         if (secs < 60) return `+${secs.toFixed(3)}`;
         const m = Math.floor(secs / 60);
@@ -399,7 +404,7 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td class="col-pos ${pCls}">${pos}</td>
-            <td class="col-name"><span class="team-dot" style="background:${colour}"></span>${e.driverName.toUpperCase()}</td>
+            <td class="col-name"><span class="team-dot" style="background:${colour}"></span>${driverLink(e.driverId, e.driverName)}</td>
             <td class="col-team">${displayTeam(e.teamId)}</td>
             <td class="col-gap${e.position === 1 && !e.retired ? ' leader' : ''}">${gapStr}</td>
             <td class="col-stops">${stops}</td>
@@ -447,7 +452,7 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td class="col-pos ${pCls}">${pos}</td>
-            <td class="col-name"><span class="team-dot" style="background:${colour}"></span>${r.driverName.toUpperCase()}</td>
+            <td class="col-name"><span class="team-dot" style="background:${colour}"></span>${driverLink(r.driverId, r.driverName)}</td>
             <td class="col-team">${displayTeam(r.teamId)}</td>
             <td class="col-time${r.gridPosition === 1 && !r.retired ? ' pole' : ''}">${timeHtml}</td>
             <td class="col-gap${r.gridPosition === 1 ? ' leader' : ''}">${gapStr}</td>
@@ -480,7 +485,7 @@
           tr.innerHTML = `
             <td class="s-pos${i === 0 ? ' p1' : ''}">${i + 1}</td>
             <td class="s-name">
-              <span class="team-dot" style="background:${colour}"></span>${d.name.toUpperCase()}
+              <span class="team-dot" style="background:${colour}"></span>${driverLink(d.driverId, d.name)}
               <div class="s-team">${displayTeam(d.teamId)}</div>
             </td>
             <td class="s-pts">${d.points}</td>

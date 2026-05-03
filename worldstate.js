@@ -250,8 +250,8 @@ export function getTeamTyre(teamId, season, worldSeed) {
 // Each driver has base stats seeded from their id + worldSeed.
 // Stats follow a career arc: rising through early career, peaking at prime, declining late.
 
-function driverAge(driver, season) {
-  return getDisplayYear(season) - driver.birthYear;
+function driverAge(birthYear, season) {
+  return getDisplayYear(season) - birthYear;
 }
 
 /** Career arc multiplier for skill: rises to 1.0 at prime, falls off late career. */
@@ -273,11 +273,12 @@ function consistencyArcMultiplier(age) {
   return 0.80;
 }
 
-export function getDriverStats(driverId, season, worldSeed) {
+export function getDriverStats(driverId, season, worldSeed, birthYear) {
   const driver = DRIVER_POOL.find(d => d.id === driverId);
   if (!driver) throw new Error(`Unknown driverId: ${driverId}`);
 
-  const age         = driverAge(driver, season);
+  const effectiveBirthYear = birthYear ?? driver.birthYear;
+  const age         = driverAge(effectiveBirthYear, season);
   const skillArc    = skillArcMultiplier(age);
   const conArc      = consistencyArcMultiplier(age);
 
@@ -291,9 +292,11 @@ export function getDriverStats(driverId, season, worldSeed) {
   };
 }
 
-export function getDriverAge(driverId, season) {
+export function getDriverAge(driverId, season, birthYear) {
   const driver = DRIVER_POOL.find(d => d.id === driverId);
-  return driver ? driverAge(driver, season) : null;
+  if (!driver) return null;
+  const effectiveBirthYear = birthYear ?? driver.birthYear;
+  return driverAge(effectiveBirthYear, season);
 }
 
 // ─── Driver lifecycle ─────────────────────────────────────────────────────────
@@ -320,12 +323,13 @@ function teamMinSkill(team) {
   return Math.round(40 + (team.fundingLevel / 100) * 20);
 }
 
-/** Returns the active driver roster for the start of a season: Array<{driverId, teamId}>. */
+/** Returns the active driver roster for the start of a season: Array<{driverId, teamId, birthYear}>. */
 export function getActiveRoster(season, worldSeed) {
-  // Season 1: start with all S1 drivers assigned to their startTeam
+  // Season 1: all pool drivers with a fixed birthYear who are at least 20.
+  // Rookie-pool drivers have rookieAge instead of birthYear and enter later.
   let roster = DRIVER_POOL
-    .filter(d => driverAge(d, 1) >= 20)
-    .map(d => ({ driverId: d.id, teamId: d.startTeam }));
+    .filter(d => d.birthYear != null && driverAge(d.birthYear, 1) >= 20)
+    .map(d => ({ driverId: d.id, teamId: d.startTeam, birthYear: d.birthYear }));
 
   // Track which pool drivers have entered (to avoid re-entry)
   const entered = new Set(roster.map(r => r.driverId));
@@ -344,13 +348,12 @@ function applySeasonEndTransitions(roster, season, worldSeed, entered) {
     const driver = DRIVER_POOL.find(d => d.id === entry.driverId);
     if (!driver) return false;
 
-    const age        = driverAge(driver, season - 1); // age at END of previous season
-    const team       = TEAMS.find(t => t.id === entry.teamId);
-    const stats      = getDriverStats(entry.driverId, season - 1, worldSeed);
+    const age   = driverAge(entry.birthYear, season - 1); // age at END of previous season
+    const team  = TEAMS.find(t => t.id === entry.teamId);
+    const stats = getDriverStats(entry.driverId, season - 1, worldSeed, entry.birthYear);
 
     // Performance-based firing: drop drivers whose skill falls below the team's floor.
-    // Threshold range is 40–60 (low enough that developing drivers are safe unless
-    // genuinely poor; only clear backmarkers at established teams get cut).
+    // Threshold range 40–60 so only genuine backmarkers at established teams get cut.
     const minSkill = teamMinSkill(team);
     if (stats.skill < minSkill) return false; // fired
 
@@ -360,7 +363,9 @@ function applySeasonEndTransitions(roster, season, worldSeed, entered) {
     return retireRoll >= retireProb; // true = stays; false = retires
   });
 
-  // Step 2: Fill vacant team slots with rookies
+  // Step 2: Fill vacant team slots with rookies from the dynamic pool.
+  // Rookie-pool drivers have rookieAge instead of birthYear; they enter whenever
+  // there is a vacancy — no fixed-year eligibility window that can expire.
   const teamSlots = {};
   for (const team of TEAMS) {
     teamSlots[team.id] = active.filter(r => r.teamId === team.id).length;
@@ -368,15 +373,11 @@ function applySeasonEndTransitions(roster, season, worldSeed, entered) {
 
   for (const team of TEAMS) {
     while (teamSlots[team.id] < 2) {
-      // Find the next eligible rookie: born so they're 20–22 this season, not yet entered
-      const rookie = DRIVER_POOL.find(d =>
-        !entered.has(d.id) &&
-        driverAge(d, season) >= 20 &&
-        driverAge(d, season) <= 22
-      );
-      if (!rookie) break; // pool exhausted for this season — leave slot vacant
+      const rookie = DRIVER_POOL.find(d => d.rookieAge != null && !entered.has(d.id));
+      if (!rookie) break; // pool exhausted — leave slot vacant
 
-      active.push({ driverId: rookie.id, teamId: team.id });
+      const birthYear = getDisplayYear(season) - rookie.rookieAge;
+      active.push({ driverId: rookie.id, teamId: team.id, birthYear });
       entered.add(rookie.id);
       teamSlots[team.id]++;
     }
@@ -466,9 +467,9 @@ export function getSeasonSnapshot(season, worldSeed) {
   const carNumbers = getCarNumbers(season, worldSeed);
 
   // Build resolved driver objects (matching the shape state.js expects)
-  const drivers = roster.map(({ driverId, teamId }) => {
+  const drivers = roster.map(({ driverId, teamId, birthYear }) => {
     const poolDriver = DRIVER_POOL.find(d => d.id === driverId);
-    const stats      = getDriverStats(driverId, season, worldSeed);
+    const stats      = getDriverStats(driverId, season, worldSeed, birthYear);
     const number     = carNumbers.get(driverId) ?? 0;
     return {
       id:          driverId,
@@ -479,8 +480,8 @@ export function getSeasonSnapshot(season, worldSeed) {
       portraitIndex: poolDriver.portraitIndex,
       gender:      poolDriver.gender,
       nationality: poolDriver.nationality,
-      birthYear:   poolDriver.birthYear,
-      age:         getDriverAge(driverId, season),
+      birthYear,   // effective birthYear (fixed for S1 drivers; computed for rookies)
+      age:         getDriverAge(driverId, season, birthYear),
       ...stats,
     };
   });

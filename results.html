@@ -275,6 +275,7 @@
       document.title = `${circuit.eventName} ${typeLabel} — Simple Motor Racing`;
 
       const simFns = { initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession, getSeasonSnapshot };
+      if (season > 1) await ensurePastResultsCached(season - 1, simFns);
       await ensurePastResultsCached(season, simFns);
 
       document.getElementById('loading-msg').style.display = 'none';

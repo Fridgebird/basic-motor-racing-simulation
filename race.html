@@ -731,14 +731,14 @@
 
   <script type="module">
     import { Renderer, setCurrentCircuit as setRendererCircuit } from './renderer.js';
-    import { initRace }              from './state.js';
-    import { tick, isRaceOver, initStrategies, setCurrentCircuit, runQualifyingSession } from './simulation.js';
+    import { initRace, cars }         from './state.js';
+    import { tick, isRaceOver, initStrategies, setCurrentCircuit, runQualifyingSession, runRace } from './simulation.js';
     import {
       getCurrentEvent, getCircuit, getSeedForEvent, getEventForRound,
       loadQualiResults, saveQualiResults, addRaceResult, hasRaceResult, resetWorld,
       advanceDevEvent, retreatDevEvent, isDevMode, enterDevMode, exitDevMode,
       getTodayDayOffset, getWorldSeed, setWorldSeed,
-      getEventDate, formatShortDate,
+      getEventDate, formatShortDate, ensurePastResultsCached,
     } from './championship.js';
     import { getSeasonSnapshot, getDisplayYear } from './worldstate.js';
 
@@ -765,6 +765,9 @@
     setRendererCircuit(circuit);
 
     // ── Season snapshot ────────────────────────────────────────────────────────
+    // Ensure the prior season is cached so getCarNumbers can find the reigning champion.
+    const simFns = { initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession, getSeasonSnapshot };
+    if (event.season > 1) await ensurePastResultsCached(event.season - 1, simFns);
     // Resolve all team/driver/engine/tyre stats for this season from worldstate.js.
     // This ensures the simulation uses era-appropriate stats rather than S1 defaults.
     const snapshot = getSeasonSnapshot(event.season, worldSeed);

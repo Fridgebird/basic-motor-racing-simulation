@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Driver Profile — Simple Motor Racing</title>
+  <style>
+    @font-face { font-family:'Square'; src:url('Square.ttf') format('truetype'); font-weight:normal; }
+    @font-face { font-family:'Square'; src:url('Squareo.ttf') format('truetype'); font-weight:bold; }
+    :root {
+      --bg:#0d1117; --bg-deep:#080c12; --bg-mid:#0a0f18; --border:#1e2f44;
+      --hi:#ffffff; --mid:#8ab4d4; --lo:#4a6a88; --dim:#2a4055; --accent:#cc2233;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--mid); font-family:'Square','Courier New',monospace; font-size:12px; min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+
+    #topbar { width:100%; height:44px; background:var(--bg-deep); border:1px solid var(--border); border-bottom:2px solid var(--accent); display:flex; align-items:center; padding:0 16px; }
+    .b-flat { font-size:15px; color:var(--hi); letter-spacing:0.04em; flex-shrink:0; }
+    .b-flat em { font-style:normal; color:var(--mid); }
+    .topbar-nav { display:flex; gap:16px; margin-left:auto; margin-right:16px; }
+    .topbar-nav-link { color:var(--lo); text-decoration:none; font-size:10px; letter-spacing:0.08em; }
+    .topbar-nav-link:hover { color:var(--mid); }
+
+    #info-bar { width:100%; background:var(--bg-mid); border-bottom:1px solid var(--border); padding:6px 16px; font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
+
+    #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--dim); text-align:center; width:100%; }
+
+    #page { width:100%; max-width:700px; padding:24px 16px; }
+
+    #driver-nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    .nav-btn { font-family:inherit; font-size:9px; letter-spacing:1px; color:var(--lo); background:none; border:1px solid var(--border); padding:5px 12px; cursor:pointer; text-transform:uppercase; }
+    .nav-btn:hover:not(:disabled) { color:var(--hi); border-color:var(--mid); }
+    .nav-btn:disabled { opacity:0.25; cursor:default; }
+    #driver-counter { font-size:9px; letter-spacing:2px; color:var(--dim); }
+
+    #profile-card { display:flex; gap:28px; align-items:flex-start; border:1px solid var(--border); background:var(--bg-mid); padding:20px; margin-bottom:20px; }
+
+    #portrait { width:128px; height:128px; flex-shrink:0; background:var(--bg-deep); border:1px solid var(--border); overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:36px; font-weight:bold; color:var(--lo); }
+    #portrait img { width:128px; height:128px; object-fit:cover; display:block; }
+
+    #driver-details { flex:1; min-width:0; }
+    #driver-name { font-size:20px; letter-spacing:3px; color:var(--hi); margin-bottom:4px; font-weight:bold; }
+    #driver-meta { font-size:9px; letter-spacing:2px; color:var(--lo); margin-bottom:16px; }
+    .team-line { display:flex; align-items:center; gap:8px; margin-bottom:16px; }
+    .team-dot { width:3px; height:16px; flex-shrink:0; }
+    #team-name { font-size:10px; letter-spacing:1px; color:var(--mid); }
+    #team-name a { color:inherit; text-decoration:none; }
+    #team-name a:hover { color:var(--hi); }
+
+    .stats-row { display:flex; gap:16px; flex-wrap:wrap; }
+    .stat-block { display:flex; flex-direction:column; gap:3px; }
+    .stat-value { font-size:18px; color:var(--hi); letter-spacing:1px; }
+    .stat-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
+
+    #season-history { border:1px solid var(--border); }
+    .history-header { padding:6px 12px; font-size:9px; letter-spacing:2px; color:var(--lo); border-bottom:1px solid var(--border); background:var(--bg-deep); }
+    .history-table { width:100%; border-collapse:collapse; }
+    .history-table th { font-size:9px; letter-spacing:1px; color:var(--lo); text-align:left; padding:5px 12px; border-bottom:1px solid var(--border); }
+    .history-table td { padding:6px 12px; font-size:11px; color:var(--mid); border-bottom:1px solid var(--dim); }
+    .history-table tr:last-child td { border-bottom:none; }
+    .history-table td.h-season { color:var(--hi); width:42px; }
+    .history-table td.h-year   { color:var(--lo); width:42px; }
+    .history-table td.h-pos    { color:var(--hi); width:36px; }
+    .history-table td.h-pts    { color:var(--hi); text-align:right; }
+    .history-table td.h-wins   { color:var(--lo); text-align:right; }
+    .history-table a { color:inherit; text-decoration:none; }
+    .history-table a:hover { color:var(--hi); }
+    .champ-marker { color:var(--accent); font-size:10px; margin-left:4px; }
+
+    @media (max-width:500px) { #profile-card { flex-direction:column; } }
+  </style>
+</head>
+<body>
+
+  <div id="topbar">
+    <span class="b-flat">Simple <em>Motor Racing</em></span>
+    <nav class="topbar-nav">
+      <a href="index.html" class="topbar-nav-link">CALENDAR</a>
+    </nav>
+  </div>
+  <div id="info-bar">Driver Profile</div>
+
+  <div id="loading-state">COMPUTING HISTORY…</div>
+
+  <div id="page" style="display:none">
+    <div id="driver-nav">
+      <button class="nav-btn" id="btn-prev">◀ PREV</button>
+      <span id="driver-counter"></span>
+      <button class="nav-btn" id="btn-next">NEXT ▶</button>
+    </div>
+
+    <div id="profile-card">
+      <div id="portrait"></div>
+      <div id="driver-details">
+        <div id="driver-name">—</div>
+        <div id="driver-meta">—</div>
+        <div class="team-line">
+          <div class="team-dot" id="team-dot"></div>
+          <div id="team-name">—</div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-block"><div class="stat-value" id="s-seasons">—</div><div class="stat-label">Seasons</div></div>
+          <div class="stat-block"><div class="stat-value" id="s-races">—</div><div class="stat-label">Races</div></div>
+          <div class="stat-block"><div class="stat-value" id="s-wins">—</div><div class="stat-label">Wins</div></div>
+          <div class="stat-block"><div class="stat-value" id="s-podiums">—</div><div class="stat-label">Podiums</div></div>
+          <div class="stat-block"><div class="stat-value" id="s-champs">—</div><div class="stat-label">Titles</div></div>
+          <div class="stat-block"><div class="stat-value" id="s-pts">—</div><div class="stat-label">Points</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="season-history">
+      <div class="history-header">SEASON HISTORY</div>
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th class="h-season">S#</th>
+            <th class="h-year">YEAR</th>
+            <th>TEAM</th>
+            <th class="h-pos">POS</th>
+            <th style="text-align:right">PTS</th>
+            <th style="text-align:right">W</th>
+          </tr>
+        </thead>
+        <tbody id="history-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script type="module">
+    import { DRIVER_POOL }          from './drivers.js';
+    import { TEAMS }                from './data.js';
+    import {
+      getActiveRoster, getDisplayYear, getDriverAge, getSeasonSnapshot,
+    }                               from './worldstate.js';
+    import {
+      getCurrentEvent, getWorldSeed, getCareerStats, ensurePastResultsCached,
+      getStandings,
+    }                               from './championship.js';
+    import { initRace, cars }       from './state.js';
+    import {
+      runRace, initStrategies, setCurrentCircuit, runQualifyingSession,
+    }                               from './simulation.js';
+
+    const params        = new URLSearchParams(location.search);
+    const driverIdParam = params.get('id');
+    const worldSeed     = getWorldSeed();
+    const currentEvent  = getCurrentEvent();
+    const currentSeason = currentEvent.season;
+
+    const simFns = {
+      initRace, cars, runRace, initStrategies,
+      setCurrentCircuit, runQualifyingSession, getSeasonSnapshot,
+    };
+
+    const roster         = getActiveRoster(currentSeason, worldSeed);
+    const activeDriverIds = roster.map(e => e.driverId);
+
+    let currentIdx = 0;
+    if (driverIdParam != null) {
+      const id    = parseInt(driverIdParam, 10);
+      const found = activeDriverIds.indexOf(id);
+      if (found >= 0) currentIdx = found;
+    }
+
+    function render(idx) {
+      const dId       = activeDriverIds[idx];
+      const poolDriver = DRIVER_POOL.find(d => d.id === dId);
+      if (!poolDriver) return;
+
+      const rosterEntry = roster.find(e => e.driverId === dId);
+      const team        = rosterEntry ? TEAMS.find(t => t.id === rosterEntry.teamId) : null;
+      const age         = rosterEntry ? getDriverAge(dId, currentSeason, rosterEntry.birthYear) : '?';
+
+      // Portrait — try image, fall back to initials
+      const portrait = document.getElementById('portrait');
+      portrait.style.cssText = '';
+      portrait.innerHTML = '';
+      const img = document.createElement('img');
+      img.alt   = `${poolDriver.firstName} ${poolDriver.lastName}`;
+      img.onerror = () => {
+        portrait.removeChild(img);
+        portrait.style.cssText = `background:${team ? team.colour + '22' : '#1e2f44'};color:${team ? team.colour : 'var(--lo)'};`;
+        portrait.textContent = (poolDriver.firstName[0] + poolDriver.lastName[0]).toUpperCase();
+      };
+      img.src = `portraits/driver_${poolDriver.portraitIndex}.png`;
+      portrait.appendChild(img);
+
+      // Header
+      const nat = poolDriver.nationality.charAt(0).toUpperCase() + poolDriver.nationality.slice(1);
+      document.getElementById('driver-name').textContent = `${poolDriver.firstName} ${poolDriver.lastName}`.toUpperCase();
+      document.getElementById('driver-meta').textContent = `${nat} · Born ${rosterEntry?.birthYear ?? '—'} · Age ${age}`;
+      document.getElementById('info-bar').textContent    = `Driver Profile · ${poolDriver.firstName} ${poolDriver.lastName}`;
+
+      const teamDot  = document.getElementById('team-dot');
+      const teamName = document.getElementById('team-name');
+      if (team) {
+        teamDot.style.background = team.colour;
+        teamName.innerHTML = `<a href="team.html?id=${team.id}&season=${currentSeason}">${team.name.toUpperCase()}</a>`;
+      } else {
+        teamDot.style.background = 'var(--dim)';
+        teamName.textContent = 'NOT ACTIVE THIS SEASON';
+      }
+
+      // Career totals
+      const career = getCareerStats(dId);
+      const totals  = career.reduce((acc, s) => ({
+        races:  acc.races  + s.raceStarts,
+        wins:   acc.wins   + s.wins,
+        pods:   acc.pods   + s.podiums,
+        pts:    acc.pts    + s.points,
+        champs: acc.champs + (s.champion ? 1 : 0),
+      }), { races:0, wins:0, pods:0, pts:0, champs:0 });
+
+      document.getElementById('s-seasons').textContent = career.length || '—';
+      document.getElementById('s-races').textContent   = totals.races  || '—';
+      document.getElementById('s-wins').textContent    = totals.wins;
+      document.getElementById('s-podiums').textContent = totals.pods;
+      document.getElementById('s-champs').textContent  = totals.champs;
+      document.getElementById('s-pts').textContent     = totals.pts;
+
+      // History table — most recent season first
+      const tbody = document.getElementById('history-body');
+      tbody.innerHTML = '';
+      [...career].reverse().forEach(hs => {
+        const year     = getDisplayYear(hs.season);
+        const standings = getStandings(hs.season);
+        const posIdx   = standings.drivers.findIndex(d => d.name === hs.driverName);
+        const pos      = posIdx >= 0 ? posIdx + 1 : '?';
+        const hsTeam   = TEAMS.find(t => t.id === hs.teamId);
+        const tName    = hsTeam ? hsTeam.shortName.toUpperCase() : (hs.teamId || '—').toUpperCase();
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="h-season">S${hs.season}</td>
+          <td class="h-year">${year}</td>
+          <td><a href="team.html?id=${hs.teamId}&season=${hs.season}">${tName}</a></td>
+          <td class="h-pos">${pos}${hs.champion ? '<span class="champ-marker">★</span>' : ''}</td>
+          <td class="h-pts">${hs.points}</td>
+          <td class="h-wins">${hs.wins}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('driver-counter').textContent = `${idx + 1} / ${activeDriverIds.length}`;
+      document.getElementById('btn-prev').disabled = idx === 0;
+      document.getElementById('btn-next').disabled = idx === activeDriverIds.length - 1;
+
+      window.history.replaceState(null, '', `driver.html?id=${dId}&season=${currentSeason}`);
+    }
+
+    document.getElementById('btn-prev').addEventListener('click', () => { currentIdx--; render(currentIdx); });
+    document.getElementById('btn-next').addEventListener('click', () => { currentIdx++; render(currentIdx); });
+
+    (async () => {
+      for (let s = 1; s <= currentSeason; s++) {
+        await ensurePastResultsCached(s, simFns);
+      }
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('page').style.display = '';
+      render(currentIdx);
+    })();
+  </script>
+
+</body>
+</html>

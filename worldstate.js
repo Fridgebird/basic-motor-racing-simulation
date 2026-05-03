@@ -442,6 +442,44 @@ export function getCarNumbers(season, worldSeed) {
 // Returns the car sprite sheet filename for the current chassis era.
 // Falls back to era 1 sheet if the era's asset hasn't been provided yet.
 
+// ─── Chassis identifiers ──────────────────────────────────────────────────────
+
+function toRoman(n) {
+  const vals = [1000,900,500,400,100,90,50,40,10,9,5,4,1];
+  const syms = ['M','CM','D','CD','C','XC','L','XL','X','IX','V','IV','I'];
+  let r = '';
+  for (let i = 0; i < vals.length; i++) while (n >= vals[i]) { r += syms[i]; n -= vals[i]; }
+  return r;
+}
+
+/**
+ * Return the chassis model designation for a team in a given season.
+ * Each team uses a distinct naming convention reflecting their character.
+ */
+export function getChassisId(teamId, season) {
+  const year = getDisplayYear(season);
+  const era  = getChassisEra(season);
+  const pos  = ((season - 1) % 5) + 1;          // 1–5 within the chassis era
+  const y2   = String(year).slice(-2);           // last two digits of year
+  const yr   = String(year);
+
+  switch (teamId) {
+    case 'hartwell':    return `HW ${yr[0]}${yr[2]}${yr[3]}`;             // HW 130, HW 135
+    case 'frd':         return `FRD Mk ${toRoman(era)}`;                  // FRD Mk I, FRD Mk II
+    case 'ferrosso':    return `Tipo ${season}`;                          // Tipo 1, Tipo 2
+    case 'vettura':     return `VC-${toRoman(era)}/${pos}`;               // VC-I/1, VC-II/3
+    case 'kaiserwerke': return `KW${y2}${'ABCDE'[pos - 1]}`;             // KW30A, KW31B
+    case 'mistral':     return `M.${y2}`;                                 // M.30, M.31
+    case 'alpenring':   return `AR-${era}${String(pos).padStart(2,'0')}`; // AR-101, AR-205
+    case 'deltaBravo':  return `DB ${(era - 1) * 5 + pos}`;              // DB 1…DB 5, DB 6…
+    case 'eaglecrest':  return `Eagle ${year}`;                           // Eagle 1930
+    case 'sakura':      return `S-${era}${String(pos).padStart(2,'0')}`;  // S-101, S-205
+    case 'santos':      return `SA-${season}`;                            // SA-1, SA-2
+    case 'oconnell':    return `OCR ${year}`;                             // OCR 1930
+    default:            return `${teamId.slice(0,3).toUpperCase()}-${season}`;
+  }
+}
+
 const ERA_SPRITE_SHEETS = {
   1: 'car_sprites_1930_gemini_context.png',  // S1–5  (1930–1934)
   // Add future era sheets here as they are provided:

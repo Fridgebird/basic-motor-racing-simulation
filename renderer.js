@@ -22,6 +22,7 @@ export function setCurrentCircuit(circuit) {
 export class Renderer {
 
   constructor() {
+    this.season          = 1;   // set by race.html after construction for profile links
     this._tbody          = document.getElementById('timing-body');
     this._statusEl       = document.getElementById('timing-status');
     this._commentaryFeed = document.getElementById('commentary-feed');
@@ -354,8 +355,10 @@ export class Renderer {
         const info = document.createElement('div');
         info.className = 'driver-info';
 
-        const nameDiv = document.createElement('div');
-        nameDiv.className = 't-driver';
+        const nameDiv = document.createElement('a');
+        nameDiv.className  = 't-driver';
+        nameDiv.href       = `driver.html?id=${car.driver.id}&season=${this.season}`;
+        nameDiv.style.cssText = 'color:inherit;text-decoration:none;';
         nameDiv.textContent = car.driver.name.toUpperCase();
 
         const tagDiv = document.createElement('div');

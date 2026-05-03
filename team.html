@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Constructor Profile — Simple Motor Racing</title>
+  <style>
+    @font-face { font-family:'Square'; src:url('Square.ttf') format('truetype'); font-weight:normal; }
+    @font-face { font-family:'Square'; src:url('Squareo.ttf') format('truetype'); font-weight:bold; }
+    :root {
+      --bg:#0d1117; --bg-deep:#080c12; --bg-mid:#0a0f18; --border:#1e2f44;
+      --hi:#ffffff; --mid:#8ab4d4; --lo:#4a6a88; --dim:#2a4055; --accent:#cc2233;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--mid); font-family:'Square','Courier New',monospace; font-size:12px; min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+
+    #topbar { width:100%; height:44px; background:var(--bg-deep); border:1px solid var(--border); border-bottom:2px solid var(--accent); display:flex; align-items:center; padding:0 16px; }
+    .b-flat { font-size:15px; color:var(--hi); letter-spacing:0.04em; flex-shrink:0; }
+    .b-flat em { font-style:normal; color:var(--mid); }
+    .topbar-nav { display:flex; gap:16px; margin-left:auto; margin-right:16px; }
+    .topbar-nav-link { color:var(--lo); text-decoration:none; font-size:10px; letter-spacing:0.08em; }
+    .topbar-nav-link:hover { color:var(--mid); }
+
+    #info-bar { width:100%; background:var(--bg-mid); border-bottom:1px solid var(--border); padding:6px 16px; font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
+
+    #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--dim); text-align:center; width:100%; }
+
+    #page { width:100%; max-width:760px; padding:24px 16px; }
+
+    #team-nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    .nav-btn { font-family:inherit; font-size:9px; letter-spacing:1px; color:var(--lo); background:none; border:1px solid var(--border); padding:5px 12px; cursor:pointer; text-transform:uppercase; }
+    .nav-btn:hover:not(:disabled) { color:var(--hi); border-color:var(--mid); }
+    .nav-btn:disabled { opacity:0.25; cursor:default; }
+    #team-counter { font-size:9px; letter-spacing:2px; color:var(--dim); }
+
+    #profile-card { border:1px solid var(--border); background:var(--bg-mid); margin-bottom:20px; overflow:hidden; }
+
+    #car-wrap { width:100%; background:#111418; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:center; padding:16px 0; }
+    #car-sprite { width:400px; height:176px; background-repeat:no-repeat; image-rendering:auto; }
+
+    #team-header { display:flex; align-items:center; padding:16px 20px 12px; border-bottom:1px solid var(--border); }
+    #livery-bar { width:4px; align-self:stretch; flex-shrink:0; margin-right:16px; border-radius:1px; }
+    #team-name { font-size:18px; letter-spacing:2px; color:var(--hi); margin-bottom:4px; font-weight:bold; }
+    #team-meta { font-size:9px; letter-spacing:2px; color:var(--lo); }
+
+    #career-stats { display:flex; gap:24px; flex-wrap:wrap; padding:16px 20px; border-bottom:1px solid var(--border); }
+    .stat-block { display:flex; flex-direction:column; gap:3px; }
+    .stat-value { font-size:18px; color:var(--hi); letter-spacing:1px; }
+    .stat-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
+
+    #season-pane { padding:16px 20px; }
+    #season-pane-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    #season-label { font-size:11px; letter-spacing:2px; color:var(--hi); }
+    .season-btn { font-family:inherit; font-size:10px; color:var(--lo); background:none; border:1px solid var(--border); padding:3px 8px; cursor:pointer; }
+    .season-btn:hover:not(:disabled) { color:var(--hi); border-color:var(--mid); }
+    .season-btn:disabled { opacity:0.25; cursor:default; }
+
+    #season-tech { display:flex; gap:20px; flex-wrap:wrap; margin-bottom:14px; font-size:9px; letter-spacing:1px; color:var(--lo); }
+    #season-tech span { color:var(--hi); }
+
+    .section-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; margin-bottom:10px; }
+    #driver-list { display:flex; gap:12px; flex-wrap:wrap; }
+
+    .driver-chip { display:flex; align-items:center; gap:8px; background:var(--bg-deep); border:1px solid var(--border); padding:6px 12px; text-decoration:none; color:inherit; }
+    .driver-chip:hover { border-color:var(--mid); }
+    .driver-chip-portrait { width:32px; height:32px; flex-shrink:0; border:1px solid var(--border); overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold; }
+    .driver-chip-portrait img { width:32px; height:32px; object-fit:cover; display:block; }
+    .driver-chip-name { font-size:11px; color:var(--hi); }
+    .driver-chip-nat { font-size:9px; letter-spacing:1px; color:var(--lo); }
+
+    #season-history { border:1px solid var(--border); }
+    .history-header { padding:6px 12px; font-size:9px; letter-spacing:2px; color:var(--lo); border-bottom:1px solid var(--border); background:var(--bg-deep); }
+    .history-table { width:100%; border-collapse:collapse; }
+    .history-table th { font-size:9px; letter-spacing:1px; color:var(--lo); text-align:left; padding:5px 12px; border-bottom:1px solid var(--border); }
+    .history-table td { padding:6px 12px; font-size:11px; color:var(--mid); border-bottom:1px solid var(--dim); }
+    .history-table tr:last-child td { border-bottom:none; }
+    .history-table td.h-season { color:var(--hi); width:42px; }
+    .history-table td.h-year   { color:var(--lo); width:42px; }
+    .history-table td.h-pos    { color:var(--hi); width:36px; }
+    .history-table td.h-pts    { color:var(--hi); text-align:right; }
+    .history-table td.h-wins   { color:var(--lo); text-align:right; }
+    .champ-marker { color:var(--accent); font-size:10px; margin-left:4px; }
+
+    @media (max-width:520px) {
+      #car-sprite { width:100%; height:auto; aspect-ratio:400/176; max-width:360px; }
+      #career-stats { gap:16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="topbar">
+    <span class="b-flat">Simple <em>Motor Racing</em></span>
+    <nav class="topbar-nav">
+      <a href="index.html" class="topbar-nav-link">CALENDAR</a>
+    </nav>
+  </div>
+  <div id="info-bar">Constructor Profile</div>
+
+  <div id="loading-state">COMPUTING HISTORY…</div>
+
+  <div id="page" style="display:none">
+    <div id="team-nav">
+      <button class="nav-btn" id="btn-prev">◀ PREV</button>
+      <span id="team-counter"></span>
+      <button class="nav-btn" id="btn-next">NEXT ▶</button>
+    </div>
+
+    <div id="profile-card">
+      <div id="car-wrap"><div id="car-sprite"></div></div>
+      <div id="team-header">
+        <div id="livery-bar"></div>
+        <div>
+          <div id="team-name">—</div>
+          <div id="team-meta">—</div>
+        </div>
+      </div>
+      <div id="career-stats">
+        <div class="stat-block"><div class="stat-value" id="s-seasons">—</div><div class="stat-label">Seasons</div></div>
+        <div class="stat-block"><div class="stat-value" id="s-wins">—</div><div class="stat-label">Wins</div></div>
+        <div class="stat-block"><div class="stat-value" id="s-pts">—</div><div class="stat-label">Points</div></div>
+        <div class="stat-block"><div class="stat-value" id="s-titles">—</div><div class="stat-label">Titles</div></div>
+      </div>
+      <div id="season-pane">
+        <div id="season-pane-header">
+          <button class="season-btn" id="btn-season-prev">◀</button>
+          <span id="season-label">—</span>
+          <button class="season-btn" id="btn-season-next">▶</button>
+        </div>
+        <div id="season-tech"></div>
+        <div class="section-label">Drivers</div>
+        <div id="driver-list"></div>
+      </div>
+    </div>
+
+    <div id="season-history">
+      <div class="history-header">CONSTRUCTORS' CHAMPIONSHIP HISTORY</div>
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th class="h-season">S#</th>
+            <th class="h-year">YEAR</th>
+            <th class="h-pos">POS</th>
+            <th>DRIVERS</th>
+            <th class="h-pts">PTS</th>
+            <th class="h-wins">W</th>
+          </tr>
+        </thead>
+        <tbody id="history-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script type="module">
+    import { TEAMS, ENGINES, TYRES }       from './data.js';
+    import { DRIVER_POOL }                  from './drivers.js';
+    import {
+      getActiveRoster, getDisplayYear, getChassisId,
+      getTeamEngine, getTeamTyre, getCarSpriteSheet, getSeasonSnapshot,
+    }                                       from './worldstate.js';
+    import {
+      getCurrentEvent, getWorldSeed, getConstructorHistory, loadSeasonSummary,
+      ensurePastResultsCached, getStandings,
+    }                                       from './championship.js';
+    import { initRace, cars }               from './state.js';
+    import {
+      runRace, initStrategies, setCurrentCircuit, runQualifyingSession,
+    }                                       from './simulation.js';
+
+    const params        = new URLSearchParams(location.search);
+    const teamIdParam   = params.get('id');
+    const worldSeed     = getWorldSeed();
+    const currentEvent  = getCurrentEvent();
+    const currentSeason = currentEvent.season;
+
+    const simFns = {
+      initRace, cars, runRace, initStrategies,
+      setCurrentCircuit, runQualifyingSession, getSeasonSnapshot,
+    };
+
+    let teamIdx = 0;
+    if (teamIdParam) {
+      const found = TEAMS.findIndex(t => t.id === teamIdParam);
+      if (found >= 0) teamIdx = found;
+    }
+
+    let viewedSeason = parseInt(params.get('season') || currentSeason, 10);
+    viewedSeason = Math.max(1, Math.min(viewedSeason, currentSeason));
+
+    function carSpriteStyle(team, season) {
+      const sheet = getCarSpriteSheet(season);
+      const x     = (team.spriteCol * 100 / 3).toFixed(4);
+      const y     = (team.spriteRow * 100 / 2).toFixed(4);
+      return `background-image:url('${sheet}');background-size:400% 300%;background-position:${x}% ${y}%;`;
+    }
+
+    function makePortraitEl(poolDriver, teamColour) {
+      const wrap = document.createElement('div');
+      wrap.className = 'driver-chip-portrait';
+      wrap.style.background = `${teamColour}22`;
+      wrap.style.color      = teamColour;
+
+      const img = document.createElement('img');
+      img.alt    = poolDriver.firstName;
+      img.onerror = () => {
+        wrap.removeChild(img);
+        wrap.textContent = (poolDriver.firstName[0] + poolDriver.lastName[0]).toUpperCase();
+      };
+      img.src = `portraits/driver_${poolDriver.portraitIndex}.png`;
+      wrap.appendChild(img);
+      return wrap;
+    }
+
+    function renderSeasonPane(team, season) {
+      const year      = getDisplayYear(season);
+      const engineId  = getTeamEngine(team.id, season, worldSeed);
+      const tyreId    = getTeamTyre(team.id, season, worldSeed);
+      const chassis   = getChassisId(team.id, season);
+      const engineName = (ENGINES[engineId]?.name ?? engineId).toUpperCase();
+      const tyreName   = (TYRES[tyreId]?.name   ?? tyreId).toUpperCase();
+
+      document.getElementById('car-sprite').style.cssText = carSpriteStyle(team, season);
+      document.getElementById('season-label').textContent = `SEASON ${season} · ${year}`;
+
+      document.getElementById('season-tech').innerHTML = `
+        <div>CHASSIS <span>${chassis}</span></div>
+        <div>ENGINE <span>${engineName}</span></div>
+        <div>TYRES <span>${tyreName}</span></div>
+      `;
+
+      const seasonRoster = getActiveRoster(season, worldSeed).filter(e => e.teamId === team.id);
+      const driverList   = document.getElementById('driver-list');
+      driverList.innerHTML = '';
+      seasonRoster.forEach(entry => {
+        const pd = DRIVER_POOL.find(d => d.id === entry.driverId);
+        if (!pd) return;
+        const nat  = pd.nationality.charAt(0).toUpperCase() + pd.nationality.slice(1);
+        const chip = document.createElement('a');
+        chip.href      = `driver.html?id=${entry.driverId}&season=${season}`;
+        chip.className = 'driver-chip';
+        chip.appendChild(makePortraitEl(pd, team.colour));
+        const info = document.createElement('div');
+        info.innerHTML = `<div class="driver-chip-name">${pd.firstName} ${pd.lastName}</div><div class="driver-chip-nat">${nat}</div>`;
+        chip.appendChild(info);
+        driverList.appendChild(chip);
+      });
+
+      document.getElementById('btn-season-prev').disabled = season <= 1;
+      document.getElementById('btn-season-next').disabled = season >= currentSeason;
+    }
+
+    function renderTeam(idx) {
+      const team       = TEAMS[idx];
+      const ctorHistory = getConstructorHistory(team.id);
+      const totals = ctorHistory.reduce((acc, s) => ({
+        wins:   acc.wins   + s.wins,
+        pts:    acc.pts    + s.points,
+        titles: acc.titles + (s.champion ? 1 : 0),
+      }), { wins:0, pts:0, titles:0 });
+
+      document.getElementById('info-bar').textContent        = `Constructor Profile · ${team.name}`;
+      document.getElementById('livery-bar').style.background = team.colour;
+      document.getElementById('team-name').textContent       = team.name.toUpperCase();
+      document.getElementById('team-meta').textContent       = `${team.nationality.toUpperCase()} · EST. ${getDisplayYear(1)}`;
+      document.getElementById('s-seasons').textContent       = ctorHistory.length || '—';
+      document.getElementById('s-wins').textContent          = totals.wins;
+      document.getElementById('s-pts').textContent           = totals.pts;
+      document.getElementById('s-titles').textContent        = totals.titles;
+
+      renderSeasonPane(team, viewedSeason);
+
+      // History table — most recent first
+      const tbody = document.getElementById('history-body');
+      tbody.innerHTML = '';
+      [...ctorHistory].reverse().forEach(hs => {
+        const year      = getDisplayYear(hs.season);
+        const standings = getStandings(hs.season);
+        const posIdx    = standings.constructors.findIndex(c => c.id === team.id);
+        const pos       = posIdx >= 0 ? posIdx + 1 : '?';
+
+        const summary = loadSeasonSummary(hs.season);
+        const driverNames = summary
+          ? Object.values(summary.drivers)
+              .filter(d => d.teamId === team.id)
+              .map(d => {
+                const parts = d.driverName.split(' ');
+                return parts[parts.length - 1];
+              })
+              .join(' / ')
+          : '—';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="h-season">S${hs.season}</td>
+          <td class="h-year">${year}</td>
+          <td class="h-pos">${pos}${hs.champion ? '<span class="champ-marker">★</span>' : ''}</td>
+          <td>${driverNames}</td>
+          <td class="h-pts">${hs.points}</td>
+          <td class="h-wins">${hs.wins}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('team-counter').textContent = `${idx + 1} / ${TEAMS.length}`;
+      document.getElementById('btn-prev').disabled = idx === 0;
+      document.getElementById('btn-next').disabled = idx === TEAMS.length - 1;
+
+      document.title = `${team.name} — Simple Motor Racing`;
+      window.history.replaceState(null, '', `team.html?id=${team.id}&season=${viewedSeason}`);
+    }
+
+    document.getElementById('btn-prev').addEventListener('click', () => { teamIdx--; renderTeam(teamIdx); });
+    document.getElementById('btn-next').addEventListener('click', () => { teamIdx++; renderTeam(teamIdx); });
+
+    document.getElementById('btn-season-prev').addEventListener('click', () => {
+      viewedSeason = Math.max(1, viewedSeason - 1);
+      renderSeasonPane(TEAMS[teamIdx], viewedSeason);
+      window.history.replaceState(null, '', `team.html?id=${TEAMS[teamIdx].id}&season=${viewedSeason}`);
+    });
+    document.getElementById('btn-season-next').addEventListener('click', () => {
+      viewedSeason = Math.min(currentSeason, viewedSeason + 1);
+      renderSeasonPane(TEAMS[teamIdx], viewedSeason);
+      window.history.replaceState(null, '', `team.html?id=${TEAMS[teamIdx].id}&season=${viewedSeason}`);
+    });
+
+    (async () => {
+      for (let s = 1; s <= currentSeason; s++) {
+        await ensurePastResultsCached(s, simFns);
+      }
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('page').style.display = '';
+      renderTeam(teamIdx);
+    })();
+  </script>
+
+</body>
+</html>

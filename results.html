@@ -290,12 +290,14 @@
       const engineNames = { honda: 'Honda', ferrari: 'Ferrari', megatron: 'Megatron', ford: 'Ford' };
       const POINTS_TABLE = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 
-      function displayTeam(teamId) {
+      function displayTeam(teamId, link = true) {
         const base = (teamNames[teamId] || teamId).toUpperCase();
         const eng  = engineNames[engByTeam[teamId]];
-        if (!eng) return base;
-        const engUp = eng.toUpperCase();
-        return base.includes(engUp) ? base : `${base}-${engUp}`;
+        const label = (!eng || base.includes(eng.toUpperCase()))
+          ? base
+          : `${base}-${eng.toUpperCase()}`;
+        if (!link || !teamId) return label;
+        return `<a href="team.html?id=${teamId}&season=${season}" style="color:inherit;text-decoration:none">${label}</a>`;
       }
 
       function driverLink(driverId, name) {

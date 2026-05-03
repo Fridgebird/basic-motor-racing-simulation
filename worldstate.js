@@ -348,11 +348,11 @@ function applySeasonEndTransitions(roster, season, worldSeed, entered) {
     const team       = TEAMS.find(t => t.id === entry.teamId);
     const stats      = getDriverStats(entry.driverId, season - 1, worldSeed);
 
-    // Performance-based firing — only applies to drivers 28+ (fully developed).
-    // Young drivers are still on the arc toward their peak; firing them early
-    // drains the grid because there are never enough same-season rookies to replace them.
+    // Performance-based firing: drop drivers whose skill falls below the team's floor.
+    // Threshold range is 40–60 (low enough that developing drivers are safe unless
+    // genuinely poor; only clear backmarkers at established teams get cut).
     const minSkill = teamMinSkill(team);
-    if (age >= 28 && stats.skill < minSkill) return false; // fired
+    if (stats.skill < minSkill) return false; // fired
 
     // Age-based retirement
     const retireProb = retirementProbability(age);

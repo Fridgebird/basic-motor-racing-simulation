@@ -6,7 +6,7 @@
   <title>Driver Profile — Simple Motor Racing</title>
   <style>
     @font-face { font-family:'Square'; src:url('Square.ttf') format('truetype'); font-weight:normal; }
-    @font-face { font-family:'Square'; src:url('Squareo.ttf') format('truetype'); font-weight:bold; }
+    @font-face { font-family:'Square'; src:url('Square.ttf') format('truetype'); font-weight:bold; }
     :root {
       --bg:#0d1117; --bg-deep:#080c12; --bg-mid:#0a0f18; --border:#1e2f44;
       --hi:#ffffff; --mid:#8ab4d4; --lo:#4a6a88; --dim:#2a4055; --accent:#cc2233;
@@ -172,19 +172,22 @@
       const team        = rosterEntry ? TEAMS.find(t => t.id === rosterEntry.teamId) : null;
       const age         = rosterEntry ? getDriverAge(dId, currentSeason, rosterEntry.birthYear) : '?';
 
-      // Portrait — try image, fall back to initials
+      // Portrait — CSS sprite from driver sheet; fall back to initials if no sheet covers this index
       const portrait = document.getElementById('portrait');
       portrait.style.cssText = '';
       portrait.innerHTML = '';
-      const img = document.createElement('img');
-      img.alt   = `${poolDriver.firstName} ${poolDriver.lastName}`;
-      img.onerror = () => {
-        portrait.removeChild(img);
+      const pIdx = poolDriver.portraitIndex;
+      if (pIdx != null && pIdx < 32) {
+        const COLS = 4, PX = 128;
+        const sheet = Math.floor(pIdx / 16) + 1;
+        const pos   = pIdx % 16;
+        const col   = pos % COLS;
+        const row   = Math.floor(pos / COLS);
+        portrait.style.cssText = `background-image:url('driver_sprites_16x16_${sheet}.png');background-size:${PX*COLS}px ${PX*COLS}px;background-position:${-(col*PX)}px ${-(row*PX)}px;`;
+      } else {
         portrait.style.cssText = `background:${team ? team.colour + '22' : '#1e2f44'};color:${team ? team.colour : 'var(--lo)'};`;
         portrait.textContent = (poolDriver.firstName[0] + poolDriver.lastName[0]).toUpperCase();
-      };
-      img.src = `portraits/driver_${poolDriver.portraitIndex}.png`;
-      portrait.appendChild(img);
+      }
 
       // Header
       const nat = poolDriver.nationality.charAt(0).toUpperCase() + poolDriver.nationality.slice(1);

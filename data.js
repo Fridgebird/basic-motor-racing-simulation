@@ -119,7 +119,7 @@ export const TEAMS = [
   },
   {
     id:                 'ferrosso',
-    name:               'Scuderia Ferrosso',
+    name:               'Officine Ferrosso',
     shortName:          'Ferrosso',
     nationality:        'Italian',
     spriteRow:          0, spriteCol: 2,

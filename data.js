@@ -231,6 +231,7 @@ export const TEAMS = [
     id:                 'deltaBravo',
     name:               'Delta Bravo Racing',
     shortName:          'Delta Bravo',
+    carImageId:         'dbr',
     nationality:        'British',
     spriteRow:          1, spriteCol: 3,
     colour:             '#fb8d1f',

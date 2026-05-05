@@ -35,8 +35,10 @@
 
     #profile-card { border:1px solid var(--border); background:var(--bg-mid); margin-bottom:20px; overflow:hidden; }
 
-    #car-wrap { width:100%; background:#111418; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:center; padding:16px 0; }
-    #car-sprite { width:400px; height:176px; background-repeat:no-repeat; image-rendering:auto; }
+    #car-wrap { width:100%; background:#111418; border-bottom:1px solid var(--border); aspect-ratio:16/9; overflow:hidden; }
+    #car-sprite { width:100%; height:100%; }
+    .car-img { width:100%; height:100%; object-fit:cover; display:block; }
+    .car-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:9px; letter-spacing:3px; }
 
     #team-header { display:flex; align-items:center; padding:16px 20px 12px; border-bottom:1px solid var(--border); }
     #livery-bar { width:4px; align-self:stretch; flex-shrink:0; margin-right:16px; border-radius:1px; }
@@ -82,7 +84,6 @@
     .champ-marker { color:var(--accent); font-size:10px; margin-left:4px; }
 
     @media (max-width:520px) {
-      #car-sprite { width:100%; height:auto; aspect-ratio:400/176; max-width:360px; }
       #career-stats { gap:16px; }
     }
   </style>
@@ -156,7 +157,7 @@
     import { DRIVER_POOL }                  from './drivers.js';
     import {
       getActiveRoster, getDisplayYear, getChassisId,
-      getTeamEngine, getTeamTyre, getCarSpriteSheet, getSeasonSnapshot,
+      getTeamEngine, getTeamTyre, getSeasonSnapshot,
     }                                       from './worldstate.js';
     import {
       getCurrentEvent, getWorldSeed, getConstructorHistory, loadSeasonSummary,
@@ -187,27 +188,44 @@
     let viewedSeason = parseInt(params.get('season') || currentSeason, 10);
     viewedSeason = Math.max(1, Math.min(viewedSeason, currentSeason));
 
-    function carSpriteStyle(team, season) {
-      const sheet = getCarSpriteSheet(season);
-      const x     = (team.spriteCol * 100 / 3).toFixed(4);
-      const y     = (team.spriteRow * 100 / 2).toFixed(4);
-      return `background-image:url('${sheet}');background-size:400% 300%;background-position:${x}% ${y}%;`;
+    function updateCarImage(team, season) {
+      const chassisEra = Math.floor((season - 1) / 5) + 1;
+      const eraYear    = 1930 + (chassisEra - 1) * 5;
+      const imageId    = team.carImageId || team.id.toLowerCase();
+      const wrap       = document.getElementById('car-sprite');
+      wrap.innerHTML   = '';
+
+      const img = document.createElement('img');
+      img.className = 'car-img';
+      img.alt = '';
+      img.onerror = () => {
+        wrap.removeChild(img);
+        const ph = document.createElement('div');
+        ph.className   = 'car-placeholder';
+        ph.textContent = `${team.shortName.toUpperCase()} · ${eraYear}`;
+        ph.style.color = team.colour;
+        wrap.appendChild(ph);
+      };
+      img.src = `car_sprites_${eraYear}_${imageId}.png`;
+      wrap.appendChild(img);
     }
 
     function makePortraitEl(poolDriver, teamColour) {
       const wrap = document.createElement('div');
       wrap.className = 'driver-chip-portrait';
-      wrap.style.background = `${teamColour}22`;
-      wrap.style.color      = teamColour;
-
-      const img = document.createElement('img');
-      img.alt    = poolDriver.firstName;
-      img.onerror = () => {
-        wrap.removeChild(img);
+      const pIdx = poolDriver.portraitIndex;
+      if (pIdx != null && pIdx < 32) {
+        const COLS = 4, PX = 32;
+        const sheet = Math.floor(pIdx / 16) + 1;
+        const pos   = pIdx % 16;
+        const col   = pos % COLS;
+        const row   = Math.floor(pos / COLS);
+        wrap.style.cssText = `background-image:url('driver_sprites_16x16_${sheet}.png');background-size:${PX*COLS}px ${PX*COLS}px;background-position:${-(col*PX)}px ${-(row*PX)}px;background-color:${teamColour}22;`;
+      } else {
+        wrap.style.background = `${teamColour}22`;
+        wrap.style.color      = teamColour;
         wrap.textContent = (poolDriver.firstName[0] + poolDriver.lastName[0]).toUpperCase();
-      };
-      img.src = `portraits/driver_${poolDriver.portraitIndex}.png`;
-      wrap.appendChild(img);
+      }
       return wrap;
     }
 
@@ -219,7 +237,7 @@
       const engineName = (ENGINES[engineId]?.name ?? engineId).toUpperCase();
       const tyreName   = (TYRES[tyreId]?.name   ?? tyreId).toUpperCase();
 
-      document.getElementById('car-sprite').style.cssText = carSpriteStyle(team, season);
+      updateCarImage(team, season);
       document.getElementById('season-label').textContent = `SEASON ${season} · ${year}`;
 
       document.getElementById('season-tech').innerHTML = `

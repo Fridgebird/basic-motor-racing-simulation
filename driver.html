@@ -39,7 +39,8 @@
     #portrait img { width:128px; height:128px; object-fit:cover; display:block; }
 
     #driver-details { flex:1; min-width:0; }
-    #driver-name { font-size:20px; letter-spacing:3px; color:var(--hi); margin-bottom:4px; font-weight:bold; }
+    #driver-name { font-size:20px; letter-spacing:3px; color:var(--hi); margin-bottom:4px; font-weight:bold; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .flag-strip { width:72px; height:8px; border-radius:1px; object-fit:cover; display:block; flex-shrink:0; }
     #driver-meta { font-size:9px; letter-spacing:2px; color:var(--lo); margin-bottom:16px; }
     .team-line { display:flex; align-items:center; gap:8px; margin-bottom:16px; }
     .team-dot { width:3px; height:16px; flex-shrink:0; }
@@ -163,6 +164,18 @@
       if (found >= 0) currentIdx = found;
     }
 
+    const NAT_CODE = {
+      'american':'us',   'argentinian':'ar', 'australian':'au', 'austrian':'at',
+      'belgian':'be',    'brazilian':'br',   'british':'gb',    'canadian':'ca',
+      'chinese':'cn',    'colombian':'co',   'czech':'cz',      'danish':'dk',
+      'dutch':'nl',      'egyptian':'eg',    'finnish':'fi',    'french':'fr',
+      'german':'de',     'ghanaian':'gh',    'greek':'gr',      'hungarian':'hu',
+      'indian':'in',     'irish':'ie',       'italian':'it',    'japanese':'jp',
+      'mexican':'mx',    'moroccan':'ma',    'new zealander':'nz','nigerian':'ng',
+      'norwegian':'no',  'polish':'pl',      'portuguese':'pt', 'senegalese':'sn',
+      'south african':'za','spanish':'es',   'swedish':'se',    'swiss':'ch',
+    };
+
     function render(idx) {
       const dId       = activeDriverIds[idx];
       const poolDriver = DRIVER_POOL.find(d => d.id === dId);
@@ -191,7 +204,19 @@
 
       // Header
       const nat = poolDriver.nationality.charAt(0).toUpperCase() + poolDriver.nationality.slice(1);
-      document.getElementById('driver-name').textContent = `${poolDriver.firstName} ${poolDriver.lastName}`.toUpperCase();
+      const nameEl = document.getElementById('driver-name');
+      nameEl.innerHTML = '';
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = `${poolDriver.firstName} ${poolDriver.lastName}`.toUpperCase();
+      nameEl.appendChild(nameSpan);
+      const flagCode = NAT_CODE[poolDriver.nationality.toLowerCase()];
+      if (flagCode) {
+        const fi = document.createElement('img');
+        fi.className = 'flag-strip';
+        fi.alt = '';
+        fi.src = `https://flagcdn.com/w160/${flagCode}.png`;
+        nameEl.appendChild(fi);
+      }
       document.getElementById('driver-meta').textContent = `${nat} · Born ${rosterEntry?.birthYear ?? '—'} · Age ${age}`;
       document.getElementById('info-bar').textContent    = `Driver Profile · ${poolDriver.firstName} ${poolDriver.lastName}`;
 

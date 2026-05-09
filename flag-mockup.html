@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flag Display Options — Simple Motor Racing</title>
+  <style>
+    @font-face { font-family:'Square'; src:url('Square.ttf') format('truetype'); font-weight:normal; }
+    @font-face { font-family:'Square'; src:url('Square.ttf') format('truetype'); font-weight:bold; }
+    :root {
+      --bg:#0d1117; --bg-deep:#080c12; --bg-mid:#0a0f18; --border:#1e2f44;
+      --hi:#ffffff; --mid:#8ab4d4; --lo:#4a6a88; --dim:#2a4055; --accent:#cc2233;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--mid); font-family:'Square','Courier New',monospace; font-size:12px; min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+
+    #topbar { width:100%; height:44px; background:var(--bg-deep); border:1px solid var(--border); border-bottom:2px solid var(--accent); display:flex; align-items:center; padding:0 16px; }
+    .b-flat { font-size:15px; color:var(--hi); letter-spacing:0.04em; }
+    .b-flat em { font-style:normal; color:var(--mid); }
+
+    #info-bar { width:100%; background:var(--bg-mid); border-bottom:1px solid var(--border); padding:6px 16px; font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
+
+    #page { width:100%; max-width:800px; padding:24px 16px 64px; }
+
+    section { margin-bottom:40px; }
+    h2 { font-size:9px; letter-spacing:3px; color:var(--lo); text-transform:uppercase; border-bottom:1px solid var(--border); padding-bottom:8px; margin-bottom:20px; font-weight:normal; }
+    .note { font-size:9px; letter-spacing:1px; color:var(--dim); margin-bottom:28px; line-height:1.8; }
+
+    /* ── Flag base — Italian tricolore as CSS proxy for real images ── */
+    .f {
+      background: linear-gradient(to right, #009246 33.33%, #ffffff 33.33% 66.67%, #ce2b37 66.67%);
+      flex-shrink: 0;
+      display: block;
+    }
+
+    /* ── Shape options ──────────────────────────────────────────────── */
+    .shape-grid { display:flex; flex-wrap:wrap; gap:28px 36px; align-items:flex-end; }
+    .shape-item { display:flex; flex-direction:column; align-items:center; gap:10px; }
+    .shape-label { font-size:8px; letter-spacing:1.5px; color:var(--lo); text-transform:uppercase; text-align:center; line-height:1.6; }
+
+    .f-rect      { width:60px; height:40px; }
+    .f-rect-out  { width:60px; height:40px; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.25); }
+    .f-wide      { width:80px; height:40px; }
+    .f-rounded   { width:60px; height:40px; border-radius:5px; }
+    .f-rounded-out { width:60px; height:40px; border-radius:5px; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.25); }
+    .f-circle    { border-radius:50%; }
+    .f-circle-sm { width:40px; height:40px; border-radius:50%; }
+    .f-ring      { width:40px; height:40px; border-radius:50%; box-shadow:0 0 0 2px var(--border), 0 0 0 4px rgba(255,255,255,0.12); }
+    .f-square    { width:40px; height:40px; }
+    .f-diagonal  { width:72px; height:36px; clip-path:polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+    .f-slash     { width:60px; height:40px; clip-path:polygon(0 0, 100% 0, 100% 100%, 18px 100%); }
+    .f-shield    { width:40px; height:50px; clip-path:polygon(0 0, 100% 0, 100% 65%, 50% 100%, 0 65%); }
+    .f-strip     { width:96px; height:10px; }
+    .f-strip-r   { width:96px; height:10px; border-radius:5px; }
+    .f-pill      { width:64px; height:18px; border-radius:9px; }
+    .f-sliver    { width:5px; height:40px; }
+    .f-notch     { width:60px; height:40px; clip-path:polygon(0 0, 100% 0, 100% 100%, 12px 100%, 0 calc(100% - 12px)); }
+
+    /* ── Treatments ─────────────────────────────────────────────────── */
+    .t-vivid  { }
+    .t-muted  { filter:saturate(0.45) brightness(0.8); }
+    .t-dim    { filter:brightness(0.55); }
+    .t-inset  { box-shadow:inset 0 0 0 1px rgba(255,255,255,0.2), inset 0 0 12px rgba(0,0,0,0.35); }
+
+    /* ── Size scale rows ─────────────────────────────────────────────── */
+    .scale-row { display:flex; align-items:center; gap:16px; padding:14px 20px; background:var(--bg-mid); border:1px solid var(--border); border-bottom:none; }
+    .scale-row:last-child { border-bottom:1px solid var(--border); }
+    .scale-tag { font-size:9px; letter-spacing:1px; color:var(--lo); width:80px; flex-shrink:0; }
+    .scale-flags { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+    .scale-flags span { font-size:8px; letter-spacing:1px; color:var(--dim); }
+
+    /* ── Context panels ──────────────────────────────────────────────── */
+    .ctx { background:var(--bg-mid); border:1px solid var(--border); margin-bottom:12px; overflow:hidden; }
+    .ctx-hdr { font-size:8px; letter-spacing:2px; color:var(--lo); padding:5px 12px; background:var(--bg-deep); border-bottom:1px solid var(--border); text-transform:uppercase; }
+
+    /* Timing sheet */
+    .tr { display:flex; align-items:center; border-bottom:1px solid var(--dim); }
+    .tr:last-child { border-bottom:none; }
+    .tc { padding:6px 10px; font-size:11px; }
+    .tc-pos  { color:var(--hi); width:30px; }
+    .tc-num  { color:var(--lo); width:26px; font-size:10px; }
+    .tc-flag { display:flex; align-items:center; padding:0 5px 0 2px; }
+    .tc-drv  { color:var(--hi); flex:1; }
+    .tc-team { color:var(--lo); width:120px; font-size:10px; }
+    .tc-gap  { color:var(--mid); width:60px; text-align:right; font-size:10px; }
+    .tc-dot  { width:3px; align-self:stretch; }
+
+    /* Profile header */
+    .ph { display:flex; align-items:center; gap:16px; padding:16px 20px; border-top:1px solid var(--border); }
+    .ph:first-of-type { border-top:none; }
+    .ph-flag { display:flex; flex-direction:column; align-items:center; gap:6px; }
+    .ph-sz   { font-size:7px; letter-spacing:1px; color:var(--dim); text-align:center; }
+    .ph-name { font-size:17px; letter-spacing:2px; color:var(--hi); font-weight:bold; margin-bottom:4px; }
+    .ph-meta { font-size:9px; letter-spacing:2px; color:var(--lo); }
+
+    /* Standings */
+    .sr { display:flex; align-items:center; gap:10px; padding:6px 12px; border-bottom:1px solid var(--dim); }
+    .sr:last-child { border-bottom:none; }
+    .sr-pos  { color:var(--hi); width:20px; font-size:11px; }
+    .sr-name { color:var(--hi); flex:1; font-size:11px; }
+    .sr-nat  { color:var(--lo); font-size:9px; width:80px; }
+    .sr-pts  { color:var(--mid); width:36px; text-align:right; font-size:11px; }
+
+    /* Team header strip */
+    .team-strip { display:flex; align-items:center; gap:12px; padding:14px 20px; }
+    .ts-bar  { width:4px; align-self:stretch; border-radius:1px; flex-shrink:0; }
+    .ts-name { font-size:17px; letter-spacing:2px; color:var(--hi); font-weight:bold; }
+    .ts-meta { font-size:9px; letter-spacing:2px; color:var(--lo); }
+  </style>
+</head>
+<body>
+
+<div id="topbar">
+  <span class="b-flat">Simple <em>Motor Racing</em></span>
+</div>
+<div id="info-bar">Flag Display Options — Mockup · Italian Tricolore</div>
+
+<div id="page">
+
+  <p class="note">Flags simulated in CSS (Italian tricolore). Real assets will be image files — the same CSS classes apply unchanged to &lt;img&gt; elements with object-fit:cover/contain.</p>
+
+  <!-- ── 1. SHAPES ──────────────────────────────────────────────── -->
+  <section>
+    <h2>Shape Options</h2>
+    <div class="shape-grid">
+
+      <div class="shape-item">
+        <div class="f f-rect-out"></div>
+        <div class="shape-label">Rectangle 3:2<br>+ outline</div>
+      </div>
+
+      <div class="shape-item">
+        <div class="f f-wide" style="box-shadow:inset 0 0 0 1px rgba(255,255,255,0.2);"></div>
+        <div class="shape-label">Wide 2:1</div>
+      </div>
+
+      <div class="shape-item">
+        <div class="f f-rounded-out"></div>
+        <div class="shape-label">Rounded<br>rectangle</div>
+      </div>
+
+      <div class="shape-item">
+        <div class="f f-circle-sm"></div>
+        <div class="shape-label">Circle</div>
+      </div>
+
+      <div class="shape-item">
+        <div class="f f-ring"></div>
+        <div class="shape-label">Circle<br>+ ring</div>
+      </div>
+
+      <div class="shape-item">
+        <div class="f f-square" style="box-shadow:inset 0 0 0 1px rgba(255,255,255,0.2);"></div>
+        <div class="shape-label">Square</div>
+      </div>
+
+      <div class="shape-item">
+        <div class="f f-diagonal"></div>
+        <div class="shape-label">Diagonal<br>parallelogram</div>
+      </div>
+
+      <div class="shape-item">
+        <div class="f f-slash"></div>
+        <div class="shape-label">Slash cut<br>(right edge)</div>
+      </div>
+
+      <div class="shape-item">
+        <div class="f f-notch"></div>
+        <div class="shape-label">Notch cut<br>(bottom-left)</div>
+      </div>
+
+      <div class="shape-item">
+        <div class="f f-shield"></div>
+        <div class="shape-label">Shield /<br>crest</div>
+      </div>
+
+      <div class="shape-item">
+        <div class="f f-strip"></div>
+        <div class="shape-label">Thin strip</div>
+      </div>
+
+      <div class="shape-item">
+        <div class="f f-strip-r"></div>
+        <div class="shape-label">Rounded strip</div>
+      </div>
+
+      <div class="shape-item">
+        <div class="f f-pill"></div>
+        <div class="shape-label">Pill</div>
+      </div>
+
+      <div class="shape-item">
+        <div class="f f-sliver"></div>
+        <div class="shape-label">Vertical<br>sliver</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── 2. SIZES ───────────────────────────────────────────────── -->
+  <section>
+    <h2>Size Scale — Rectangle &amp; Circle</h2>
+
+    <div class="scale-row">
+      <div class="scale-tag">RECTANGLE</div>
+      <div class="scale-flags">
+        <div class="f f-rect-out" style="width:90px;height:60px;"></div>
+        <div class="f f-rect-out" style="width:60px;height:40px;"></div>
+        <div class="f f-rect-out" style="width:36px;height:24px;"></div>
+        <div class="f f-rect-out" style="width:27px;height:18px;"></div>
+        <div class="f f-rect-out" style="width:21px;height:14px;"></div>
+        <span>↑ profile · standings · timing →</span>
+      </div>
+    </div>
+
+    <div class="scale-row">
+      <div class="scale-tag">CIRCLE</div>
+      <div class="scale-flags">
+        <div class="f f-circle" style="width:64px;height:64px;"></div>
+        <div class="f f-circle" style="width:40px;height:40px;"></div>
+        <div class="f f-circle" style="width:24px;height:24px;"></div>
+        <div class="f f-circle" style="width:18px;height:18px;"></div>
+        <div class="f f-circle" style="width:14px;height:14px;"></div>
+        <span>↑ profile · standings · timing →</span>
+      </div>
+    </div>
+
+    <div class="scale-row">
+      <div class="scale-tag">STRIP</div>
+      <div class="scale-flags" style="flex-direction:column;align-items:flex-start;">
+        <div class="f" style="width:200px;height:14px;border-radius:2px;"></div>
+        <div class="f" style="width:200px;height:8px;border-radius:2px;"></div>
+        <div class="f" style="width:200px;height:4px;border-radius:1px;"></div>
+        <div class="f" style="width:200px;height:2px;"></div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ── 3. TREATMENTS ─────────────────────────────────────────── -->
+  <section>
+    <h2>Treatments on Dark Background</h2>
+    <div class="shape-grid" style="align-items:center;">
+
+      <div class="shape-item">
+        <div class="f f-rect t-vivid" style="width:72px;height:48px;"></div>
+        <div class="shape-label">Full colour</div>
+      </div>
+      <div class="shape-item">
+        <div class="f f-rect t-vivid t-inset" style="width:72px;height:48px;"></div>
+        <div class="shape-label">Full colour<br>+ inset shadow</div>
+      </div>
+      <div class="shape-item">
+        <div class="f f-rect t-muted" style="width:72px;height:48px;"></div>
+        <div class="shape-label">Desaturated</div>
+      </div>
+      <div class="shape-item">
+        <div class="f f-rect t-dim" style="width:72px;height:48px;"></div>
+        <div class="shape-label">Dimmed</div>
+      </div>
+
+      <div class="shape-item">
+        <div class="f f-circle t-vivid" style="width:48px;height:48px;"></div>
+        <div class="shape-label">Circle<br>full colour</div>
+      </div>
+      <div class="shape-item">
+        <div class="f f-ring t-vivid" style="width:48px;height:48px;"></div>
+        <div class="shape-label">Circle<br>+ ring</div>
+      </div>
+      <div class="shape-item">
+        <div class="f f-circle t-muted" style="width:48px;height:48px;"></div>
+        <div class="shape-label">Circle<br>desaturated</div>
+      </div>
+      <div class="shape-item">
+        <div class="f f-rounded t-vivid t-inset" style="width:72px;height:48px;border-radius:6px;"></div>
+        <div class="shape-label">Rounded<br>+ inset shadow</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── 4. IN CONTEXT ─────────────────────────────────────────── -->
+  <section>
+    <h2>In Context</h2>
+
+    <!-- Timing sheet — three flag style options compared row by row -->
+    <div class="ctx">
+      <div class="ctx-hdr">Timing Sheet — flag inline with driver name</div>
+
+      <div style="padding:8px 12px;font-size:8px;letter-spacing:1px;color:var(--dim);border-bottom:1px solid var(--border);">Option A — small rectangle</div>
+      <div class="tr">
+        <div class="tc tc-pos">1</div>
+        <div class="tc tc-num">27</div>
+        <div class="tc-flag"><div class="f f-rect-out" style="width:22px;height:14px;"></div></div>
+        <div class="tc tc-drv">ALESSI</div>
+        <div class="tc tc-team">FERROSSO-FER</div>
+        <div class="tc tc-gap">LEADER</div>
+      </div>
+      <div class="tr">
+        <div class="tc tc-pos">2</div>
+        <div class="tc tc-num">5</div>
+        <div class="tc-flag"><div class="f f-rect-out" style="width:22px;height:14px;"></div></div>
+        <div class="tc tc-drv">BURKE</div>
+        <div class="tc tc-team">HARTWELL-HEN</div>
+        <div class="tc tc-gap">+3.4s</div>
+      </div>
+
+      <div style="padding:8px 12px;font-size:8px;letter-spacing:1px;color:var(--dim);border-bottom:1px solid var(--border);border-top:1px solid var(--border);">Option B — small circle</div>
+      <div class="tr">
+        <div class="tc tc-pos">1</div>
+        <div class="tc tc-num">27</div>
+        <div class="tc-flag"><div class="f f-circle" style="width:14px;height:14px;"></div></div>
+        <div class="tc tc-drv">ALESSI</div>
+        <div class="tc tc-team">FERROSSO-FER</div>
+        <div class="tc tc-gap">LEADER</div>
+      </div>
+      <div class="tr">
+        <div class="tc tc-pos">2</div>
+        <div class="tc tc-num">5</div>
+        <div class="tc-flag"><div class="f f-circle" style="width:14px;height:14px;"></div></div>
+        <div class="tc tc-drv">BURKE</div>
+        <div class="tc tc-team">HARTWELL-HEN</div>
+        <div class="tc tc-gap">+3.4s</div>
+      </div>
+
+      <div style="padding:8px 12px;font-size:8px;letter-spacing:1px;color:var(--dim);border-bottom:1px solid var(--border);border-top:1px solid var(--border);">Option C — no flag (baseline)</div>
+      <div class="tr">
+        <div class="tc tc-pos">1</div>
+        <div class="tc tc-num">27</div>
+        <div class="tc tc-drv" style="padding-left:10px;">ALESSI</div>
+        <div class="tc tc-team">FERROSSO-FER</div>
+        <div class="tc tc-gap">LEADER</div>
+      </div>
+      <div class="tr">
+        <div class="tc tc-pos">2</div>
+        <div class="tc tc-num">5</div>
+        <div class="tc tc-drv" style="padding-left:10px;">BURKE</div>
+        <div class="tc tc-team">HARTWELL-HEN</div>
+        <div class="tc tc-gap">+3.4s</div>
+      </div>
+    </div>
+
+    <!-- Driver profile header — three shapes compared -->
+    <div class="ctx">
+      <div class="ctx-hdr">Driver Profile Header</div>
+
+      <div class="ph">
+        <div class="ph-flag">
+          <div class="f f-rect-out" style="width:72px;height:48px;"></div>
+          <div class="ph-sz">Rect 3:2</div>
+        </div>
+        <div>
+          <div class="ph-name">MARCO ALESSI</div>
+          <div class="ph-meta">ITALIAN · BORN 1900 · AGE 30</div>
+        </div>
+      </div>
+
+      <div class="ph">
+        <div class="ph-flag">
+          <div class="f f-ring" style="width:52px;height:52px;"></div>
+          <div class="ph-sz">Circle + ring</div>
+        </div>
+        <div>
+          <div class="ph-name">MARCO ALESSI</div>
+          <div class="ph-meta">ITALIAN · BORN 1900 · AGE 30</div>
+        </div>
+      </div>
+
+      <div class="ph">
+        <div class="ph-flag">
+          <div class="f f-shield" style="width:42px;height:52px;"></div>
+          <div class="ph-sz">Shield</div>
+        </div>
+        <div>
+          <div class="ph-name">MARCO ALESSI</div>
+          <div class="ph-meta">ITALIAN · BORN 1900 · AGE 30</div>
+        </div>
+      </div>
+
+      <div class="ph">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div class="f" style="width:160px;height:4px;border-radius:1px;"></div>
+          <div class="ph-sz" style="text-align:left;">Strip accent above name</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Team header — flag as accent -->
+    <div class="ctx">
+      <div class="ctx-hdr">Constructor Profile Header</div>
+
+      <div class="team-strip">
+        <div class="ts-bar" style="background:#fe3029;"></div>
+        <div class="f f-diagonal" style="width:64px;height:32px;"></div>
+        <div>
+          <div class="ts-name">OFFICINE FERROSSO</div>
+          <div class="ts-meta">ITALIAN · EST. 1930</div>
+        </div>
+      </div>
+
+      <div class="team-strip" style="border-top:1px solid var(--border);">
+        <div class="ts-bar" style="background:#fe3029;"></div>
+        <div class="f f-circle" style="width:40px;height:40px;"></div>
+        <div>
+          <div class="ts-name">OFFICINE FERROSSO</div>
+          <div class="ts-meta">ITALIAN · EST. 1930</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Standings table -->
+    <div class="ctx">
+      <div class="ctx-hdr">Championship Standings — rect vs circle</div>
+
+      <div style="display:flex;">
+        <div style="flex:1;border-right:1px solid var(--border);">
+          <div style="padding:5px 12px;font-size:8px;letter-spacing:1px;color:var(--dim);border-bottom:1px solid var(--border);">Rectangle</div>
+          <div class="sr">
+            <div class="sr-pos">1</div>
+            <div class="f f-rect-out" style="width:22px;height:14px;"></div>
+            <div class="sr-name">ALESSI</div>
+            <div class="sr-pts">148</div>
+          </div>
+          <div class="sr">
+            <div class="sr-pos">2</div>
+            <div class="f f-rect-out" style="width:22px;height:14px;"></div>
+            <div class="sr-name">HORAK</div>
+            <div class="sr-pts">121</div>
+          </div>
+          <div class="sr">
+            <div class="sr-pos">3</div>
+            <div class="f f-rect-out" style="width:22px;height:14px;"></div>
+            <div class="sr-name">ESPOSITO</div>
+            <div class="sr-pts">98</div>
+          </div>
+        </div>
+        <div style="flex:1;">
+          <div style="padding:5px 12px;font-size:8px;letter-spacing:1px;color:var(--dim);border-bottom:1px solid var(--border);">Circle</div>
+          <div class="sr">
+            <div class="sr-pos">1</div>
+            <div class="f f-circle" style="width:16px;height:16px;"></div>
+            <div class="sr-name">ALESSI</div>
+            <div class="sr-pts">148</div>
+          </div>
+          <div class="sr">
+            <div class="sr-pos">2</div>
+            <div class="f f-circle" style="width:16px;height:16px;"></div>
+            <div class="sr-name">HORAK</div>
+            <div class="sr-pts">121</div>
+          </div>
+          <div class="sr">
+            <div class="sr-pos">3</div>
+            <div class="f f-circle" style="width:16px;height:16px;"></div>
+            <div class="sr-name">ESPOSITO</div>
+            <div class="sr-pts">98</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+</div>
+</body>
+</html>

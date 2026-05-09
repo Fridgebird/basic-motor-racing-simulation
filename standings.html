@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Standings — Simple Motor Racing</title>
+  <style>
+    @font-face { font-family:'Square'; src:url('Square.ttf') format('truetype'); font-weight:normal; }
+    @font-face { font-family:'Square'; src:url('Square.ttf') format('truetype'); font-weight:bold; }
+    :root {
+      --bg:#0d1117; --bg-deep:#080c12; --bg-mid:#0a0f18; --border:#1e2f44;
+      --hi:#ffffff; --mid:#8ab4d4; --lo:#4a6a88; --dim:#2a4055; --accent:#cc2233;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--mid); font-family:'Square','Courier New',monospace; font-size:12px; min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+
+    #topbar { width:100%; height:44px; background:var(--bg-deep); border:1px solid var(--border); border-bottom:2px solid var(--accent); display:flex; align-items:center; padding:0 16px; }
+    .b-flat { font-size:15px; color:var(--hi); letter-spacing:0.04em; flex-shrink:0; }
+    .b-flat em { font-style:normal; color:var(--mid); }
+    .topbar-nav { display:flex; gap:16px; margin-left:auto; margin-right:16px; }
+    .topbar-nav-link { color:var(--lo); text-decoration:none; font-size:10px; letter-spacing:0.08em; }
+    .topbar-nav-link:hover { color:var(--mid); }
+    .topbar-nav-link.current { color:var(--mid); }
+
+    #info-bar { width:100%; background:var(--bg-mid); border-bottom:1px solid var(--border); padding:6px 16px; font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
+
+    #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--dim); text-align:center; width:100%; }
+
+    #page { width:100%; max-width:860px; padding:24px 16px; }
+
+    #season-nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    .nav-btn { font-family:inherit; font-size:9px; letter-spacing:1px; color:var(--lo); background:none; border:1px solid var(--border); padding:5px 12px; cursor:pointer; text-transform:uppercase; }
+    .nav-btn:hover:not(:disabled) { color:var(--hi); border-color:var(--mid); }
+    .nav-btn:disabled { opacity:0.25; cursor:default; }
+    #season-label { font-size:11px; letter-spacing:2px; color:var(--hi); }
+
+    #standings-wrap { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    @media (max-width:600px) { #standings-wrap { grid-template-columns:1fr; } }
+
+    .table-section { border:1px solid var(--border); }
+    .table-header { padding:6px 12px; font-size:9px; letter-spacing:2px; color:var(--lo); border-bottom:1px solid var(--border); background:var(--bg-deep); }
+    .standings-table { width:100%; border-collapse:collapse; }
+    .standings-table th { font-size:9px; letter-spacing:1px; color:var(--lo); text-align:left; padding:5px 10px; border-bottom:1px solid var(--border); white-space:nowrap; }
+    .standings-table td { padding:5px 10px; font-size:11px; color:var(--mid); border-bottom:1px solid var(--dim); }
+    .standings-table tr:last-child td { border-bottom:none; }
+    .standings-table tr:hover td { background:var(--bg-mid); }
+    .standings-table a { color:inherit; text-decoration:none; }
+    .standings-table a:hover { color:var(--hi); }
+    .col-pos { color:var(--hi); width:32px; }
+    .col-pos.p1 { color:var(--accent); }
+    .col-pts { color:var(--hi); text-align:right; }
+    .col-w   { color:var(--lo);  text-align:right; }
+    .team-dot { display:inline-block; width:3px; height:14px; vertical-align:middle; margin-right:6px; border-radius:1px; flex-shrink:0; }
+    .no-data { padding:20px; font-size:9px; letter-spacing:2px; color:var(--dim); text-align:center; }
+  </style>
+</head>
+<body>
+
+  <div id="topbar">
+    <span class="b-flat">Simple <em>Motor Racing</em></span>
+    <nav class="topbar-nav">
+      <a href="index.html" class="topbar-nav-link">CALENDAR</a>
+      <a href="drivers.html" class="topbar-nav-link">DRIVERS</a>
+      <a href="team.html" class="topbar-nav-link">TEAMS</a>
+      <a href="standings.html" class="topbar-nav-link current">STANDINGS</a>
+    </nav>
+  </div>
+  <div id="info-bar">Championship Standings</div>
+
+  <div id="loading-state">COMPUTING…</div>
+
+  <div id="page" style="display:none">
+    <div id="season-nav">
+      <button class="nav-btn" id="btn-prev">◀ PREV</button>
+      <span id="season-label">—</span>
+      <button class="nav-btn" id="btn-next">NEXT ▶</button>
+    </div>
+    <div id="standings-wrap">
+      <div class="table-section">
+        <div class="table-header">DRIVERS' CHAMPIONSHIP</div>
+        <table class="standings-table">
+          <thead><tr>
+            <th class="col-pos">POS</th>
+            <th>DRIVER</th>
+            <th style="text-align:right">W</th>
+            <th style="text-align:right">PTS</th>
+          </tr></thead>
+          <tbody id="drivers-tbody"></tbody>
+        </table>
+      </div>
+      <div class="table-section">
+        <div class="table-header">CONSTRUCTORS' CHAMPIONSHIP</div>
+        <table class="standings-table">
+          <thead><tr>
+            <th class="col-pos">POS</th>
+            <th>TEAM</th>
+            <th style="text-align:right">W</th>
+            <th style="text-align:right">PTS</th>
+          </tr></thead>
+          <tbody id="constructors-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { TEAMS }           from './data.js';
+    import { getDisplayYear, getSeasonSnapshot } from './worldstate.js';
+    import {
+      getCurrentEvent, getWorldSeed, getStandings, ensurePastResultsCached,
+    }                          from './championship.js';
+    import { initRace, cars }  from './state.js';
+    import {
+      runRace, initStrategies, setCurrentCircuit, runQualifyingSession,
+    }                          from './simulation.js';
+
+    const worldSeed     = getWorldSeed();
+    const currentEvent  = getCurrentEvent();
+    const currentSeason = currentEvent.season;
+
+    const simFns = {
+      initRace, cars, runRace, initStrategies,
+      setCurrentCircuit, runQualifyingSession, getSeasonSnapshot,
+    };
+
+    const params = new URLSearchParams(location.search);
+    let viewedSeason = parseInt(params.get('season') || currentSeason, 10);
+    viewedSeason = Math.max(1, Math.min(viewedSeason, currentSeason));
+
+    function renderStandings(season) {
+      const year = getDisplayYear(season);
+      document.getElementById('season-label').textContent = `SEASON ${season} · ${year}`;
+      document.getElementById('info-bar').textContent = `Championship Standings · S${season} ${year}`;
+      document.getElementById('btn-prev').disabled = season <= 1;
+      document.getElementById('btn-next').disabled = season >= currentSeason;
+
+      const { drivers, constructors } = getStandings(season);
+
+      const driversTbody = document.getElementById('drivers-tbody');
+      driversTbody.innerHTML = '';
+      if (!drivers.length) {
+        driversTbody.innerHTML = '<tr><td colspan="4" class="no-data">NO DATA YET</td></tr>';
+      } else {
+        drivers.forEach((d, i) => {
+          const pos   = i + 1;
+          const team  = TEAMS.find(t => {
+            // Find team from constructors list by matching driverId via roster
+            return constructors.some(c => c.id === t.id);
+          });
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="col-pos${pos === 1 ? ' p1' : ''}">${pos}</td>
+            <td>${d.driverId != null
+              ? `<a href="driver.html?id=${d.driverId}&season=${season}">${d.name.toUpperCase()}</a>`
+              : d.name.toUpperCase()
+            }</td>
+            <td class="col-w">${d.wins}</td>
+            <td class="col-pts">${d.points}</td>
+          `;
+          driversTbody.appendChild(tr);
+        });
+      }
+
+      const ctorTbody = document.getElementById('constructors-tbody');
+      ctorTbody.innerHTML = '';
+      if (!constructors.length) {
+        ctorTbody.innerHTML = '<tr><td colspan="4" class="no-data">NO DATA YET</td></tr>';
+      } else {
+        constructors.forEach((c, i) => {
+          const pos  = i + 1;
+          const team = TEAMS.find(t => t.id === c.id);
+          const dot  = team ? `<span class="team-dot" style="background:${team.colour}"></span>` : '';
+          const name = team
+            ? `<a href="team.html?id=${team.id}&season=${season}">${dot}${team.shortName.toUpperCase()}</a>`
+            : c.id.toUpperCase();
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="col-pos${pos === 1 ? ' p1' : ''}">${pos}</td>
+            <td>${name}</td>
+            <td class="col-w">${c.wins}</td>
+            <td class="col-pts">${c.points}</td>
+          `;
+          ctorTbody.appendChild(tr);
+        });
+      }
+
+      window.history.replaceState(null, '', `standings.html?season=${season}`);
+    }
+
+    document.getElementById('btn-prev').addEventListener('click', () => {
+      viewedSeason = Math.max(1, viewedSeason - 1);
+      renderStandings(viewedSeason);
+    });
+    document.getElementById('btn-next').addEventListener('click', () => {
+      viewedSeason = Math.min(currentSeason, viewedSeason + 1);
+      renderStandings(viewedSeason);
+    });
+
+    (async () => {
+      for (let s = 1; s <= currentSeason; s++) {
+        await ensurePastResultsCached(s, simFns);
+      }
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('page').style.display = '';
+      renderStandings(viewedSeason);
+    })();
+  </script>
+</body>
+</html>

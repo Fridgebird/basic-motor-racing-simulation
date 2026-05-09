@@ -73,6 +73,7 @@
       letter-spacing: 0.08em;
     }
     .topbar-nav-link:hover { color: var(--mid); }
+    .topbar-nav-link.current { color: var(--mid); }
 
     /* ── Season header ───────────────────────────────────────────────────────── */
     #season-header {
@@ -256,6 +257,12 @@
   <!-- ── Topbar ──────────────────────────────────────────────────────────────── -->
   <div id="topbar">
     <div class="b-flat">Simple <em>Motor Racing</em></div>
+    <nav class="topbar-nav">
+      <a href="index.html" class="topbar-nav-link current">CALENDAR</a>
+      <a href="drivers.html" class="topbar-nav-link">DRIVERS</a>
+      <a href="team.html" class="topbar-nav-link">TEAMS</a>
+      <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
+    </nav>
   </div>
 
   <!-- ── Dev bar ──────────────────────────────────────────────────────────────── -->

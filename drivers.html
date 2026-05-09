@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drivers — Simple Motor Racing</title>
+  <style>
+    @font-face { font-family:'Square'; src:url('Square.ttf') format('truetype'); font-weight:normal; }
+    @font-face { font-family:'Square'; src:url('Square.ttf') format('truetype'); font-weight:bold; }
+    :root {
+      --bg:#0d1117; --bg-deep:#080c12; --bg-mid:#0a0f18; --border:#1e2f44;
+      --hi:#ffffff; --mid:#8ab4d4; --lo:#4a6a88; --dim:#2a4055; --accent:#cc2233;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--mid); font-family:'Square','Courier New',monospace; font-size:12px; min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+
+    #topbar { width:100%; height:44px; background:var(--bg-deep); border:1px solid var(--border); border-bottom:2px solid var(--accent); display:flex; align-items:center; padding:0 16px; }
+    .b-flat { font-size:15px; color:var(--hi); letter-spacing:0.04em; flex-shrink:0; }
+    .b-flat em { font-style:normal; color:var(--mid); }
+    .topbar-nav { display:flex; gap:16px; margin-left:auto; margin-right:16px; }
+    .topbar-nav-link { color:var(--lo); text-decoration:none; font-size:10px; letter-spacing:0.08em; }
+    .topbar-nav-link:hover { color:var(--mid); }
+    .topbar-nav-link.current { color:var(--mid); }
+
+    #info-bar { width:100%; background:var(--bg-mid); border-bottom:1px solid var(--border); padding:6px 16px; font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
+
+    #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--dim); text-align:center; width:100%; }
+
+    #page { width:100%; max-width:860px; padding:24px 16px; }
+
+    #controls { display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+    #search { font-family:inherit; font-size:10px; letter-spacing:1px; background:var(--bg-mid); border:1px solid var(--border); color:var(--hi); padding:5px 12px; width:180px; outline:none; }
+    #search:focus { border-color:var(--lo); }
+    #search::placeholder { color:var(--dim); }
+    .filter-btn { font-family:inherit; font-size:9px; letter-spacing:1px; color:var(--lo); background:none; border:1px solid var(--border); padding:4px 11px; cursor:pointer; text-transform:uppercase; }
+    .filter-btn:hover { color:var(--hi); border-color:var(--mid); }
+    .filter-btn.active { color:var(--hi); border-color:var(--mid); background:var(--bg-mid); }
+    #result-count { font-size:9px; letter-spacing:2px; color:var(--dim); margin-left:auto; }
+
+    #driver-table { width:100%; border-collapse:collapse; border:1px solid var(--border); }
+    #driver-table th { font-size:9px; letter-spacing:1px; color:var(--lo); text-align:left; padding:5px 12px; border-bottom:1px solid var(--border); background:var(--bg-deep); white-space:nowrap; }
+    #driver-table td { padding:4px 10px; font-size:11px; color:var(--mid); border-bottom:1px solid var(--dim); vertical-align:middle; }
+    #driver-table tr:last-child td { border-bottom:none; }
+    #driver-table tr:hover td { background:var(--bg-mid); }
+    #driver-table a { color:inherit; text-decoration:none; }
+    #driver-table a:hover { color:var(--hi); }
+
+    .portrait-cell { width:40px; padding:4px 6px 4px 10px !important; }
+    .portrait-thumb { width:32px; height:32px; flex-shrink:0; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:bold; overflow:hidden; }
+    .col-name { color:var(--hi); white-space:nowrap; }
+    .col-nat { padding:4px 8px !important; }
+    .col-nat img { height:12px; vertical-align:middle; border-radius:1px; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.15); display:block; }
+    .col-num { text-align:right; color:var(--lo); }
+
+    .status-badge { font-size:8px; letter-spacing:1px; padding:2px 6px; border:1px solid; display:inline-block; white-space:nowrap; }
+    .status-active   { color:#55aa88; border-color:#55aa88; }
+    .status-retired  { color:var(--lo); border-color:var(--dim); }
+    .status-replaced { color:#cc8833; border-color:#cc8833; }
+  </style>
+</head>
+<body>
+
+  <div id="topbar">
+    <span class="b-flat">Simple <em>Motor Racing</em></span>
+    <nav class="topbar-nav">
+      <a href="index.html" class="topbar-nav-link">CALENDAR</a>
+      <a href="drivers.html" class="topbar-nav-link current">DRIVERS</a>
+      <a href="team.html" class="topbar-nav-link">TEAMS</a>
+      <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
+    </nav>
+  </div>
+  <div id="info-bar">All Drivers</div>
+
+  <div id="loading-state">COMPUTING HISTORY…</div>
+
+  <div id="page" style="display:none">
+    <div id="controls">
+      <input id="search" type="text" placeholder="SEARCH BY NAME" autocomplete="off">
+      <button class="filter-btn active" data-filter="all">ALL</button>
+      <button class="filter-btn" data-filter="active">ACTIVE</button>
+      <button class="filter-btn" data-filter="retired">RETIRED</button>
+      <button class="filter-btn" data-filter="replaced">REPLACED</button>
+      <span id="result-count"></span>
+    </div>
+    <table id="driver-table">
+      <thead>
+        <tr>
+          <th class="portrait-cell"></th>
+          <th>DRIVER</th>
+          <th class="col-nat"></th>
+          <th>TEAM</th>
+          <th style="text-align:right">S</th>
+          <th style="text-align:right">W</th>
+          <th style="text-align:right">PTS</th>
+          <th>STATUS</th>
+        </tr>
+      </thead>
+      <tbody id="driver-tbody"></tbody>
+    </table>
+  </div>
+
+  <script type="module">
+    import { DRIVER_POOL }     from './drivers.js';
+    import { TEAMS }           from './data.js';
+    import {
+      getActiveRoster, getDisplayYear, getDriverDepartureReason, getSeasonSnapshot,
+    }                          from './worldstate.js';
+    import {
+      getCurrentEvent, getWorldSeed, getCareerStats, ensurePastResultsCached,
+    }                          from './championship.js';
+    import { initRace, cars }  from './state.js';
+    import {
+      runRace, initStrategies, setCurrentCircuit, runQualifyingSession,
+    }                          from './simulation.js';
+
+    const worldSeed     = getWorldSeed();
+    const currentEvent  = getCurrentEvent();
+    const currentSeason = currentEvent.season;
+
+    const simFns = {
+      initRace, cars, runRace, initStrategies,
+      setCurrentCircuit, runQualifyingSession, getSeasonSnapshot,
+    };
+
+    const NAT_CODE = {
+      'american':'us',   'argentinian':'ar', 'australian':'au', 'austrian':'at',
+      'belgian':'be',    'brazilian':'br',   'british':'gb',    'canadian':'ca',
+      'chinese':'cn',    'colombian':'co',   'czech':'cz',      'danish':'dk',
+      'dutch':'nl',      'egyptian':'eg',    'finnish':'fi',    'french':'fr',
+      'german':'de',     'ghanaian':'gh',    'greek':'gr',      'hungarian':'hu',
+      'indian':'in',     'irish':'ie',       'italian':'it',    'japanese':'jp',
+      'mexican':'mx',    'moroccan':'ma',    'new zealander':'nz','nigerian':'ng',
+      'norwegian':'no',  'polish':'pl',      'portuguese':'pt', 'senegalese':'sn',
+      'south african':'za','spanish':'es',   'swedish':'se',    'swiss':'ch',
+    };
+
+    function makePortrait(pd, teamColour) {
+      const wrap = document.createElement('div');
+      wrap.className = 'portrait-thumb';
+      const pIdx = pd.portraitIndex;
+      if (pIdx != null && pIdx < 32) {
+        const COLS = 4, PX = 32;
+        const sheet = Math.floor(pIdx / 16) + 1;
+        const pos   = pIdx % 16;
+        const col   = pos % COLS;
+        const row   = Math.floor(pos / COLS);
+        wrap.style.cssText = `background-image:url('driver_sprites_16x16_${sheet}.png');background-size:${PX*COLS}px ${PX*COLS}px;background-position:${-(col*PX)}px ${-(row*PX)}px;background-color:${teamColour}22;`;
+      } else {
+        wrap.style.cssText = `background:${teamColour}22;color:${teamColour};`;
+        wrap.textContent = (pd.firstName[0] + pd.lastName[0]).toUpperCase();
+      }
+      return wrap;
+    }
+
+    let allRows = [];
+    let currentFilter = 'all';
+    let currentSearch = '';
+
+    function applyFilters() {
+      const q = currentSearch.toLowerCase();
+      const filtered = allRows.filter(r => {
+        if (currentFilter !== 'all' && r.status !== currentFilter) return false;
+        if (q && !r.searchKey.includes(q)) return false;
+        return true;
+      });
+      const tbody = document.getElementById('driver-tbody');
+      tbody.innerHTML = '';
+      filtered.forEach(r => tbody.appendChild(r.el));
+      document.getElementById('result-count').textContent =
+        `${filtered.length} DRIVER${filtered.length !== 1 ? 'S' : ''}`;
+    }
+
+    (async () => {
+      for (let s = 1; s <= currentSeason; s++) {
+        await ensurePastResultsCached(s, simFns);
+      }
+
+      const activeRoster = getActiveRoster(currentSeason, worldSeed);
+      const activeIds    = new Set(activeRoster.map(e => e.driverId));
+
+      const rows = [];
+
+      for (const pd of DRIVER_POOL) {
+        const career = getCareerStats(pd.id);
+        if (!career.length) continue; // never raced
+
+        const totals = career.reduce((acc, s) => ({
+          wins: acc.wins + s.wins,
+          pts:  acc.pts  + s.points,
+        }), { wins: 0, pts: 0 });
+
+        let status, teamId;
+        if (activeIds.has(pd.id)) {
+          status = 'active';
+          teamId = activeRoster.find(e => e.driverId === pd.id)?.teamId;
+        } else {
+          teamId = career[career.length - 1].teamId;
+          const lastSeason = career[career.length - 1].season;
+          const reason = getDriverDepartureReason(pd.id, lastSeason, worldSeed);
+          status = reason === 'replaced' ? 'replaced' : 'retired';
+        }
+
+        const team       = TEAMS.find(t => t.id === teamId);
+        const teamColour = team?.colour ?? '#4a6a88';
+        const flagCode   = NAT_CODE[pd.nationality.toLowerCase()] ?? '';
+        const natLabel   = pd.nationality.charAt(0).toUpperCase() + pd.nationality.slice(1);
+        const teamLink   = team
+          ? `<a href="team.html?id=${team.id}&season=${currentSeason}">${team.shortName.toUpperCase()}</a>`
+          : '—';
+        const flagHtml = flagCode
+          ? `<img src="https://flagcdn.com/w40/${flagCode}.png" alt="${natLabel}" title="${natLabel}">`
+          : natLabel;
+
+        const tr = document.createElement('tr');
+
+        const portraitTd = document.createElement('td');
+        portraitTd.className = 'portrait-cell';
+        portraitTd.appendChild(makePortrait(pd, teamColour));
+        tr.appendChild(portraitTd);
+
+        tr.insertAdjacentHTML('beforeend', `
+          <td class="col-name"><a href="driver.html?id=${pd.id}&season=${currentSeason}">${pd.lastName.toUpperCase()}, ${pd.firstName.toUpperCase()}</a></td>
+          <td class="col-nat">${flagHtml}</td>
+          <td>${teamLink}</td>
+          <td class="col-num">${career.length}</td>
+          <td class="col-num">${totals.wins}</td>
+          <td class="col-num">${totals.pts}</td>
+          <td><span class="status-badge status-${status}">${status.toUpperCase()}</span></td>
+        `);
+
+        rows.push({
+          lastName:  pd.lastName,
+          firstName: pd.firstName,
+          searchKey: `${pd.firstName} ${pd.lastName}`.toLowerCase(),
+          status,
+          el: tr,
+        });
+      }
+
+      rows.sort((a, b) =>
+        a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)
+      );
+      allRows = rows;
+
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('page').style.display = '';
+      applyFilters();
+
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentFilter = btn.dataset.filter;
+          applyFilters();
+        });
+      });
+
+      document.getElementById('search').addEventListener('input', e => {
+        currentSearch = e.target.value;
+        applyFilters();
+      });
+    })();
+  </script>
+</body>
+</html>

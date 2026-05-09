@@ -154,13 +154,19 @@
       setCurrentCircuit, runQualifyingSession, getSeasonSnapshot,
     };
 
-    const roster         = getActiveRoster(currentSeason, worldSeed);
+    const roster          = getActiveRoster(currentSeason, worldSeed);
     const activeDriverIds = roster.map(e => e.driverId);
+
+    // If the requested driver is not in the current active roster (retired/dropped),
+    // put just them in a single-element view list so their profile still renders.
+    const requestedId = driverIdParam != null ? parseInt(driverIdParam, 10) : NaN;
+    const viewIds = activeDriverIds.includes(requestedId)
+      ? activeDriverIds
+      : (DRIVER_POOL.find(d => d.id === requestedId) ? [requestedId] : activeDriverIds);
 
     let currentIdx = 0;
     if (driverIdParam != null) {
-      const id    = parseInt(driverIdParam, 10);
-      const found = activeDriverIds.indexOf(id);
+      const found = viewIds.indexOf(requestedId);
       if (found >= 0) currentIdx = found;
     }
 
@@ -177,13 +183,21 @@
     };
 
     function render(idx) {
-      const dId       = activeDriverIds[idx];
+      const dId        = viewIds[idx];
       const poolDriver = DRIVER_POOL.find(d => d.id === dId);
       if (!poolDriver) return;
 
       const rosterEntry = roster.find(e => e.driverId === dId);
       const team        = rosterEntry ? TEAMS.find(t => t.id === rosterEntry.teamId) : null;
-      const age         = rosterEntry ? getDriverAge(dId, currentSeason, rosterEntry.birthYear) : '?';
+
+      // Resolve birthYear: current roster entry has it; for retired drivers fall back to
+      // pool birthYear (S1 starters) or compute from rookieAge + first career season.
+      let birthYear = rosterEntry?.birthYear ?? poolDriver.birthYear;
+      if (birthYear == null && poolDriver.rookieAge != null) {
+        const career = getCareerStats(dId);
+        if (career.length > 0) birthYear = getDisplayYear(career[0].season) - poolDriver.rookieAge;
+      }
+      const age = birthYear != null ? getDriverAge(dId, currentSeason, birthYear) : '?';
 
       // Portrait — CSS sprite from driver sheet; fall back to initials if no sheet covers this index
       const portrait = document.getElementById('portrait');
@@ -217,7 +231,7 @@
         fi.src = `https://flagcdn.com/w160/${flagCode}.png`;
         nameEl.appendChild(fi);
       }
-      document.getElementById('driver-meta').textContent = `${nat} · Born ${rosterEntry?.birthYear ?? '—'} · Age ${age}`;
+      document.getElementById('driver-meta').textContent = `${nat} · Born ${birthYear ?? '—'} · Age ${age}`;
       document.getElementById('info-bar').textContent    = `Driver Profile · ${poolDriver.firstName} ${poolDriver.lastName}`;
 
       const teamDot  = document.getElementById('team-dot');
@@ -270,9 +284,10 @@
         tbody.appendChild(tr);
       });
 
-      document.getElementById('driver-counter').textContent = `${idx + 1} / ${activeDriverIds.length}`;
+      const isRetiredView = viewIds.length === 1 && !activeDriverIds.includes(viewIds[0]);
+      document.getElementById('driver-counter').textContent = isRetiredView ? 'RETIRED' : `${idx + 1} / ${viewIds.length}`;
       document.getElementById('btn-prev').disabled = idx === 0;
-      document.getElementById('btn-next').disabled = idx === activeDriverIds.length - 1;
+      document.getElementById('btn-next').disabled = idx === viewIds.length - 1;
 
       window.history.replaceState(null, '', `driver.html?id=${dId}&season=${currentSeason}`);
     }

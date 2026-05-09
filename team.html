@@ -45,7 +45,6 @@
 
     #team-header { display:flex; align-items:center; padding:16px 20px 12px; border-bottom:1px solid var(--border); }
     #livery-bar { width:4px; align-self:stretch; flex-shrink:0; margin-right:16px; border-radius:1px; }
-    #team-name { font-size:18px; letter-spacing:2px; color:var(--hi); margin-bottom:4px; font-weight:bold; }
     #team-meta { font-size:9px; letter-spacing:2px; color:var(--lo); }
 
     #career-stats { display:flex; gap:24px; flex-wrap:wrap; padding:16px 20px; border-bottom:1px solid var(--border); }
@@ -70,8 +69,11 @@
     .driver-chip:hover { border-color:var(--mid); }
     .driver-chip-portrait { width:32px; height:32px; flex-shrink:0; border:1px solid var(--border); overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold; }
     .driver-chip-portrait img { width:32px; height:32px; object-fit:cover; display:block; }
+    .driver-chip-num { width:32px; height:32px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:bold; color:var(--hi); letter-spacing:0; }
     .driver-chip-name { font-size:11px; color:var(--hi); }
     .driver-chip-nat { font-size:9px; letter-spacing:1px; color:var(--lo); }
+    #team-name { font-size:18px; letter-spacing:2px; color:var(--hi); margin-bottom:4px; font-weight:bold; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .flag-strip { width:48px; height:24px; border-radius:2px; object-fit:cover; display:block; flex-shrink:0; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.2); }
 
     #season-history { border:1px solid var(--border); }
     .history-header { padding:6px 12px; font-size:9px; letter-spacing:2px; color:var(--lo); border-bottom:1px solid var(--border); background:var(--bg-deep); }
@@ -160,7 +162,7 @@
     import { DRIVER_POOL }                  from './drivers.js';
     import {
       getActiveRoster, getDisplayYear, getChassisId,
-      getTeamEngine, getTeamTyre, getSeasonSnapshot,
+      getTeamEngine, getTeamTyre, getSeasonSnapshot, getCarNumbers,
     }                                       from './worldstate.js';
     import {
       getCurrentEvent, getWorldSeed, getConstructorHistory, loadSeasonSummary,
@@ -170,6 +172,18 @@
     import {
       runRace, initStrategies, setCurrentCircuit, runQualifyingSession,
     }                                       from './simulation.js';
+
+    const NAT_CODE = {
+      'american':'us',   'argentinian':'ar', 'australian':'au', 'austrian':'at',
+      'belgian':'be',    'brazilian':'br',   'british':'gb',    'canadian':'ca',
+      'chinese':'cn',    'colombian':'co',   'czech':'cz',      'danish':'dk',
+      'dutch':'nl',      'egyptian':'eg',    'finnish':'fi',    'french':'fr',
+      'german':'de',     'ghanaian':'gh',    'greek':'gr',      'hungarian':'hu',
+      'indian':'in',     'irish':'ie',       'italian':'it',    'japanese':'jp',
+      'mexican':'mx',    'moroccan':'ma',    'new zealander':'nz','nigerian':'ng',
+      'norwegian':'no',  'polish':'pl',      'portuguese':'pt', 'senegalese':'sn',
+      'south african':'za','spanish':'es',   'swedish':'se',    'swiss':'ch',
+    };
 
     const params        = new URLSearchParams(location.search);
     const teamIdParam   = params.get('id');
@@ -273,16 +287,23 @@
       `;
 
       const seasonRoster = getActiveRoster(season, worldSeed).filter(e => e.teamId === team.id);
+      const carNumbers   = getCarNumbers(season, worldSeed);
       const driverList   = document.getElementById('driver-list');
       driverList.innerHTML = '';
       seasonRoster.forEach(entry => {
         const pd = DRIVER_POOL.find(d => d.id === entry.driverId);
         if (!pd) return;
         const nat  = pd.nationality.charAt(0).toUpperCase() + pd.nationality.slice(1);
+        const num  = carNumbers.get(entry.driverId) ?? '';
         const chip = document.createElement('a');
         chip.href      = `driver.html?id=${entry.driverId}&season=${season}`;
         chip.className = 'driver-chip';
         chip.appendChild(makePortraitEl(pd, team.colour));
+        const numEl = document.createElement('div');
+        numEl.className   = 'driver-chip-num';
+        numEl.style.color = team.colour;
+        numEl.textContent = num;
+        chip.appendChild(numEl);
         const info = document.createElement('div');
         info.innerHTML = `<div class="driver-chip-name">${pd.firstName} ${pd.lastName}</div><div class="driver-chip-nat">${nat}</div>`;
         chip.appendChild(info);
@@ -304,7 +325,21 @@
 
       document.getElementById('info-bar').textContent        = `Constructor Profile · ${team.name}`;
       document.getElementById('livery-bar').style.background = team.colour;
-      document.getElementById('team-name').textContent       = team.name.toUpperCase();
+
+      const nameEl = document.getElementById('team-name');
+      nameEl.innerHTML = '';
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = team.name.toUpperCase();
+      nameEl.appendChild(nameSpan);
+      const flagCode = NAT_CODE[team.nationality.toLowerCase()];
+      if (flagCode) {
+        const fi = document.createElement('img');
+        fi.className = 'flag-strip';
+        fi.alt = '';
+        fi.src = `https://flagcdn.com/w160/${flagCode}.png`;
+        nameEl.appendChild(fi);
+      }
+
       document.getElementById('team-meta').textContent       = `${team.nationality.toUpperCase()} · EST. ${getDisplayYear(1)}`;
       document.getElementById('s-seasons').textContent       = ctorHistory.length || '—';
       document.getElementById('s-wins').textContent          = totals.wins;

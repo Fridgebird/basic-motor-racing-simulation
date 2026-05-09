@@ -762,14 +762,16 @@
         const colour = teamColours[r.teamId] || '#888';
 
         const teamLabel = teamLabels[r.teamId] || '';
+        const driverHref = `driver.html?id=${r.driverId}&season=${event.season}`;
+        const teamHref   = `team.html?id=${r.teamId}&season=${event.season}`;
         tr.innerHTML = `
           <td class="col-pos${pos === 1 ? ' p1' : ''}">${isFinal ? `P${pos}` : pos}</td>
           <td class="col-num">${r.carNumber ?? ''}</td>
           <td class="col-driver">
             <span class="team-dot-inline" style="background:${colour}"></span>
-            ${r.driverName.toUpperCase()}
+            <a href="${driverHref}" style="color:inherit;text-decoration:none">${r.driverName.toUpperCase()}</a>
           </td>
-          <td class="col-team">${teamLabel}</td>
+          <td class="col-team"><a href="${teamHref}" style="color:inherit;text-decoration:none">${teamLabel}</a></td>
           <td class="${r.retired ? 'col-no-time' : 'col-time'}">${r.retired ? 'NO TIME' : formatTime(r.lapTime)}</td>
           <td class="col-gap">${i === 0 || r.retired ? '' : gapString(r.lapTime, bestTime)}</td>
         `;

@@ -75,7 +75,7 @@ export const COMPOUNDS = {
 export const TEAMS = [
   {
     id:                 'hartwell',
-    name:               'Hartwell Racing',
+    name:               'Team Hartwell Racing',
     shortName:          'Hartwell',
     nationality:        'British',
     spriteRow:          0, spriteCol: 0,

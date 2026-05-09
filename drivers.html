@@ -91,6 +91,7 @@
           <th>TEAM</th>
           <th style="text-align:right">S</th>
           <th style="text-align:right">W</th>
+          <th style="text-align:right">T</th>
           <th style="text-align:right">PTS</th>
           <th>STATUS</th>
         </tr>
@@ -185,9 +186,10 @@
         if (!career.length) continue; // never raced
 
         const totals = career.reduce((acc, s) => ({
-          wins: acc.wins + s.wins,
-          pts:  acc.pts  + s.points,
-        }), { wins: 0, pts: 0 });
+          wins:   acc.wins   + s.wins,
+          titles: acc.titles + (s.champion ? 1 : 0),
+          pts:    acc.pts    + s.points,
+        }), { wins: 0, titles: 0, pts: 0 });
 
         let status, teamId;
         if (activeIds.has(pd.id)) {
@@ -224,6 +226,7 @@
           <td>${teamLink}</td>
           <td class="col-num">${career.length}</td>
           <td class="col-num">${totals.wins}</td>
+          <td class="col-num">${totals.titles || '—'}</td>
           <td class="col-num">${totals.pts}</td>
           <td><span class="status-badge status-${status}">${status.toUpperCase()}</span></td>
         `);

@@ -196,9 +196,11 @@
       setCurrentCircuit, runQualifyingSession, getSeasonSnapshot,
     };
 
+    const SORTED_TEAMS = [...TEAMS].sort((a, b) => a.baseNumbers[0] - b.baseNumbers[0]);
+
     let teamIdx = 0;
     if (teamIdParam) {
-      const found = TEAMS.findIndex(t => t.id === teamIdParam);
+      const found = SORTED_TEAMS.findIndex(t => t.id === teamIdParam);
       if (found >= 0) teamIdx = found;
     }
 
@@ -315,7 +317,7 @@
     }
 
     function renderTeam(idx) {
-      const team       = TEAMS[idx];
+      const team       = SORTED_TEAMS[idx];
       const ctorHistory = getConstructorHistory(team.id);
       const totals = ctorHistory.reduce((acc, s) => ({
         wins:   acc.wins   + s.wins,
@@ -380,9 +382,9 @@
         tbody.appendChild(tr);
       });
 
-      document.getElementById('team-counter').textContent = `${idx + 1} / ${TEAMS.length}`;
+      document.getElementById('team-counter').textContent = `${idx + 1} / ${SORTED_TEAMS.length}`;
       document.getElementById('btn-prev').disabled = idx === 0;
-      document.getElementById('btn-next').disabled = idx === TEAMS.length - 1;
+      document.getElementById('btn-next').disabled = idx === SORTED_TEAMS.length - 1;
 
       document.title = `${team.name} — Simple Motor Racing`;
       window.history.replaceState(null, '', `team.html?id=${team.id}&season=${viewedSeason}`);
@@ -393,13 +395,13 @@
 
     document.getElementById('btn-season-prev').addEventListener('click', () => {
       viewedSeason = Math.max(1, viewedSeason - 1);
-      renderSeasonPane(TEAMS[teamIdx], viewedSeason);
-      window.history.replaceState(null, '', `team.html?id=${TEAMS[teamIdx].id}&season=${viewedSeason}`);
+      renderSeasonPane(SORTED_TEAMS[teamIdx], viewedSeason);
+      window.history.replaceState(null, '', `team.html?id=${SORTED_TEAMS[teamIdx].id}&season=${viewedSeason}`);
     });
     document.getElementById('btn-season-next').addEventListener('click', () => {
       viewedSeason = Math.min(currentSeason, viewedSeason + 1);
-      renderSeasonPane(TEAMS[teamIdx], viewedSeason);
-      window.history.replaceState(null, '', `team.html?id=${TEAMS[teamIdx].id}&season=${viewedSeason}`);
+      renderSeasonPane(SORTED_TEAMS[teamIdx], viewedSeason);
+      window.history.replaceState(null, '', `team.html?id=${SORTED_TEAMS[teamIdx].id}&season=${viewedSeason}`);
     });
 
     (async () => {

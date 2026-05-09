@@ -252,6 +252,7 @@
       getTodayDayOffset,
     } from './championship.js';
     import { TEAMS, SEASON_SCHEDULE } from './data.js';
+    import { DRIVER_POOL } from './drivers.js';
     import { initRace, cars } from './state.js';
     import { runRace, initStrategies, setCurrentCircuit, runQualifyingSession } from './simulation.js';
     import { getSeasonSnapshot } from './worldstate.js';
@@ -301,8 +302,9 @@
       }
 
       function driverLink(driverId, name) {
-        if (driverId == null) return name.toUpperCase();
-        return `<a href="driver.html?id=${driverId}&season=${season}" style="color:inherit;text-decoration:none">${name.toUpperCase()}</a>`;
+        const id = driverId ?? DRIVER_POOL.find(d => `${d.firstName} ${d.lastName}` === name)?.id;
+        if (id == null) return name.toUpperCase();
+        return `<a href="driver.html?id=${id}&season=${season}" style="color:inherit;text-decoration:none">${name.toUpperCase()}</a>`;
       }
 
       function formatGap(secs) {

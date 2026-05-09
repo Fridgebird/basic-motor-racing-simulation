@@ -386,6 +386,27 @@ function applySeasonEndTransitions(roster, season, worldSeed, entered) {
   return active;
 }
 
+/**
+ * Returns why a driver left the active roster after lastSeason.
+ * 'replaced' — dropped for poor performance
+ * 'retired'  — age-based retirement
+ */
+export function getDriverDepartureReason(driverId, lastSeason, worldSeed) {
+  const rosterAtSeason = getActiveRoster(lastSeason, worldSeed);
+  const entry = rosterAtSeason.find(e => e.driverId === driverId);
+  if (!entry) return 'retired'; // wasn't there — treat as retired
+
+  const team  = TEAMS.find(t => t.id === entry.teamId);
+  const stats = getDriverStats(driverId, lastSeason, worldSeed, entry.birthYear);
+
+  if (stats.skill < teamMinSkill(team)) return 'replaced';
+
+  const age        = driverAge(entry.birthYear, lastSeason);
+  const retireProb = retirementProbability(age);
+  const retireRoll = hash32(worldSeed + SALT_RETIRE, driverId, lastSeason + 1);
+  return retireRoll < retireProb ? 'retired' : 'active';
+}
+
 // ─── Car numbers ──────────────────────────────────────────────────────────────
 // The reigning champion's team gets 1 and 2 (champion = 1, teammate = 2).
 // All other teams use their permanent baseNumbers from data.js.

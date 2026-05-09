@@ -133,6 +133,7 @@
     import { TEAMS }                from './data.js';
     import {
       getActiveRoster, getDisplayYear, getDriverAge, getSeasonSnapshot,
+      getDriverDepartureReason,
     }                               from './worldstate.js';
     import {
       getCurrentEvent, getWorldSeed, getCareerStats, ensurePastResultsCached,
@@ -234,6 +235,9 @@
       document.getElementById('driver-meta').textContent = `${nat} · Born ${birthYear ?? '—'} · Age ${age}`;
       document.getElementById('info-bar').textContent    = `Driver Profile · ${poolDriver.firstName} ${poolDriver.lastName}`;
 
+      // Career stats needed here for departure reason and below for totals/table
+      const career = getCareerStats(dId);
+
       const teamDot  = document.getElementById('team-dot');
       const teamName = document.getElementById('team-name');
       if (team) {
@@ -241,11 +245,15 @@
         teamName.innerHTML = `<a href="team.html?id=${team.id}&season=${currentSeason}">${team.name.toUpperCase()}</a>`;
       } else {
         teamDot.style.background = 'var(--dim)';
-        teamName.textContent = 'NOT ACTIVE THIS SEASON';
+        let statusLabel = 'NOT ACTIVE THIS SEASON';
+        if (career.length > 0) {
+          const lastSeason = career[career.length - 1].season;
+          const reason = getDriverDepartureReason(dId, lastSeason, worldSeed);
+          if (reason === 'replaced') statusLabel = 'REPLACED';
+          else if (reason === 'retired') statusLabel = 'RETIRED';
+        }
+        teamName.textContent = statusLabel;
       }
-
-      // Career totals
-      const career = getCareerStats(dId);
       const totals  = career.reduce((acc, s) => ({
         races:  acc.races  + s.raceStarts,
         wins:   acc.wins   + s.wins,

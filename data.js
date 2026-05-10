@@ -450,7 +450,7 @@ export const CIRCUITS = {
     type:               'Purpose-built',
     character:          'Technical, hillside, tight infield',
     profile:            'Built into the foothills of the Aso volcanic region. Abrupt changes in gradient punish set-up compromises. The smoking caldera of Mount Aso is visible from the top of the circuit on clear days.',
-    eventName:          'Nihon Grand Prix',
+    eventName:          'Japanese Grand Prix',
     lengthKm:           4.4,
     totalLaps:          68,
     trackAbrasiveness:  0.30,

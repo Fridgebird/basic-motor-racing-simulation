@@ -65,13 +65,29 @@
       margin-bottom:8px;
     }
     .circuit-meta {
-      font-size:9px; color:var(--dim); letter-spacing:1.5px;
+      font-size:9px; color:var(--lo); letter-spacing:1.5px;
       text-transform:uppercase; padding-left:2px; margin-bottom:12px;
     }
     .circuit-profile {
-      font-size:11px; color:var(--mid); line-height:1.7;
-      max-width:640px; padding-left:2px;
+      font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;
+      font-size:13px; color:var(--mid); line-height:1.75;
+      max-width:600px; padding-left:2px;
     }
+
+    /* ── Round nav ──────────────────────────────────────────────── */
+    #round-nav {
+      display:flex; justify-content:space-between; align-items:center;
+      margin-bottom:20px;
+    }
+    .nav-btn {
+      font-family:inherit; font-size:9px; letter-spacing:1px; color:var(--lo);
+      background:none; border:1px solid var(--border); padding:5px 12px;
+      cursor:pointer; text-transform:uppercase; text-decoration:none;
+      display:inline-block;
+    }
+    .nav-btn:hover { color:var(--hi); border-color:var(--mid); }
+    .nav-btn.disabled { opacity:0.25; cursor:default; pointer-events:none; }
+    #round-label { font-size:11px; letter-spacing:2px; color:var(--hi); }
 
     /* ── Info sections ────────────────────────────────────────────── */
     .info-section { margin-bottom:20px; }
@@ -126,9 +142,14 @@
     </nav>
   </div>
 
-  <div id="info-bar" id="info-bar-el">Circuit Guide</div>
+  <div id="info-bar">Circuit Guide</div>
 
   <div id="main">
+    <div id="round-nav" style="display:none">
+      <a class="nav-btn" id="btn-prev">◀ PREV RACE</a>
+      <span id="round-label">–</span>
+      <a class="nav-btn" id="btn-next">NEXT RACE ▶</a>
+    </div>
     <div class="event-hero">
       <div class="event-name-row">
         <img class="event-flag" id="event-flag" src="" alt="" style="display:none">
@@ -211,6 +232,26 @@
     const roundLabel = round ? `R${round} · ` : '';
     document.getElementById('info-bar').textContent =
       `${roundLabel}${circuit.eventName} — Circuit Guide`;
+
+    // ── Round nav
+    if (round) {
+      const maxRound = Math.max(...SEASON_SCHEDULE.filter(e => e.eventType === 'race').map(e => e.round));
+      const s = season || 1;
+      document.getElementById('round-nav').style.display = '';
+      document.getElementById('round-label').textContent = `R${round} / ${maxRound}`;
+      const btnPrev = document.getElementById('btn-prev');
+      const btnNext = document.getElementById('btn-next');
+      if (round > 1) {
+        btnPrev.href = `circuit.html?season=${s}&round=${round - 1}`;
+      } else {
+        btnPrev.classList.add('disabled');
+      }
+      if (round < maxRound) {
+        btnNext.href = `circuit.html?season=${s}&round=${round + 1}`;
+      } else {
+        btnNext.classList.add('disabled');
+      }
+    }
 
     // ── Flag
     const flagCode = NAT_CODE[(circuit.country || '').toLowerCase()];

@@ -491,6 +491,13 @@
       }
     });
 
+    // ── Day-gating ─────────────────────────────────────────────────────────────
+    const isQualiAvailable = event.dayOffset <= getTodayDayOffset();
+    if (!isQualiAvailable) {
+      btnStart.disabled = true;
+      btnStart.title    = 'Qualifying session not yet available';
+    }
+
     // ── Check for cached results ───────────────────────────────────────────────
     // If results exist, silently store them so clicking Start replays the animation
     // with the same seed (same result). The result table is available on the calendar page.

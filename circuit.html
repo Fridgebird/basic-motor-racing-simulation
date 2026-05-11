@@ -129,6 +129,7 @@
     .footer-btn:hover { color:var(--mid); border-color:var(--mid); }
     .footer-btn.primary { color:var(--mid); border-color:var(--lo); }
     .footer-btn.primary:hover { color:var(--hi); border-color:var(--mid); }
+    .footer-btn.locked { opacity:0.28; cursor:default; pointer-events:none; }
   </style>
 </head>
 <body>
@@ -184,7 +185,7 @@
   </div>
 
   <script type="module">
-    import { getCircuit, getEventForRound, getCurrentEvent } from './championship.js';
+    import { getCircuit, getEventForRound, getCurrentEvent, getTodayDayOffset } from './championship.js';
     import { CIRCUITS, SEASON_SCHEDULE } from './data.js';
 
     const NAT_CODE = {
@@ -315,13 +316,16 @@
     }));
     if (round) {
       const s = season || 1;
+      const raceEvent    = getEventForRound(s, round, 'race');
+      const isAvailable  = raceEvent && raceEvent.dayOffset <= getTodayDayOffset();
+      const activeCls    = isAvailable ? 'footer-btn primary' : 'footer-btn locked';
       footerNav.appendChild(Object.assign(document.createElement('a'), {
-        href: `qualifying.html?season=${s}&round=${round}`,
-        className: 'footer-btn primary', textContent: 'QUALIFYING →',
+        href: isAvailable ? `qualifying.html?season=${s}&round=${round}` : '',
+        className: activeCls, textContent: 'QUALIFYING →',
       }));
       footerNav.appendChild(Object.assign(document.createElement('a'), {
-        href: `race.html?season=${s}&round=${round}`,
-        className: 'footer-btn primary', textContent: 'RACE →',
+        href: isAvailable ? `race.html?season=${s}&round=${round}` : '',
+        className: activeCls, textContent: 'RACE →',
       }));
     }
 

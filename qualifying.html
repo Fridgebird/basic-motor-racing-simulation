@@ -126,27 +126,33 @@
 
     #driver-info-row {
       display: flex;
-      align-items: stretch;
+      align-items: center;
       gap: 8px;
       margin-bottom: 10px;
-      min-height: 34px;
     }
     #driver-colour-bar {
       width: 4px;
+      height: 48px;
       border-radius: 2px;
       background: var(--dim);
       flex-shrink: 0;
+    }
+    #driver-portrait {
+      width: 48px; height: 48px; flex-shrink: 0;
+      border: 1px solid var(--border);
+      background-color: var(--dim);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: bold; color: var(--lo);
+      overflow: hidden;
     }
     #current-driver-name {
       font-size: 14px;
       color: var(--hi);
       margin-bottom: 2px;
-      min-height: 18px;
     }
     #current-team-name {
       font-size: 10px;
       color: var(--lo);
-      min-height: 14px;
     }
 
     .seed-label { color: var(--dim); margin-right: 4px; }
@@ -323,6 +329,7 @@
 
       <div id="driver-info-row">
         <div id="driver-colour-bar"></div>
+        <div id="driver-portrait"></div>
         <div>
           <div id="current-driver-name"></div>
           <div id="current-team-name"></div>
@@ -468,17 +475,15 @@
     const btnGotoRace = document.getElementById('btn-goto-race');
     const seedInput   = document.getElementById('seed-input');
 
-    // Team colours and labels — must be declared before cached-results check.
-    // Populated async; re-render leaderboard once data arrives so dots aren't grey.
+    // Team colours and labels — built synchronously from snapshot (snapshot already computed above).
     const teamColours = {};
-    const teamLabels  = {};  // teamId → "MCLAREN-HONDA"
-    import('./data.js').then(({ TEAMS }) => {
-      TEAMS.forEach(t => {
-        teamColours[t.id] = t.colour;
-        const tName = t.name.toUpperCase();
-        const eName = t.engine ? t.engine.toUpperCase() : '';
-        teamLabels[t.id] = (tName === eName || !eName) ? tName : `${tName}-${eName}`;
-      });
+    const teamLabels  = {};  // teamId → "SHORTNAME - ENGINE"
+    snapshot.teams.forEach(t => {
+      teamColours[t.id] = t.colour;
+      const engineName  = snapshot.engines[t.engine]?.name ?? '';
+      teamLabels[t.id]  = engineName
+        ? `${t.shortName.toUpperCase()} - ${engineName.toUpperCase()}`
+        : t.shortName.toUpperCase();
     });
 
     // Seed: default to championship-derived seed; user can override before session starts
@@ -634,14 +639,37 @@
     }
 
     function showOnTrack(car, drawIndex, total) {
-      document.getElementById('current-driver-name').textContent = `${car.driver.number}. ${car.driver.name.toUpperCase()}`;
-      const teamName   = car.team.name.toUpperCase();
-      const engineName = car.team.engine ? car.team.engine.toUpperCase() : '';
-      const teamLabel  = teamName === engineName || !engineName
-        ? teamName : `${teamName}-${engineName}`;
-      document.getElementById('current-team-name').textContent = teamLabel;
-      document.getElementById('driver-colour-bar').style.background =
-        teamColours[car.team.id] || 'var(--dim)';
+      document.getElementById('current-driver-name').textContent =
+        `${car.driver.number}. ${car.driver.name.toUpperCase()}`;
+      document.getElementById('current-team-name').textContent =
+        teamLabels[car.team.id] || car.team.shortName?.toUpperCase() || '';
+      const teamColour = teamColours[car.team.id] || '#2a4055';
+      document.getElementById('driver-colour-bar').style.background = teamColour;
+
+      // Portrait
+      const portraitEl = document.getElementById('driver-portrait');
+      const pIdx = car.driver.portraitIndex;
+      portraitEl.textContent = '';
+      if (pIdx != null && pIdx < 32) {
+        const COLS = 4, PX = 48;
+        const sheet = Math.floor(pIdx / 16) + 1;
+        const pos   = pIdx % 16;
+        const col   = pos % COLS;
+        const row   = Math.floor(pos / COLS);
+        portraitEl.style.backgroundImage    = `url('driver_sprites_16x16_${sheet}.png')`;
+        portraitEl.style.backgroundSize     = `${PX * COLS}px ${PX * COLS}px`;
+        portraitEl.style.backgroundPosition = `${-(col * PX)}px ${-(row * PX)}px`;
+        portraitEl.style.backgroundColor    = `${teamColour}22`;
+        portraitEl.style.color              = '';
+      } else {
+        portraitEl.textContent              = car.driver.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+        portraitEl.style.backgroundImage    = '';
+        portraitEl.style.backgroundSize     = '';
+        portraitEl.style.backgroundPosition = '';
+        portraitEl.style.backgroundColor    = `${teamColour}22`;
+        portraitEl.style.color              = teamColour;
+      }
+
       document.getElementById('draw-progress').textContent =
         `Car ${drawIndex + 1} of ${total}`;
       document.getElementById('lap-time-display').textContent = '–';
@@ -721,11 +749,18 @@
     }
 
     function clearOnTrackPanel() {
-      document.getElementById('current-driver-name').textContent  = 'SESSION COMPLETE';
-      document.getElementById('current-team-name').textContent    = '';
+      document.getElementById('current-driver-name').textContent    = 'SESSION COMPLETE';
+      document.getElementById('current-team-name').textContent      = '';
       document.getElementById('driver-colour-bar').style.background = 'var(--dim)';
-      document.getElementById('draw-progress').textContent         = '';
-      document.getElementById('lap-time-display').textContent      = '–';
+      document.getElementById('draw-progress').textContent          = '';
+      document.getElementById('lap-time-display').textContent       = '–';
+      const portraitEl = document.getElementById('driver-portrait');
+      portraitEl.textContent              = '';
+      portraitEl.style.backgroundImage    = '';
+      portraitEl.style.backgroundSize     = '';
+      portraitEl.style.backgroundPosition = '';
+      portraitEl.style.backgroundColor    = '';
+      portraitEl.style.color              = '';
     }
 
     function formatTime(seconds) {

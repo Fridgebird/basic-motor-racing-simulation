@@ -481,9 +481,11 @@
     snapshot.teams.forEach(t => {
       teamColours[t.id] = t.colour;
       const engineName  = snapshot.engines[t.engine]?.name ?? '';
-      teamLabels[t.id]  = engineName
-        ? `${t.shortName.toUpperCase()} - ${engineName.toUpperCase()}`
-        : t.shortName.toUpperCase();
+      const teamUp      = t.shortName.toUpperCase();
+      const engineUp    = engineName.toUpperCase();
+      teamLabels[t.id]  = (!engineName || teamUp === engineUp)
+        ? teamUp
+        : `${teamUp} - ${engineUp}`;
     });
 
     // Seed: default to championship-derived seed; user can override before session starts

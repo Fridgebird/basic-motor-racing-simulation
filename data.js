@@ -24,7 +24,7 @@ export const ENGINES = {
   mirabeau:    { id: 'mirabeau',    name: 'Mirabeau',    power: 78, reliability: 80, fuelBurnRate: 1.10 },
   tannhauser:  { id: 'tannhauser',  name: 'Tannhäuser',  power: 80, reliability: 74, fuelBurnRate: 1.12 },
   eclipse:     { id: 'eclipse',     name: 'Éclipse',     power: 77, reliability: 78, fuelBurnRate: 1.06 },
-  kosen:       { id: 'kosen',       name: 'Kōsen',       power: 73, reliability: 83, fuelBurnRate: 1.03 },
+  kosen:       { id: 'kosen',       name: 'Kosen',       power: 73, reliability: 83, fuelBurnRate: 1.03 },
   titan:       { id: 'titan',       name: 'Titan',       power: 71, reliability: 86, fuelBurnRate: 1.00 },
   valkyr:      { id: 'valkyr',      name: 'Valkyr',      power: 74, reliability: 79, fuelBurnRate: 1.07 },
 };
@@ -588,7 +588,7 @@ export const CIRCUITS = {
     type:               'Parkland / public road',
     character:          'Fast, sweeping, forested valley',
     profile:            'The Karlovy Vary Kurkurs follows the wooded banks of the Ohře river before climbing through the spa district and onto a fast hillside loop above the valley. Speeds on the riverside section are among the highest on the European calendar. The grandstands fill with the cream of central European society.',
-    eventName:          'Velká cena Československa',
+    eventName:          'Velka cena Ceskoslovenska',
     lengthKm:           7.4,
     totalLaps:          41,
     trackAbrasiveness:  0.26,

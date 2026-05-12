@@ -282,13 +282,19 @@ export function getDriverStats(driverId, season, worldSeed, birthYear) {
   const skillArc    = skillArcMultiplier(age);
   const conArc      = consistencyArcMultiplier(age);
 
-  // Small per-season variance on top of base arc
+  // Peak stats seeded from worldSeed + driverId — fixed for a driver's lifetime.
+  // Use constants 101/102/103 to avoid collision with season-indexed variance below.
+  const peakSkill       = seededFloat(55, 95, worldSeed + SALT_DRIVER, driverId, 101);
+  const peakConsistency = seededFloat(50, 95, worldSeed + SALT_DRIVER, driverId, 102);
+  const peakAggression  = seededFloat(35, 85, worldSeed + SALT_DRIVER, driverId, 103);
+
+  // Small per-season variance on top of arc
   const variance    = seededFloat(-3, 3, worldSeed + SALT_DRIVER, driverId, season);
 
   return {
-    skill:       Math.max(20, Math.min(100, Math.round(driver.baseSkill * skillArc + variance))),
-    consistency: Math.max(20, Math.min(100, Math.round(driver.baseConsistency * conArc + variance * 0.5))),
-    aggression:  driver.baseAggression, // aggression is a personality trait — doesn't change
+    skill:       Math.max(20, Math.min(100, Math.round(peakSkill * skillArc + variance))),
+    consistency: Math.max(20, Math.min(100, Math.round(peakConsistency * conArc + variance * 0.5))),
+    aggression:  Math.round(Math.max(20, Math.min(100, peakAggression))),
   };
 }
 

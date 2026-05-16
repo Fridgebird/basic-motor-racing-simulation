@@ -30,9 +30,9 @@ export function getEngineEra(season) {
   return Math.floor((season - 1) / 3) + 1;
 }
 
-/** Tyre regulation era — resets every 2 seasons. */
+/** Tyre regulation era — resets every 5 seasons. */
 export function getTyreEra(season) {
-  return Math.floor((season - 1) / 2) + 1;
+  return Math.floor((season - 1) / 5) + 1;
 }
 
 /** True if this season begins a new chassis era. */
@@ -134,7 +134,7 @@ export function getTeamStats(teamId, season, worldSeed) {
 
   // Season-end development increments within era
   const resolved = { ...base };
-  const maxDevPerSeason = (team.fundingLevel / 100) * 8;
+  const maxDevPerSeason = (team.fundingLevel / 100) * 50;
 
   for (let s = eraStart + 1; s <= season; s++) {
     for (const stat of CHASSIS_STATS) {
@@ -179,7 +179,7 @@ export function getEngineStats(engineId, season, worldSeed) {
 
   // Season-end development
   const resolved = { ...base };
-  const devRate  = 4; // max power/reliability gain per season
+  const devRate  = 40; // max power/reliability gain per season
   for (let s = eraStart + 1; s <= season; s++) {
     for (const stat of ['power', 'reliability']) {
       const { max }     = ENGINE_STAT_RANGES[stat];
@@ -197,10 +197,10 @@ export function getEngineStats(engineId, season, worldSeed) {
 export function getTyreStats(tyreId, season, worldSeed) {
   const ti      = TYRE_INDEX[tyreId];
   const tyreEra = getTyreEra(season);
-  const eraStart = (tyreEra - 1) * 2 + 1;
+  const eraStart = (tyreEra - 1) * 5 + 1;
 
   const base = {
-    maxGrip:  Math.round(seededFloat(78, 94, worldSeed + SALT_TYRE, ti, tyreEra, 1)),
+    maxGrip:  Math.round(seededFloat(70, 94, worldSeed + SALT_TYRE, ti, tyreEra, 1)),
     wearRate: +seededFloat(0.0090, 0.0145, worldSeed + SALT_TYRE, ti, tyreEra, 2).toFixed(5),
   };
 
@@ -209,11 +209,11 @@ export function getTyreStats(tyreId, season, worldSeed) {
   for (let s = eraStart + 1; s <= season; s++) {
     const dimGrip = (94 - resolved.maxGrip) / 94;
     resolved.maxGrip = Math.min(94, Math.round(
-      resolved.maxGrip + seededFloat(0, 2 * dimGrip, worldSeed + SALT_DEVELOP, ti + 2000, s, 1)
+      resolved.maxGrip + seededFloat(0, 40 * dimGrip, worldSeed + SALT_DEVELOP, ti + 2000, s, 1)
     ));
     // Wear rate improves (falls) slightly each season
     resolved.wearRate = Math.max(0.0090, +(
-      resolved.wearRate - seededFloat(0, 0.0003, worldSeed + SALT_DEVELOP, ti + 2000, s, 2)
+      resolved.wearRate - seededFloat(0, 0.0010, worldSeed + SALT_DEVELOP, ti + 2000, s, 2)
     ).toFixed(5));
   }
 
@@ -231,7 +231,7 @@ const NON_WORKS_ENGINES = Object.keys(ENGINES).filter(
 export function getTeamEngine(teamId, season, worldSeed) {
   const team = TEAMS.find(t => t.id === teamId);
   if (team.isWorks) return team.worksEngineId;
-  const contractPeriod = Math.floor((season - 1) / 2);
+  const contractPeriod = Math.floor((season - 1) / 3);
   const ti = TEAM_INDEX[teamId];
   return seededPick(NON_WORKS_ENGINES, worldSeed + SALT_CONTRACT, ti, contractPeriod);
 }
@@ -243,7 +243,8 @@ const ALL_TYRE_IDS = Object.keys(TYRES);
 
 export function getTeamTyre(teamId, season, worldSeed) {
   const ti = TEAM_INDEX[teamId];
-  return seededPick(ALL_TYRE_IDS, worldSeed + SALT_CONTRACT, ti + 500, season);
+  const tyrePeriod = Math.floor((season - 1) / 3);
+  return seededPick(ALL_TYRE_IDS, worldSeed + SALT_CONTRACT, ti + 500, tyrePeriod);
 }
 
 // ─── Driver stats ─────────────────────────────────────────────────────────────

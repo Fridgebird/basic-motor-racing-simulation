@@ -34,7 +34,7 @@ The season runs in three phases:
 | 14 | Suomen Grand Prix | Rovaniemi Arctic Circuit | Rovaniemi | Finland | 4.7 km | Purpose-built |
 | 15 | Hong Kong Grand Prix | Central Harbourfront Circuit | Central & Wan Chai | Hong Kong | 3.2 km | Street |
 | 16 | Grand Prix du Canada | Circuit du Lac Meech | Gatineau, Quebec | Canada | 5.5 km | Parkland |
-| 17 | Grand Prix of New York | Roosevelt Island Circuit | New York | USA | 3.4 km | Street |
+| 17 | American Grand Prix | Douglas Circuit | Roseburg, Oregon | USA | 5.2 km | Purpose-built |
 | 18 | Punjab Grand Prix | Lahore Street Circuit | Lahore | Pakistan | 3.7 km | Street |
 | 19 | Grande Prêmio do Brasil | Circuito do Recife Costeiro | Recife | Brazil | 3.8 km | Street |
 | 20 | South African Grand Prix | Bushveld Grand Prix Circuit | Pretoria | South Africa | 5.7 km | Purpose-built |
@@ -203,13 +203,13 @@ The season runs in three phases:
 
 ---
 
-### Round 17 — Grand Prix of New York
-**Circuit:** Roosevelt Island Circuit
-**Location:** New York, USA
-**Lap length:** 3.4 km
-**Type:** Street
-**Character:** Slow, narrow, bridge sections
-**Profile:** A temporary street circuit on the narrow island in the East River, linked to both shores by purpose-built bridges. The Manhattan skyline looms throughout. Urban, claustrophobic, and completely unlike anything else on the calendar.
+### Round 17 — American Grand Prix
+**Circuit:** Douglas Circuit
+**Location:** Roseburg, Oregon, USA
+**Lap length:** 5.2 km
+**Type:** Purpose-built
+**Character:** Fast, sweeping, damp surface, high tyre wear
+**Profile:** Carved through old-growth timber on the western Cascade foothills outside Roseburg, the Douglas Circuit runs across sealed volcanic aggregate that stays permanently damp beneath the forest canopy — even in midsummer the tarmac rarely dries completely, and the green-tinged surface at the forest's edge has a treacherous reputation. Tyre wear is the defining story: the abrasive surface destroys rubber faster than almost anywhere on the calendar, and strategies built around softer compounds almost always unravel in the closing stages. The surrounding timber towns send large, raucous crowds; the American Grand Prix draws a different audience from the European parkland races — louder, closer to the barriers, and less forgiving of a poor result.
 
 ---
 
@@ -247,8 +247,8 @@ The season runs in three phases:
 
 | Type | Count | Circuits |
 |------|-------|---------|
-| Street | 7 | Nice, Gothenburg, Hong Kong, New York, Lahore, Recife, Brussels* |
-| Purpose-built | 7 | Córdoba, Guadalajara, Kumamoto, Nairobi, Palermo, Rovaniemi, Pretoria |
+| Street | 6 | Nice, Gothenburg, Hong Kong, Lahore, Recife, Brussels* |
+| Purpose-built | 8 | Córdoba, Guadalajara, Kumamoto, Nairobi, Palermo, Rovaniemi, Roseburg, Pretoria |
 | Parkland / road | 5 | Windsor, Picton, Brussels*, Freiburg, Karlovy Vary, Gatineau |
 | Airfield | 1 | Gloucestershire |
 
@@ -265,7 +265,7 @@ The season runs in three phases:
 | Central America | 1 | Mexico (4) |
 | Asia | 3 | Japan (5), Hong Kong (15), Pakistan (18) |
 | Africa | 2 | Kenya (6), South Africa (20) |
-| North America | 2 | Canada (16), USA (17) |
+| North America | 2 | Canada (16), USA/Oregon (17) |
 | Europe | 8 | Belgium (7), France (8), Italy (9), Germany (10), Czechoslovakia (11), England (12), Sweden (13), Finland (14) |
 
 ---

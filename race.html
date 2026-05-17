@@ -711,6 +711,7 @@
   <div id="controls">
     <button id="btn-start">START RACE</button>
     <button id="btn-replay" style="display:none">REPLAY RACE</button>
+    <button id="btn-race-result" style="display:none">RACE RESULT →</button>
     <button id="btn-pause" disabled>PAUSE</button>
     <button id="btn-prev"  disabled title="Step one sector back">◀</button>
     <button id="btn-next"  disabled title="Step one sector forward">▶</button>
@@ -846,9 +847,10 @@
     let paused = false;
 
     // ── Controls ───────────────────────────────────────────────────────────────
-    const btnStart   = document.getElementById('btn-start');
-    const btnReplay  = document.getElementById('btn-replay');
-    const btnPause   = document.getElementById('btn-pause');
+    const btnStart      = document.getElementById('btn-start');
+    const btnReplay     = document.getElementById('btn-replay');
+    const btnRaceResult = document.getElementById('btn-race-result');
+    const btnPause      = document.getElementById('btn-pause');
     const btnPrev    = document.getElementById('btn-prev');
     const btnNext    = document.getElementById('btn-next');
     const btnReset   = document.getElementById('btn-reset');
@@ -864,6 +866,9 @@
 
     btnStart.addEventListener('click', startRace);
     btnReplay.addEventListener('click', replayRace);
+    btnRaceResult.addEventListener('click', () => {
+      window.location.href = `results.html?season=${event.season}&round=${event.round}&type=race`;
+    });
     btnPause.addEventListener('click', togglePause);
     btnReset.addEventListener('click', resetRace);
 
@@ -919,11 +924,12 @@
       initStrategies(rng);
       paused = false;
 
-      btnStart.style.display   = 'none';
-      btnReplay.style.display  = 'none';
-      btnPause.disabled        = false;
-      btnReset.disabled        = false;
-      seedInput.disabled       = true;
+      btnStart.style.display      = 'none';
+      btnReplay.style.display     = 'none';
+      btnRaceResult.style.display = 'none';
+      btnPause.disabled           = false;
+      btnReset.disabled           = false;
+      seedInput.disabled          = true;
 
       renderer.isLive = true;
       renderer.render();
@@ -937,11 +943,12 @@
       paused = false;
       rng    = null;
 
-      btnStart.style.display   = 'none';
-      btnReplay.style.display  = 'none';
-      btnPause.disabled        = true;
-      btnPause.textContent     = 'PAUSE';
-      btnReset.disabled        = false;
+      btnStart.style.display      = 'none';
+      btnReplay.style.display     = 'none';
+      btnRaceResult.style.display = 'none';
+      btnPause.disabled           = true;
+      btnPause.textContent        = 'PAUSE';
+      btnReset.disabled           = false;
       seedInput.disabled       = true;
 
       renderer.isLive = false;
@@ -1020,8 +1027,9 @@
     // ── onRaceFinished ─────────────────────────────────────────────────────────
     function onRaceFinished() {
       btnPause.disabled    = true;
-      btnStart.style.display  = 'none';
-      btnReplay.style.display = 'inline-block';
+      btnStart.style.display      = 'none';
+      btnReplay.style.display     = 'inline-block';
+      document.getElementById('btn-race-result').style.display = 'inline-block';
       renderer.isLive = false;
       renderer.render();
       updateStepButtons();

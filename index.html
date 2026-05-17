@@ -329,9 +329,10 @@
     const titleEl   = document.getElementById('season-title');
 
     function updateSeasonHeader() {
-      titleEl.textContent   = `Season ${viewSeason} — Calendar`;
-      prevBtn.textContent   = `← S${viewSeason - 1}`;
-      nextBtn.textContent   = `S${viewSeason + 1} →`;
+      const year = 1929 + viewSeason;
+      titleEl.textContent   = `${year} — Calendar`;
+      prevBtn.textContent   = `← ${year - 1}`;
+      nextBtn.textContent   = `${year + 1} →`;
       prevBtn.style.display = viewSeason > 1 ? 'inline-block' : 'none';
       nextBtn.style.display = viewSeason < currentEvent.season ? 'inline-block' : 'none';
     }
@@ -343,7 +344,7 @@
     const devBar = document.getElementById('dev-bar');
     if (isDevMode()) {
       const todayDateStr  = formatShortDate(getEventDate(todayOffset));
-      const todayEventStr = `Race Day — R${currentEvent.round} · S${currentEvent.season}`;
+      const todayEventStr = `Race Day — R${currentEvent.round} · ${1929 + currentEvent.season}`;
 
       devBar.style.display = 'flex';
       document.getElementById('dev-label').textContent =

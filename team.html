@@ -24,7 +24,8 @@
 
     #info-bar { width:100%; background:var(--bg-mid); border-bottom:1px solid var(--border); padding:6px 16px; font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
 
-    #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--dim); text-align:center; width:100%; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+    #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--lo); text-align:center; width:100%; animation:pulse 1.6s ease-in-out infinite; }
 
     #page { width:100%; max-width:760px; padding:24px 16px; }
 
@@ -82,8 +83,7 @@
     .history-table th { font-size:9px; letter-spacing:1px; color:var(--lo); text-align:left; padding:5px 12px; border-bottom:1px solid var(--border); }
     .history-table td { padding:6px 12px; font-size:11px; color:var(--mid); border-bottom:1px solid var(--dim); }
     .history-table tr:last-child td { border-bottom:none; }
-    .history-table td.h-season { color:var(--hi); width:42px; }
-    .history-table td.h-year   { color:var(--lo); width:42px; }
+    .history-table td.h-year   { color:var(--lo); width:52px; }
     .history-table td.h-pos    { color:var(--hi); width:36px; }
     .history-table td.h-pts    { color:var(--hi); text-align:right; }
     .history-table td.h-wins   { color:var(--lo); text-align:right; }
@@ -148,7 +148,6 @@
       <table class="history-table">
         <thead>
           <tr>
-            <th class="h-season">S#</th>
             <th class="h-year">YEAR</th>
             <th class="h-pos">POS</th>
             <th>DRIVERS</th>
@@ -284,7 +283,7 @@
 
       updateCarImage(team, season);
       updateTeamLogo(team, season);
-      document.getElementById('season-label').textContent = `SEASON ${season} · ${year}`;
+      document.getElementById('season-label').textContent = `${year}`;
 
       document.getElementById('season-tech').innerHTML = `
         <div>CHASSIS <span>${chassis}</span></div>
@@ -376,7 +375,6 @@
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="h-season">S${hs.season}</td>
           <td class="h-year">${year}</td>
           <td class="h-pos">${pos}${hs.champion ? '<span class="champ-marker">★</span>' : ''}</td>
           <td>${driverNames}</td>

@@ -46,12 +46,13 @@
     .standings-table tr:hover td { background:var(--bg-mid); }
     .standings-table a { color:inherit; text-decoration:none; }
     .standings-table a:hover { color:var(--hi); }
-    .col-pos { color:var(--hi); width:32px; }
+    .col-pos  { color:var(--hi); width:32px; }
     .col-pos.p1 { color:var(--accent); }
-    .col-pts { color:var(--hi); text-align:right; }
-    .col-w   { color:var(--lo);  text-align:right; }
+    .col-pts  { color:var(--hi); text-align:right; }
+    .col-w    { color:var(--lo); text-align:right; }
+    .col-team { color:var(--lo); font-size:10px; }
     .team-dot { display:inline-block; width:3px; height:14px; vertical-align:middle; margin-right:6px; border-radius:1px; flex-shrink:0; }
-    .no-data { padding:20px; font-size:9px; letter-spacing:2px; color:var(--dim); text-align:center; }
+    .no-data  { padding:20px; font-size:9px; letter-spacing:2px; color:var(--dim); text-align:center; }
   </style>
 </head>
 <body>
@@ -82,6 +83,7 @@
           <thead><tr>
             <th class="col-pos">POS</th>
             <th>DRIVER</th>
+            <th>TEAM</th>
             <th style="text-align:right">W</th>
             <th style="text-align:right">PTS</th>
           </tr></thead>
@@ -104,8 +106,8 @@
   </div>
 
   <script type="module">
-    import { TEAMS }           from './data.js';
-    import { getDisplayYear, getSeasonSnapshot } from './worldstate.js';
+    import { TEAMS, ENGINES }  from './data.js';
+    import { getDisplayYear, getSeasonSnapshot, getTeamEngine } from './worldstate.js';
     import {
       getCurrentEvent, getWorldSeed, getStandings, ensurePastResultsCached,
     }                          from './championship.js';
@@ -127,10 +129,19 @@
     let viewedSeason = parseInt(params.get('season') || currentSeason, 10);
     viewedSeason = Math.max(1, Math.min(viewedSeason, currentSeason));
 
+    function teamLabel(teamId, season) {
+      const team = TEAMS.find(t => t.id === teamId);
+      if (!team) return (teamId || '').toUpperCase();
+      const engineId   = getTeamEngine(teamId, season, worldSeed);
+      const engineName = (ENGINES[engineId]?.name ?? '').toUpperCase();
+      const shortUp    = team.shortName.toUpperCase();
+      return (!engineName || shortUp === engineName) ? shortUp : `${shortUp}-${engineName}`;
+    }
+
     function renderStandings(season) {
       const year = getDisplayYear(season);
-      document.getElementById('season-label').textContent = `SEASON ${season} · ${year}`;
-      document.getElementById('info-bar').textContent = `Championship Standings · S${season} ${year}`;
+      document.getElementById('season-label').textContent = `${year}`;
+      document.getElementById('info-bar').textContent = `Championship Standings · ${year}`;
       document.getElementById('btn-prev').disabled = season <= 1;
       document.getElementById('btn-next').disabled = season >= currentSeason;
 
@@ -139,20 +150,23 @@
       const driversTbody = document.getElementById('drivers-tbody');
       driversTbody.innerHTML = '';
       if (!drivers.length) {
-        driversTbody.innerHTML = '<tr><td colspan="4" class="no-data">NO DATA YET</td></tr>';
+        driversTbody.innerHTML = '<tr><td colspan="5" class="no-data">NO DATA YET</td></tr>';
       } else {
         drivers.forEach((d, i) => {
           const pos   = i + 1;
-          const team  = TEAMS.find(t => {
-            // Find team from constructors list by matching driverId via roster
-            return constructors.some(c => c.id === t.id);
-          });
+          const team  = TEAMS.find(t => t.id === d.teamId);
+          const dot   = team ? `<span class="team-dot" style="background:${team.colour}"></span>` : '';
+          const label = teamLabel(d.teamId, season);
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td class="col-pos${pos === 1 ? ' p1' : ''}">${pos}</td>
             <td>${d.driverId != null
               ? `<a href="driver.html?id=${d.driverId}&season=${season}">${d.name.toUpperCase()}</a>`
               : d.name.toUpperCase()
+            }</td>
+            <td class="col-team">${dot}${team
+              ? `<a href="team.html?id=${team.id}&season=${season}">${label}</a>`
+              : label
             }</td>
             <td class="col-w">${d.wins}</td>
             <td class="col-pts">${d.points}</td>
@@ -167,11 +181,12 @@
         ctorTbody.innerHTML = '<tr><td colspan="4" class="no-data">NO DATA YET</td></tr>';
       } else {
         constructors.forEach((c, i) => {
-          const pos  = i + 1;
-          const team = TEAMS.find(t => t.id === c.id);
-          const dot  = team ? `<span class="team-dot" style="background:${team.colour}"></span>` : '';
-          const name = team
-            ? `<a href="team.html?id=${team.id}&season=${season}">${dot}${team.shortName.toUpperCase()}</a>`
+          const pos   = i + 1;
+          const team  = TEAMS.find(t => t.id === c.id);
+          const dot   = team ? `<span class="team-dot" style="background:${team.colour}"></span>` : '';
+          const label = teamLabel(c.id, season);
+          const name  = team
+            ? `<a href="team.html?id=${team.id}&season=${season}">${dot}${label}</a>`
             : c.id.toUpperCase();
           const tr = document.createElement('tr');
           tr.innerHTML = `

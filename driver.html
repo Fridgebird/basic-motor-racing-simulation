@@ -60,8 +60,7 @@
     .history-table th { font-size:9px; letter-spacing:1px; color:var(--lo); text-align:left; padding:5px 12px; border-bottom:1px solid var(--border); }
     .history-table td { padding:6px 12px; font-size:11px; color:var(--mid); border-bottom:1px solid var(--dim); }
     .history-table tr:last-child td { border-bottom:none; }
-    .history-table td.h-season { color:var(--hi); width:42px; }
-    .history-table td.h-year   { color:var(--lo); width:42px; }
+    .history-table td.h-year   { color:var(--lo); width:52px; }
     .history-table td.h-pos    { color:var(--hi); width:36px; }
     .history-table td.h-pts    { color:var(--hi); text-align:right; }
     .history-table td.h-wins   { color:var(--lo); text-align:right; }
@@ -119,7 +118,6 @@
       <table class="history-table">
         <thead>
           <tr>
-            <th class="h-season">S#</th>
             <th class="h-year">YEAR</th>
             <th>TEAM</th>
             <th class="h-pos">POS</th>
@@ -286,7 +284,6 @@
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="h-season">S${hs.season}</td>
           <td class="h-year">${year}</td>
           <td><a href="team.html?id=${hs.teamId}&season=${hs.season}">${tName}</a></td>
           <td class="h-pos">${pos}${hs.champion ? '<span class="champ-marker">★</span>' : ''}</td>

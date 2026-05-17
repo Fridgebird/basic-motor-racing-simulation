@@ -276,7 +276,7 @@
 
       const typeLabel = type === 'qualifying' ? 'Qualifying Result' : 'Race Result';
       document.getElementById('event-label').textContent =
-        `S${season} R${round} · ${circuit.eventName} — ${typeLabel}`;
+        `${1929 + season} Round ${round} · ${circuit.eventName} — ${typeLabel}`;
       document.title = `${circuit.eventName} ${typeLabel} — Simple Motor Racing`;
 
       const simFns = { initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession, getSeasonSnapshot };
@@ -369,6 +369,16 @@
         href: watchHref, className: 'footer-btn primary', textContent: watchLabel,
       });
       footer.append(backA, watchA);
+
+      if (type === 'qualifying') {
+        const raceA = Object.assign(document.createElement('a'), {
+          href: `race.html?season=${season}&round=${round}`,
+          className: 'footer-btn primary',
+          textContent: 'GO TO RACE →',
+        });
+        footer.appendChild(raceA);
+      }
+
       if (nextBtn) { nextBtn.textContent = `R${round + 1} →`; footer.appendChild(nextBtn); }
 
       // ── Race result table ────────────────────────────────────────────────────

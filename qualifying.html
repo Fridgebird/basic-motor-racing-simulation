@@ -190,7 +190,14 @@
     .sector-cell.purple .s-time { color: #cc44ff; }
     .sector-cell.purple .s-gap  { color: #cc44ff; }
 
+    #time-pos-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
     #lap-time-display {
+      flex: 1;
+      min-width: 0;
       font-size: 20px;
       color: var(--hi);
       text-align: center;
@@ -198,7 +205,6 @@
       background: var(--bg-mid);
       border: 1px solid var(--border);
       border-radius: 3px;
-      margin-bottom: 6px;
       min-height: 48px;
       display: flex;
       flex-direction: column;
@@ -208,6 +214,21 @@
     }
     #lap-time-display.no-time { color: var(--lo); font-size: 13px; }
     #lap-time-display.purple  { color: #cc44ff; }
+    #pos-display {
+      width: 64px;
+      flex-shrink: 0;
+      background: var(--bg-mid);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+    }
+    #pos-display .pos-label { font-size: 9px; color: var(--lo); letter-spacing: 0.10em; }
+    #pos-display .pos-value { font-size: 34px; color: var(--lo); line-height: 1; }
+    #pos-display .pos-value.p1 { color: var(--hi); }
 
     #draw-progress {
       font-size: 10px;
@@ -216,7 +237,7 @@
       margin-bottom: 12px;
     }
 
-    #btn-start-quali, #btn-replay-quali, #btn-rerun-quali, #btn-goto-race, #btn-pause-quali {
+    #btn-start-quali, #btn-replay-quali, #btn-rerun-quali, #btn-goto-race, #btn-goto-quali-result, #btn-pause-quali {
       width: 100%;
       padding: 8px;
       font-family: 'Square', monospace;
@@ -229,10 +250,11 @@
       color: var(--mid);
       margin-bottom: 6px;
     }
-    #btn-start-quali:hover, #btn-replay-quali:hover, #btn-rerun-quali:hover, #btn-goto-race:hover, #btn-pause-quali:hover { border-color: var(--lo); color: var(--hi); }
+    #btn-start-quali:hover, #btn-replay-quali:hover, #btn-rerun-quali:hover, #btn-goto-race:hover, #btn-goto-quali-result:hover, #btn-pause-quali:hover { border-color: var(--lo); color: var(--hi); }
     #btn-start-quali:disabled { opacity: 0.4; cursor: default; }
-    #btn-goto-race    { display: none; border-color: var(--lo); }
-    #btn-pause-quali  { display: none; }
+    #btn-goto-race         { display: none; border-color: var(--lo); }
+    #btn-goto-quali-result { display: none; border-color: var(--lo); }
+    #btn-pause-quali       { display: none; }
 
     /* ── Leaderboard ────────────────────────────────────────────────────────── */
     #leaderboard-panel { flex: 1; min-width: 0; }
@@ -354,7 +376,13 @@
         </div>
       </div>
 
-      <div id="lap-time-display">–</div>
+      <div id="time-pos-row">
+        <div id="lap-time-display">–</div>
+        <div id="pos-display">
+          <span class="pos-label">POS</span>
+          <span class="pos-value" id="pos-value">–</span>
+        </div>
+      </div>
       <div id="draw-progress"></div>
 
       <div class="control-row">
@@ -369,6 +397,7 @@
 
       <button id="btn-start-quali">START QUALIFYING</button>
       <button id="btn-pause-quali">PAUSE</button>
+      <button id="btn-goto-quali-result">QUALIFYING RESULT →</button>
       <button id="btn-goto-race">GO TO RACE →</button>
     </div>
 
@@ -433,7 +462,7 @@
 
     // Info bar
     document.getElementById('circuit-name').textContent =
-      `S${event.season} R${event.round} · ${circuit.eventName} — Qualifying · ${circuit.name}, ${circuit.country}`;
+      `${1929 + event.season} Round ${event.round} · ${circuit.eventName} — Qualifying · ${circuit.name}, ${circuit.country}`;
 
     // ── Dev bar ────────────────────────────────────────────────────────────────
     if (isDevMode()) {
@@ -470,10 +499,11 @@
     let paused          = false;
 
     const speedSel    = document.getElementById('speed-select');
-    const btnStart    = document.getElementById('btn-start-quali');
-    const btnPause    = document.getElementById('btn-pause-quali');
-    const btnGotoRace = document.getElementById('btn-goto-race');
-    const seedInput   = document.getElementById('seed-input');
+    const btnStart          = document.getElementById('btn-start-quali');
+    const btnPause          = document.getElementById('btn-pause-quali');
+    const btnGotoRace       = document.getElementById('btn-goto-race');
+    const btnGotoQualiResult = document.getElementById('btn-goto-quali-result');
+    const seedInput         = document.getElementById('seed-input');
 
     // Team colours and labels — built synchronously from snapshot (snapshot already computed above).
     const teamColours = {};
@@ -535,10 +565,15 @@
 
       sessionDone              = true;
       paused                   = false;
-      btnPause.style.display   = 'none';
+      btnPause.style.display             = 'none';
       document.getElementById('session-status').textContent = 'SESSION COMPLETE';
-      btnGotoRace.style.display = 'block';
+      btnGotoQualiResult.style.display   = 'block';
+      btnGotoRace.style.display          = 'block';
       clearOnTrackPanel();
+    });
+
+    btnGotoQualiResult.addEventListener('click', () => {
+      window.location.href = `results.html?season=${event.season}&round=${event.round}&type=qualifying`;
     });
 
     btnGotoRace.addEventListener('click', () => {
@@ -676,6 +711,9 @@
         `Car ${drawIndex + 1} of ${total}`;
       document.getElementById('lap-time-display').textContent = '–';
       document.getElementById('lap-time-display').className = '';
+      const pv = document.getElementById('pos-value');
+      pv.textContent = '–';
+      pv.className   = 'pos-value';
     }
 
     function resetSectorCells() {
@@ -723,11 +761,14 @@
     }
 
     function showLapResult(result, provisionalBest, previousResults) {
-      const el = document.getElementById('lap-time-display');
+      const el     = document.getElementById('lap-time-display');
+      const posVal = document.getElementById('pos-value');
       if (result.retired) {
-        el.innerHTML = '';
+        el.innerHTML   = '';
         el.textContent = 'NO TIME';
         el.className   = 'no-time';
+        posVal.textContent = '–';
+        posVal.className   = 'pos-value';
         return;
       }
 
@@ -743,11 +784,11 @@
         gapHtml = `<span style="font-size:12px;color:${gapCol}">${gapStr}</span>`;
       }
 
-      const posCol  = provisionalPos === 1 ? 'var(--hi)' : 'var(--lo)';
-      const posHtml = `<span style="font-size:12px;color:${posCol}">P${provisionalPos}</span>`;
+      el.innerHTML = `<span style="font-size:20px;color:${timeColor}">${formatTime(result.lapTime)}</span>${gapHtml}`;
+      el.className = '';
 
-      el.innerHTML  = `<span style="font-size:20px;color:${timeColor}">${formatTime(result.lapTime)}</span>${gapHtml}${posHtml}`;
-      el.className  = '';
+      posVal.textContent = provisionalPos;
+      posVal.className   = `pos-value${provisionalPos === 1 ? ' p1' : ''}`;
     }
 
     function clearOnTrackPanel() {
@@ -756,6 +797,9 @@
       document.getElementById('driver-colour-bar').style.background = 'var(--dim)';
       document.getElementById('draw-progress').textContent          = '';
       document.getElementById('lap-time-display').textContent       = '–';
+      const pv = document.getElementById('pos-value');
+      pv.textContent = '–';
+      pv.className   = 'pos-value';
       const portraitEl = document.getElementById('driver-portrait');
       portraitEl.textContent              = '';
       portraitEl.style.backgroundImage    = '';

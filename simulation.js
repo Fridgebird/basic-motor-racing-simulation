@@ -522,6 +522,8 @@ function overtakeProbability(behind, ahead, sectorDef) {
   if (sectorDef.id === 2) prob *= 1.50;
   if (sectorDef.id === 1) prob *= 0.55;
 
+  prob *= (currentCircuit?.overtakingDifficulty ?? 1.0);
+
   return Math.min(0.80, Math.max(0, prob));
 }
 

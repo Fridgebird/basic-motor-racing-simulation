@@ -302,6 +302,7 @@
       ['Length',        lengthStr],
       ['Race distance', distStr],
       ['Abrasiveness',  abrasiveness(circuit.trackAbrasiveness)],
+      ['Overtaking',    overtaking(circuit.overtakingDifficulty)],
     ]);
 
     // ── Sector characteristics
@@ -362,6 +363,16 @@
       if (val <= 0.45) return 'Moderate';
       if (val <= 0.55) return 'Aggressive';
       return 'Destructive';
+    }
+
+    function overtaking(val) {
+      if (!val) return '—';
+      if (val <= 0.55) return 'Very difficult';
+      if (val <= 0.75) return 'Difficult';
+      if (val <= 0.95) return 'Moderate';
+      if (val <= 1.10) return 'Average';
+      if (val <= 1.30) return 'Good';
+      return 'Excellent';
     }
 
     function fuelLoad(burnPerLap) {

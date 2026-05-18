@@ -247,7 +247,7 @@
       const maxRound = Math.max(...SEASON_SCHEDULE.filter(e => e.eventType === 'race').map(e => e.round));
       const s = season || 1;
       document.getElementById('round-nav').style.display = '';
-      document.getElementById('round-label').textContent = `R${round} / ${maxRound}`;
+      document.getElementById('round-label').textContent = `Round ${round} of ${maxRound}`;
       const btnPrev = document.getElementById('btn-prev');
       const btnNext = document.getElementById('btn-next');
       if (round > 1) {

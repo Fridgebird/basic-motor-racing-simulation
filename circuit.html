@@ -8,6 +8,7 @@
     @font-face { font-family:'Square'; src:url('Square.ttf') format('truetype'); font-weight:normal; }
     @font-face { font-family:'Square'; src:url('Square.ttf') format('truetype'); font-weight:bold; }
     @font-face { font-family:'IBMPlex'; src:url('IBMPlexSans-VariableFont_wdth,wght.ttf') format('truetype'); font-weight:100 900; }
+    @font-face { font-family:'TechRounded'; src:url('TechnicalRoundedVP-ThinOblique.otf') format('opentype'); font-weight:normal; }
 
     :root {
       --bg:#0d1117; --bg-deep:#080c12; --bg-mid:#0a0f18; --border:#1e2f44;
@@ -71,10 +72,13 @@
       text-transform:uppercase; padding-left:2px; margin-bottom:12px;
     }
     .circuit-profile {
-      font-family:'IBMPlex','Segoe UI',system-ui,sans-serif;
-      font-weight:300;
+      font-family:'TechRounded','IBMPlex','Segoe UI',system-ui,sans-serif;
       font-size:13px; color:var(--mid); line-height:1.75;
       max-width:600px; padding-left:2px;
+    }
+    .track-image {
+      display:block; width:100%; max-width:600px; height:auto;
+      margin:18px 0 4px; border:1px solid var(--border);
     }
 
     /* ── Round nav ──────────────────────────────────────────────── */
@@ -163,6 +167,7 @@
       <div class="circuit-location" id="circuit-location">–</div>
       <div class="circuit-meta"   id="circuit-meta">–</div>
       <div class="circuit-profile" id="circuit-profile"></div>
+      <img class="track-image" id="track-image" src="" alt="" style="display:none">
     </div>
 
     <div class="info-section">
@@ -276,6 +281,13 @@
     if (circuit.profile) {
       document.getElementById('circuit-profile').textContent = circuit.profile;
     }
+
+    // ── Track image
+    const trackImg = document.getElementById('track-image');
+    trackImg.src = `tracks/${circuit.id}.png`;
+    trackImg.alt = circuit.name;
+    trackImg.style.display = '';
+    trackImg.onerror = () => { trackImg.style.display = 'none'; };
 
     // ── Circuit stats
     const raceDistKm = circuit.lengthKm

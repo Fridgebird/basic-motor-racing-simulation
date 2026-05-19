@@ -24,12 +24,14 @@
 
     #info-bar { width:100%; background:var(--bg-mid); border-bottom:1px solid var(--border); padding:6px 16px; font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
 
+    #sticky-header { position:sticky; top:0; z-index:100; width:100%; background:var(--bg); display:flex; flex-direction:column; align-items:center; box-shadow:0 3px 12px rgba(0,0,0,0.6); }
+
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
     #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--lo); text-align:center; width:100%; animation:pulse 1.6s ease-in-out infinite; }
 
-    #page { width:100%; max-width:860px; padding:24px 16px; }
+    #page { width:100%; max-width:860px; padding:16px 16px 24px; }
 
-    #controls { display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+    #controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; width:100%; max-width:860px; padding:8px 16px; }
     #search { font-family:inherit; font-size:10px; letter-spacing:1px; background:var(--bg-mid); border:1px solid var(--border); color:var(--hi); padding:5px 12px; width:180px; outline:none; }
     #search:focus { border-color:var(--lo); }
     #search::placeholder { color:var(--dim); }
@@ -61,21 +63,18 @@
 </head>
 <body>
 
-  <div id="topbar">
-    <span class="b-flat">Simple <em>Motor Racing</em></span>
-    <nav class="topbar-nav">
-      <a href="index.html" class="topbar-nav-link">CALENDAR</a>
-      <a href="drivers.html" class="topbar-nav-link current">DRIVERS</a>
-      <a href="team.html" class="topbar-nav-link">TEAMS</a>
-      <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
-    </nav>
-  </div>
-  <div id="info-bar">All Drivers</div>
-
-  <div id="loading-state">COMPUTING HISTORY…</div>
-
-  <div id="page" style="display:none">
-    <div id="controls">
+  <div id="sticky-header">
+    <div id="topbar">
+      <span class="b-flat">Simple <em>Motor Racing</em></span>
+      <nav class="topbar-nav">
+        <a href="index.html" class="topbar-nav-link">CALENDAR</a>
+        <a href="drivers.html" class="topbar-nav-link current">DRIVERS</a>
+        <a href="team.html" class="topbar-nav-link">TEAMS</a>
+        <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
+      </nav>
+    </div>
+    <div id="info-bar">All Drivers</div>
+    <div id="controls" style="display:none">
       <input id="search" type="text" placeholder="SEARCH BY NAME" autocomplete="off">
       <button class="filter-btn active" data-filter="all">ALL</button>
       <button class="filter-btn" data-filter="active">ACTIVE</button>
@@ -83,6 +82,11 @@
       <button class="filter-btn" data-filter="replaced">REPLACED</button>
       <span id="result-count"></span>
     </div>
+  </div>
+
+  <div id="loading-state">COMPUTING HISTORY…</div>
+
+  <div id="page" style="display:none">
     <table id="driver-table">
       <thead>
         <tr>
@@ -247,6 +251,7 @@
       allRows = rows;
 
       document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('controls').style.display = '';
       document.getElementById('page').style.display = '';
       applyFilters();
 

@@ -81,7 +81,6 @@
       max-width: 900px;
       padding: 10px 4px 8px;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 14px;
     }
     #season-header {
       display: flex;
@@ -215,6 +214,20 @@
       vertical-align: middle;
     }
 
+    /* ── Sticky header ──────────────────────────────────────────────────────── */
+    #sticky-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      width: 100%;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-bottom: 12px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.6);
+    }
+
     /* ── Dev bar ──────────────────────────────────────────────────────────────── */
     #dev-bar {
       width: 100%;
@@ -254,33 +267,35 @@
 </head>
 <body>
 
-  <!-- ── Topbar ──────────────────────────────────────────────────────────────── -->
-  <div id="topbar">
-    <div class="b-flat">Simple <em>Motor Racing</em></div>
-    <nav class="topbar-nav">
-      <a href="index.html" class="topbar-nav-link current">CALENDAR</a>
-      <a href="drivers.html" class="topbar-nav-link">DRIVERS</a>
-      <a href="team.html" class="topbar-nav-link">TEAMS</a>
-      <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
-    </nav>
-  </div>
+  <div id="sticky-header">
+    <!-- ── Topbar ────────────────────────────────────────────────────────────── -->
+    <div id="topbar">
+      <div class="b-flat">Simple <em>Motor Racing</em></div>
+      <nav class="topbar-nav">
+        <a href="index.html" class="topbar-nav-link current">CALENDAR</a>
+        <a href="drivers.html" class="topbar-nav-link">DRIVERS</a>
+        <a href="team.html" class="topbar-nav-link">TEAMS</a>
+        <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
+      </nav>
+    </div>
 
-  <!-- ── Dev bar ──────────────────────────────────────────────────────────────── -->
-  <div id="dev-bar">
-    <button id="dev-prev">◀ PREV</button>
-    <span id="dev-label"></span>
-    <button id="dev-next">NEXT ▶</button>
-    <span class="dev-label">KEY:</span>
-    <input type="number" id="world-seed-input">
-    <button id="dev-reset" style="margin-left:8px;color:#cc2233;border-color:#cc2233">RESET WORLD</button>
-    <button id="dev-exit" style="color:#cc2233;border-color:#cc2233">EXIT DEV</button>
-  </div>
+    <!-- ── Dev bar ───────────────────────────────────────────────────────────── -->
+    <div id="dev-bar">
+      <button id="dev-prev">◀ PREV</button>
+      <span id="dev-label"></span>
+      <button id="dev-next">NEXT ▶</button>
+      <span class="dev-label">KEY:</span>
+      <input type="number" id="world-seed-input">
+      <button id="dev-reset" style="margin-left:8px;color:#cc2233;border-color:#cc2233">RESET WORLD</button>
+      <button id="dev-exit" style="color:#cc2233;border-color:#cc2233">EXIT DEV</button>
+    </div>
 
-  <!-- ── Season header ────────────────────────────────────────────────────────── -->
-  <div id="season-header">
-    <button id="season-prev" class="season-nav-btn" style="display:none">← S?</button>
-    <span id="season-title">–</span>
-    <button id="season-next" class="season-nav-btn" style="display:none">S? →</button>
+    <!-- ── Season header ─────────────────────────────────────────────────────── -->
+    <div id="season-header">
+      <button id="season-prev" class="season-nav-btn" style="display:none">← S?</button>
+      <span id="season-title">–</span>
+      <button id="season-next" class="season-nav-btn" style="display:none">S? →</button>
+    </div>
   </div>
 
   <!-- ── Calendar ─────────────────────────────────────────────────────────────── -->

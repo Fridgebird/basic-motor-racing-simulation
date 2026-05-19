@@ -235,12 +235,10 @@
       wrap.appendChild(img);
     }
 
-    function updateTeamLogo(team, season) {
-      const chassisEra = Math.floor((season - 1) / 5) + 1;
-      const eraYear    = 1930 + (chassisEra - 1) * 5;
-      const imageId    = team.carImageId || team.id.toLowerCase();
-      const wrap       = document.getElementById('team-logo');
-      wrap.innerHTML   = '';
+    function updateTeamLogo(team) {
+      const imageId  = team.carImageId || team.id.toLowerCase();
+      const wrap     = document.getElementById('team-logo');
+      wrap.innerHTML = '';
 
       const img = document.createElement('img');
       img.className = 'logo-img';
@@ -253,7 +251,7 @@
         ph.style.color = team.colour;
         wrap.appendChild(ph);
       };
-      img.src = `logo_sprites_${eraYear}_${imageId}.png`;
+      img.src = `logos/${imageId}.png`;
       wrap.appendChild(img);
     }
 
@@ -285,7 +283,7 @@
       const tyreName   = (TYRES[tyreId]?.name   ?? tyreId).toUpperCase();
 
       updateCarImage(team, season);
-      updateTeamLogo(team, season);
+      updateTeamLogo(team);
       document.getElementById('season-label').textContent = `${year}`;
 
       document.getElementById('season-tech').innerHTML = `

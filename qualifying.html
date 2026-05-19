@@ -42,6 +42,18 @@
       min-height: 100vh;
     }
 
+    /* ── Sticky header ──────────────────────────────────────────────────────── */
+    #sticky-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      width: 100%;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.6);
+    }
+
     /* ── Topbar ─────────────────────────────────────────────────────────────── */
     #topbar {
       display: flex;
@@ -317,29 +329,31 @@
 </head>
 <body>
 
-  <!-- ── Topbar ──────────────────────────────────────────────────────────────── -->
-  <div id="topbar">
-    <div class="b-flat">Simple <em>Motor Racing</em></div>
-    <nav class="topbar-nav">
-      <a href="index.html" class="topbar-nav-link">CALENDAR</a>
-      <a href="drivers.html" class="topbar-nav-link">DRIVERS</a>
-      <a href="team.html" class="topbar-nav-link">TEAMS</a>
-      <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
-    </nav>
-    <div class="topbar-meta">
-      <div id="topbar-status">QUALIFYING</div>
+  <div id="sticky-header">
+    <!-- ── Topbar ────────────────────────────────────────────────────────────── -->
+    <div id="topbar">
+      <div class="b-flat">Simple <em>Motor Racing</em></div>
+      <nav class="topbar-nav">
+        <a href="index.html" class="topbar-nav-link">CALENDAR</a>
+        <a href="drivers.html" class="topbar-nav-link">DRIVERS</a>
+        <a href="team.html" class="topbar-nav-link">TEAMS</a>
+        <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
+      </nav>
+      <div class="topbar-meta">
+        <div id="topbar-status">QUALIFYING</div>
+      </div>
     </div>
-  </div>
 
-  <!-- ── Info bar ────────────────────────────────────────────────────────────── -->
-  <div id="race-info-bar">
-    <span id="circuit-name">–</span>
-    <span>
-      <span class="seed-label">SEED</span>
-      <input type="number" id="seed-input" title="Override qualifying seed">
-      &nbsp;&nbsp;
-      <span id="session-status">–</span>
-    </span>
+    <!-- ── Info bar ──────────────────────────────────────────────────────────── -->
+    <div id="race-info-bar">
+      <span id="circuit-name">–</span>
+      <span>
+        <span class="seed-label">SEED</span>
+        <input type="number" id="seed-input" title="Override qualifying seed">
+        &nbsp;&nbsp;
+        <span id="session-status">–</span>
+      </span>
+    </div>
   </div>
 
   <!-- ── Main ────────────────────────────────────────────────────────────────── -->

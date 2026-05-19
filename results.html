@@ -40,6 +40,17 @@
       min-height: 100vh;
     }
 
+    #sticky-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      width: 100%;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.6);
+    }
+
     #topbar {
       display: flex;
       align-items: center;
@@ -224,18 +235,20 @@
 </head>
 <body>
 
-  <div id="topbar">
-    <div class="b-flat">Simple <em>Motor Racing</em></div>
-    <nav class="topbar-nav">
-      <a href="index.html" class="topbar-nav-link">CALENDAR</a>
-      <a href="drivers.html" class="topbar-nav-link">DRIVERS</a>
-      <a href="team.html" class="topbar-nav-link">TEAMS</a>
-      <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
-    </nav>
-  </div>
+  <div id="sticky-header">
+    <div id="topbar">
+      <div class="b-flat">Simple <em>Motor Racing</em></div>
+      <nav class="topbar-nav">
+        <a href="index.html" class="topbar-nav-link">CALENDAR</a>
+        <a href="drivers.html" class="topbar-nav-link">DRIVERS</a>
+        <a href="team.html" class="topbar-nav-link">TEAMS</a>
+        <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
+      </nav>
+    </div>
 
-  <div id="info-bar">
-    <span id="event-label">–</span>
+    <div id="info-bar">
+      <span id="event-label">–</span>
+    </div>
   </div>
 
   <div id="loading-msg">Computing results…</div>

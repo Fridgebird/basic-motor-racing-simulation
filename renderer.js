@@ -627,8 +627,13 @@ export class Renderer {
       tag      = 'PIT';
       tagClass = 'tag-pit';
       const estLaps = ev.aiEstimates?.[ev.compound]?.estLaps;
-      const estStr  = estLaps != null ? ` · est ${estLaps}L` : '';
-      detail   = `${entry.car.toUpperCase()} — ${ev.compound[0].toUpperCase()} tyres +${ev.fuelAdded}kg (${ev.duration}s)${estStr}`;
+      const parts   = [
+        `${ev.compound[0].toUpperCase()} TYRES +${ev.fuelAdded}KG`,
+        `${ev.stationaryTime.toFixed(1)}SEC STOP / ${ev.duration.toFixed(1)}SEC LOST`,
+      ];
+      if (estLaps != null) parts.push(`EST ${estLaps} LAPS`);
+      const prefix = (ev.botched && ev.netTimeLost > 1) ? 'BOTCHED STOP! ' : '';
+      detail = `${prefix}${entry.car.toUpperCase()} · ${parts.join(' · ')}`;
 
     } else if (ev.type === 'mechanical' && ev.severity === 'retirement') {
       tag      = 'OUT';
@@ -645,10 +650,21 @@ export class Renderer {
       tagClass = 'tag-dmg';
       detail   = `${entry.car.toUpperCase()} — ${ev.label.toUpperCase()}`;
 
-    } else if (ev.type === 'driver_error' && ev.severity === 'slow_sector') {
+    } else if (ev.type === 'driver_error' && ev.severity === 'lockup') {
+      tag      = 'LOCK';
+      tagClass = 'tag-spin';
+      detail   = `${entry.car.toUpperCase()} — locks up`;
+
+    } else if (ev.type === 'driver_error' && ev.severity === 'spin') {
       tag      = 'SPIN';
       tagClass = 'tag-spin';
-      detail   = `${entry.car.toUpperCase()} — spin / lock-up`;
+      let spinDetail = `${entry.car.toUpperCase()} — spins`;
+      if (ev.flatSpot) {
+        if      (ev.flatSpotWear < 0.10) spinDetail += ', possible flat spot';
+        else if (ev.flatSpotWear < 0.30) spinDetail += ', flat spot — tyres damaged';
+        else                             spinDetail += ', heavy flat spot — may need to stop';
+      }
+      detail = spinDetail;
 
     } else if (ev.type === 'overtake' && ev.result === 'success') {
       tag      = 'PASS';

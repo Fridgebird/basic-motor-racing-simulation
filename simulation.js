@@ -32,8 +32,9 @@ import { cars, race, raceLog, lapChartData, updatePositions } from './state.js';
 // → ~34% chance of crashing over a full race. Prost (96) → ~3%.
 const CRASH_SCALE = 0.004;
 
-// Slow sector (spin / lock-up) probability scale. Same driver: ~0.7% per sector → ~77% chance
-// of at least one slow sector during a race. Adds drama without retiring the car.
+// Slow sector (lock-up or spin) probability scale. Same driver: ~0.7% per sector → ~77% chance
+// of at least one incident during a race. 70% of events are lock-ups (minor), 30% spins (larger).
+// Spins also apply a flat-spot wear spike to the tyre.
 const SLOW_SCALE  = 0.018;
 
 // Reliability check happens once per lap.
@@ -225,11 +226,21 @@ export function tick(rng) {
       events.push({ type: 'driver_error', severity: 'crash' });
 
     } else if (errorRoll < slowThreshold) {
-      // ── Slow sector — spin or lock-up ───────────────────────────────────
-      // Penalty: 8–20% time loss on this sector only
-      const penalty = 1.08 + rng() * 0.12;
-      driverFactor  = penalty;
-      events.push({ type: 'driver_error', severity: 'slow_sector', penalty: +penalty.toFixed(3) });
+      // ── Slow sector — lock-up (70%) or spin (30%) ───────────────────────
+      // Lock-up: 5–13% time loss. Spin: 15–30% time loss + flat-spot wear spike.
+      const isLockup = rng() < 0.70;
+      const penalty  = isLockup
+        ? 1.05 + rng() * 0.08   // lock-up: 5–13%
+        : 1.15 + rng() * 0.15;  // spin:    15–30%
+      driverFactor   = penalty;
+      const ev       = { type: 'driver_error', severity: isLockup ? 'lockup' : 'spin', penalty: +penalty.toFixed(3) };
+      if (!isLockup) {
+        const flatSpotWear = rng() * rng() * 0.65;   // quadratic: usually small, occasionally severe
+        car.tyreWear       = Math.min(1.0, car.tyreWear + flatSpotWear);
+        ev.flatSpot        = true;
+        ev.flatSpotWear    = +flatSpotWear.toFixed(3);
+      }
+      events.push(ev);
 
     } else {
       // ── Normal sector ───────────────────────────────────────────────────
@@ -773,7 +784,22 @@ function executePitStop(car, rng) {
   const pitLaneTime    = currentCircuit.pitLaneTime;
   const tyreChangeTime = currentCircuit.baseTyreChangeTime * (1 + (1 - car.team.pitCrewRating / 100));
   const fuellingTime   = fuelAdded > 0 ? fuelAdded * currentCircuit.fuelRigRate : 0;
-  const stationaryTime = +Math.max(tyreChangeTime, fuellingTime).toFixed(1);
+
+  // ── Botched pit stop ──────────────────────────────────────────────────────
+  // Probability scales with crew rating^2 so top crews almost never botch.
+  // Extra time is added to the tyre change only; if fuelling already exceeds it, the botch is free.
+  const botchProb          = Math.pow(1 - car.team.pitCrewRating / 100, 2) * 0.20;
+  const botched            = rng() < botchProb;
+  let botchExtra           = 0;
+  let netTimeLost          = 0;
+  let effectiveTyreChange  = tyreChangeTime;
+  if (botched) {
+    botchExtra             = +(5 + rng() * 20).toFixed(1);
+    effectiveTyreChange    = tyreChangeTime + botchExtra;
+    netTimeLost            = +(Math.max(effectiveTyreChange, fuellingTime) - Math.max(tyreChangeTime, fuellingTime)).toFixed(1);
+  }
+
+  const stationaryTime = +Math.max(effectiveTyreChange, fuellingTime).toFixed(1);
   const duration       = +(pitLaneTime + stationaryTime).toFixed(1);
 
   car.cumulativeTime += duration;
@@ -788,10 +814,12 @@ function executePitStop(car, rng) {
     type:          'pit',
     compound:      newCompound,
     duration,
+    stationaryTime,
     pitLaneTime,
-    tyreChangeTime: +tyreChangeTime.toFixed(1),
+    tyreChangeTime: +effectiveTyreChange.toFixed(1),
     fuellingTime:   +fuellingTime.toFixed(1),
     fuelAdded,
+    ...(botched && { botched: true, botchExtra, netTimeLost }),
     // AI reasoning logged in full so strategy decisions are inspectable
     aiEstimates: {
       lapsRemaining,
@@ -823,7 +851,7 @@ export function runRace(rng) {
 //
 // Sequential single-lap format: one driver at a time, all on fresh softs, ~10 kg fuel.
 // Track evolves as rubber is laid — cars later in the draw order enjoy a small grip bonus.
-// Driver error model: crash = no time set; spin/lockup = sector penalty but lap completes.
+// Driver error model: crash = no time set; lock-up/spin = sector penalty but lap completes.
 //
 // Call runQualifyingSession(rng, circuit) after initRace(seed) has populated cars[].
 // Returns results array sorted P1 → P24; pass to initRace(raceSeed, results) for the race.
@@ -888,16 +916,19 @@ export async function simulateQualiLap(car, rng, circuit, trackEvolution, onSect
     let driverFactor;
     let isSlow = false;
     if (consistencyRoll < slowThreshold) {
-      // ── Spin / lock-up — sector penalty but lap continues ─────────────────
-      const penaltyFactor = 1.10 + rng() * 0.12;  // 10–22% sector penalty
+      // ── Lock-up (70%) or spin (30%) — sector penalty but lap continues ─────
+      const isLockup      = rng() < 0.70;
+      const penaltyFactor = isLockup
+        ? 1.05 + rng() * 0.08
+        : 1.15 + rng() * 0.15;
       driverFactor = penaltyFactor;
-      isSlow = true;
+      isSlow       = true;
       raceLog.entries.push({
         tick: -1, lap: 0, sector: sectorDef.id,
         car: car.driver.name,
         factors: {},
         rolls: { consistencyRoll },
-        events: [{ type: 'driver_error', severity: 'slow_sector', penalty: penaltyFactor, session: 'qualifying' }],
+        events: [{ type: 'driver_error', severity: isLockup ? 'lockup' : 'spin', penalty: penaltyFactor, session: 'qualifying' }],
       });
     } else {
       const effectiveSkill = car.driver.skill * consistencyRoll;

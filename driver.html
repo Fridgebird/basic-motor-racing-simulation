@@ -24,9 +24,12 @@
 
     #info-bar { width:100%; background:var(--bg-mid); border-bottom:1px solid var(--border); padding:6px 16px; font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
 
+    #sticky-header { position:sticky; top:0; z-index:100; width:100%; background:var(--bg); display:flex; flex-direction:column; align-items:center; box-shadow:0 3px 12px rgba(0,0,0,0.6); }
+    #profile-zone { width:100%; max-width:700px; padding:16px 16px 8px; }
+
     #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--dim); text-align:center; width:100%; }
 
-    #page { width:100%; max-width:700px; padding:24px 16px; }
+    #page { width:100%; max-width:700px; padding:20px 16px 24px; }
 
     #driver-nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
     .nav-btn { font-family:inherit; font-size:9px; letter-spacing:1px; color:var(--lo); background:none; border:1px solid var(--border); padding:5px 12px; cursor:pointer; text-transform:uppercase; }
@@ -73,46 +76,48 @@
 </head>
 <body>
 
-  <div id="topbar">
-    <span class="b-flat">Simple <em>Motor Racing</em></span>
-    <nav class="topbar-nav">
-      <a href="index.html" class="topbar-nav-link">CALENDAR</a>
-      <a href="drivers.html" class="topbar-nav-link current">DRIVERS</a>
-      <a href="team.html" class="topbar-nav-link">TEAMS</a>
-      <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
-    </nav>
+  <div id="sticky-header">
+    <div id="topbar">
+      <span class="b-flat">Simple <em>Motor Racing</em></span>
+      <nav class="topbar-nav">
+        <a href="index.html" class="topbar-nav-link">CALENDAR</a>
+        <a href="drivers.html" class="topbar-nav-link current">DRIVERS</a>
+        <a href="team.html" class="topbar-nav-link">TEAMS</a>
+        <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
+      </nav>
+    </div>
+    <div id="info-bar">Driver Profile</div>
+    <div id="profile-zone" style="display:none">
+      <div id="driver-nav">
+        <button class="nav-btn" id="btn-prev">◀ PREV</button>
+        <span id="driver-counter"></span>
+        <button class="nav-btn" id="btn-next">NEXT ▶</button>
+      </div>
+      <div id="profile-card">
+        <div id="portrait"></div>
+        <div id="driver-details">
+          <div id="driver-name">—</div>
+          <div id="driver-meta">—</div>
+          <div class="team-line">
+            <div class="team-dot" id="team-dot"></div>
+            <div id="team-name">—</div>
+          </div>
+          <div class="stats-row">
+            <div class="stat-block"><div class="stat-value" id="s-seasons">—</div><div class="stat-label">Seasons</div></div>
+            <div class="stat-block"><div class="stat-value" id="s-races">—</div><div class="stat-label">Races</div></div>
+            <div class="stat-block"><div class="stat-value" id="s-wins">—</div><div class="stat-label">Wins</div></div>
+            <div class="stat-block"><div class="stat-value" id="s-podiums">—</div><div class="stat-label">Podiums</div></div>
+            <div class="stat-block"><div class="stat-value" id="s-champs">—</div><div class="stat-label">Titles</div></div>
+            <div class="stat-block"><div class="stat-value" id="s-pts">—</div><div class="stat-label">Points</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-  <div id="info-bar">Driver Profile</div>
 
   <div id="loading-state">COMPUTING HISTORY…</div>
 
   <div id="page" style="display:none">
-    <div id="driver-nav">
-      <button class="nav-btn" id="btn-prev">◀ PREV</button>
-      <span id="driver-counter"></span>
-      <button class="nav-btn" id="btn-next">NEXT ▶</button>
-    </div>
-
-    <div id="profile-card">
-      <div id="portrait"></div>
-      <div id="driver-details">
-        <div id="driver-name">—</div>
-        <div id="driver-meta">—</div>
-        <div class="team-line">
-          <div class="team-dot" id="team-dot"></div>
-          <div id="team-name">—</div>
-        </div>
-        <div class="stats-row">
-          <div class="stat-block"><div class="stat-value" id="s-seasons">—</div><div class="stat-label">Seasons</div></div>
-          <div class="stat-block"><div class="stat-value" id="s-races">—</div><div class="stat-label">Races</div></div>
-          <div class="stat-block"><div class="stat-value" id="s-wins">—</div><div class="stat-label">Wins</div></div>
-          <div class="stat-block"><div class="stat-value" id="s-podiums">—</div><div class="stat-label">Podiums</div></div>
-          <div class="stat-block"><div class="stat-value" id="s-champs">—</div><div class="stat-label">Titles</div></div>
-          <div class="stat-block"><div class="stat-value" id="s-pts">—</div><div class="stat-label">Points</div></div>
-        </div>
-      </div>
-    </div>
-
     <div id="season-history">
       <div class="history-header">SEASON HISTORY</div>
       <table class="history-table">
@@ -309,6 +314,7 @@
         await ensurePastResultsCached(s, simFns);
       }
       document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('profile-zone').style.display = '';
       document.getElementById('page').style.display = '';
       render(currentIdx);
     })();

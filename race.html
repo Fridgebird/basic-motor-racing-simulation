@@ -136,7 +136,6 @@
       align-items: center;
       padding: 0 4px 6px;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 10px;
     }
 
     #circuit-name {
@@ -194,6 +193,7 @@
       display: flex;
       gap: 12px;
       align-items: flex-start;
+      margin-top: 14px;
     }
 
     /* ── Timing panel ─────────────────────────────────────────────────────────── */
@@ -508,9 +508,25 @@
     .leg-pit  { color: var(--lo); }
     .leg-ret  { color: var(--dim); }
 
+    /* ── Sticky header ───────────────────────────────────────────────────────── */
+    #sticky-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      width: 100%;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-bottom: 8px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.6);
+    }
+
     /* ── Controls ────────────────────────────────────────────────────────────── */
     #controls {
-      margin-top: 14px;
+      margin-top: 6px;
+      width: 100%;
+      max-width: 1100px;
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
@@ -604,6 +620,8 @@
 </head>
 <body>
 
+  <div id="sticky-header">
+
   <!-- ── Topbar ──────────────────────────────────────────────────────────────── -->
   <div id="topbar">
     <div class="b-flat">Simple <em>Motor Racing</em></div>
@@ -638,6 +656,35 @@
     <button class="tab-btn active" data-panel="timing">TIMING</button>
     <button class="tab-btn"        data-panel="commentary">COMMENTARY</button>
   </div>
+
+  <!-- ── Race controls ───────────────────────────────────────────────────────── -->
+  <div id="controls">
+    <button id="btn-start">START RACE</button>
+    <button id="btn-replay" style="display:none">REPLAY RACE</button>
+    <button id="btn-race-result" style="display:none">RACE RESULT →</button>
+    <button id="btn-pause" disabled>PAUSE</button>
+    <button id="btn-prev"  disabled title="Step one sector back">◀</button>
+    <button id="btn-next"  disabled title="Step one sector forward">▶</button>
+    <button id="btn-reset" disabled>RESET</button>
+
+    <span id="seed-label">SEED:</span>
+    <input id="seed-input" type="number" value="198804" min="1" max="9999999">
+
+    <span id="speed-label">SPEED:</span>
+    <select id="speed-select">
+      <option value="25714">LEISURELY (~30 MINS)</option>
+      <option value="17143">SLOW      (~20 MINS)</option>
+      <option value="8571" selected>NORMAL    (~10 MINS)</option>
+      <option value="4286">FAST      (~5 MINS)</option>
+      <option value="1714">VERY FAST (~2 MINS)</option>
+      <option value="0">INSTANT</option>
+    </select>
+  </div>
+
+  <!-- ── Not available notice ─────────────────────────────────────────────────── -->
+  <div id="not-available-notice"></div>
+
+  </div><!-- end #sticky-header -->
 
   <!-- ── Main content ────────────────────────────────────────────────────────── -->
   <div id="main-content">
@@ -706,33 +753,6 @@
       <span class="leg-item"><span class="leg-ret">■</span>RETIRED</span>
     </div>
   </div>
-
-  <!-- ── Controls ─────────────────────────────────────────────────────────────── -->
-  <div id="controls">
-    <button id="btn-start">START RACE</button>
-    <button id="btn-replay" style="display:none">REPLAY RACE</button>
-    <button id="btn-race-result" style="display:none">RACE RESULT →</button>
-    <button id="btn-pause" disabled>PAUSE</button>
-    <button id="btn-prev"  disabled title="Step one sector back">◀</button>
-    <button id="btn-next"  disabled title="Step one sector forward">▶</button>
-    <button id="btn-reset" disabled>RESET</button>
-
-    <span id="seed-label">SEED:</span>
-    <input id="seed-input" type="number" value="198804" min="1" max="9999999">
-
-    <span id="speed-label">SPEED:</span>
-    <select id="speed-select">
-      <option value="25714">LEISURELY (~30 MINS)</option>
-      <option value="17143">SLOW      (~20 MINS)</option>
-      <option value="8571" selected>NORMAL    (~10 MINS)</option>
-      <option value="4286">FAST      (~5 MINS)</option>
-      <option value="1714">VERY FAST (~2 MINS)</option>
-      <option value="0">INSTANT</option>
-    </select>
-  </div>
-
-  <!-- ── Not available notice ─────────────────────────────────────────────────── -->
-  <div id="not-available-notice"></div>
 
   <script type="module">
     import { Renderer, setCurrentCircuit as setRendererCircuit } from './renderer.js';

@@ -24,12 +24,14 @@
 
     #info-bar { width:100%; background:var(--bg-mid); border-bottom:1px solid var(--border); padding:6px 16px; font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
 
+    #sticky-header { position:sticky; top:0; z-index:100; width:100%; background:var(--bg); display:flex; flex-direction:column; align-items:center; box-shadow:0 3px 12px rgba(0,0,0,0.6); }
+
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
     #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--lo); text-align:center; width:100%; animation:pulse 1.6s ease-in-out infinite; }
 
-    #page { width:100%; max-width:760px; padding:24px 16px; }
+    #page { width:100%; max-width:760px; padding:16px 16px 24px; }
 
-    #team-nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    #team-nav { display:flex; justify-content:space-between; align-items:center; width:100%; max-width:760px; padding:10px 16px; }
     .nav-btn { font-family:inherit; font-size:9px; letter-spacing:1px; color:var(--lo); background:none; border:1px solid var(--border); padding:5px 12px; cursor:pointer; text-transform:uppercase; }
     .nav-btn:hover:not(:disabled) { color:var(--hi); border-color:var(--mid); }
     .nav-btn:disabled { opacity:0.25; cursor:default; }
@@ -96,26 +98,27 @@
 </head>
 <body>
 
-  <div id="topbar">
-    <span class="b-flat">Simple <em>Motor Racing</em></span>
-    <nav class="topbar-nav">
-      <a href="index.html" class="topbar-nav-link">CALENDAR</a>
-      <a href="drivers.html" class="topbar-nav-link">DRIVERS</a>
-      <a href="team.html" class="topbar-nav-link current">TEAMS</a>
-      <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
-    </nav>
-  </div>
-  <div id="info-bar">Constructor Profile</div>
-
-  <div id="loading-state">COMPUTING HISTORY…</div>
-
-  <div id="page" style="display:none">
-    <div id="team-nav">
+  <div id="sticky-header">
+    <div id="topbar">
+      <span class="b-flat">Simple <em>Motor Racing</em></span>
+      <nav class="topbar-nav">
+        <a href="index.html" class="topbar-nav-link">CALENDAR</a>
+        <a href="drivers.html" class="topbar-nav-link">DRIVERS</a>
+        <a href="team.html" class="topbar-nav-link current">TEAMS</a>
+        <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
+      </nav>
+    </div>
+    <div id="info-bar">Constructor Profile</div>
+    <div id="team-nav" style="display:none">
       <button class="nav-btn" id="btn-prev">◀ PREV</button>
       <span id="team-counter"></span>
       <button class="nav-btn" id="btn-next">NEXT ▶</button>
     </div>
+  </div>
 
+  <div id="loading-state">COMPUTING HISTORY…</div>
+
+  <div id="page" style="display:none">
     <div id="profile-card">
       <div id="car-wrap"><div id="car-sprite"></div><div id="team-logo"></div></div>
       <div id="team-header">
@@ -411,6 +414,7 @@
         await ensurePastResultsCached(s, simFns);
       }
       document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('team-nav').style.display = '';
       document.getElementById('page').style.display = '';
       renderTeam(teamIdx);
     })();

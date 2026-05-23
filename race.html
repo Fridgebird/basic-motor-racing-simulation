@@ -89,7 +89,7 @@
       line-height: 1;
     }
     .b-flat em {
-      font-style: normal;   /* override browser default italic on <em> */
+      font-style: normal;
       color: var(--mid);
     }
 
@@ -164,27 +164,34 @@
       color: var(--mid);
     }
 
-    /* ── Tab bar (mobile only) ────────────────────────────────────────────────── */
+    /* ── Tab bar ─────────────────────────────────────────────────────────────── */
     #tab-bar {
-      display: none;
       width: 100%;
       max-width: 1100px;
-      margin-bottom: 8px;
-      gap: 4px;
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-top: 6px;
     }
     .tab-btn {
-      flex: 1;
       background: var(--bg-deep);
       color: var(--lo);
       border: 1px solid var(--border);
+      border-bottom: none;
       font-family: 'Square', 'Courier New', monospace;
-      font-size: 12px;
-      padding: 6px;
+      font-size: 10px;
+      padding: 6px 16px;
       cursor: pointer;
       text-transform: uppercase;
       letter-spacing: 1px;
+      flex: none;
+      margin-bottom: -1px;
     }
-    .tab-btn.active { color: var(--mid); border-color: var(--border); }
+    .tab-btn:hover { color: var(--mid); }
+    .tab-btn.active {
+      color: var(--hi);
+      background: var(--bg);
+      border-bottom: 2px solid var(--accent);
+    }
 
     /* ── Main content ─────────────────────────────────────────────────────────── */
     #main-content {
@@ -196,9 +203,16 @@
       margin-top: 14px;
     }
 
-    /* ── Timing panel ─────────────────────────────────────────────────────────── */
-    #timing-panel { flex: 1 1 600px; min-width: 0; }
+    /* ── Left panel (view switcher) ───────────────────────────────────────────── */
+    #left-panel {
+      flex: 1 1 600px;
+      min-width: 0;
+    }
 
+    .view-panel { display: none; }
+    .view-panel.active { display: block; }
+
+    /* ── Timing sheet (panel-race) ────────────────────────────────────────────── */
     th.gap-toggle:hover { color: var(--hi); }
     th.gap-toggle { user-select: none; }
 
@@ -246,7 +260,7 @@
     .col-pos     { width: 38px; }
     .col-num     { width: 32px; color: var(--mid); }
     .col-driver  { width: 105px; }
-    .col-team    { width: 130px; color: var(--lo); display: none; /* hidden — restore by removing display:none */ }
+    .col-team    { width: 130px; color: var(--lo); display: none; }
     .col-lastlap { width: 80px; color: var(--mid); }
     .col-gap     { width: 70px; color: var(--mid); }
     .col-tyre    { width: 82px; }
@@ -308,7 +322,6 @@
     .pip-s { background: #ff3333; }
     .pip-m { background: #e8c400; }
     .pip-h { background: #ffffff; }
-    /* Previous stints: hollow ring in compound colour — clearly identifiable even side-by-side */
     .pip-past { background: transparent; border: 1.5px solid; }
     .pip-past.pip-s { border-color: #ff3333; }
     .pip-past.pip-m { border-color: #e8c400; }
@@ -319,8 +332,6 @@
     /* Fastest lap */
     td.lap-fast { color: #cc44ff; }
 
-    /* Row text states — high-specificity selectors override per-column colour rules.
-       .t-driver / .t-team-tag are on child divs so need explicit targeting. */
     #timing-table tr.gained td,
     #timing-table tr.gained .t-driver,
     #timing-table tr.gained .t-team-tag { color: #00cc77; }
@@ -329,13 +340,11 @@
     #timing-table tr.lost .t-driver,
     #timing-table tr.lost .t-team-tag   { color: #ff4444; }
 
-    /* Pitted / retired — lower specificity is fine; just dims column text */
     tr.pitted  { color: var(--lo); }
     tr.retired { color: var(--dim); }
 
     tr.first-retired td { border-top: 1px solid var(--border); padding-top: 5px; }
 
-    /* FLIP position-swap animation */
     #timing-body tr { will-change: transform; }
 
     @keyframes pass-flash {
@@ -346,16 +355,11 @@
       0%   { background-color: rgba(255, 60, 60, 0.22); }
       100% { background-color: transparent; }
     }
-    /* Apply to TDs so the flash is visible on all columns including sticky ones
-       (CSS animations override normal background declarations). */
     #timing-table tr.anim-pass td { animation: pass-flash 600ms ease-out forwards; }
     #timing-table tr.anim-drop td { animation: drop-flash 600ms ease-out forwards; }
 
-    /* Wear / fuel colour coding */
     td.warn-red    { color: #ff4444; }
     td.warn-yellow { color: #e8c400; }
-
-    /* Health cell */
     td.health-out { color: #ff4444; }
     td.health-dmg { color: #ff8800; }
 
@@ -406,15 +410,14 @@
     #strip-scroll::-webkit-scrollbar-thumb { background: var(--border); }
     #spacing-strip { display: block; }
 
-    /* ── Commentary panel ─────────────────────────────────────────────────────── */
-    #commentary-panel {
-      flex: 0 0 280px;
-      min-width: 0;
-      max-height: 600px;
-      display: flex;
+    /* ── Commentary panel (full-width inside left) ────────────────────────────── */
+    #panel-comm {
+      display: none;
       flex-direction: column;
-      border-left: 1px solid var(--border);
-      padding-left: 10px;
+      height: 560px;
+    }
+    #panel-comm.active {
+      display: flex;
     }
     #commentary-title {
       display: flex;
@@ -467,13 +470,9 @@
     .tag-spin  { color: #ff8800; }
     .tag-pass  { color: #00cc77; }
 
-    /* ── Lap chart ───────────────────────────────────────────────────────────── */
-    #lap-chart-panel {
-      width: 100%;
-      max-width: 1100px;
-      margin-top: 14px;
-      border-top: 1px solid var(--border);
-      padding-top: 8px;
+    /* ── Lap chart (inside left panel) ───────────────────────────────────────── */
+    #panel-chart {
+      padding-top: 4px;
     }
     #lap-chart-title {
       color: var(--mid);
@@ -482,6 +481,80 @@
       margin-bottom: 6px;
     }
     #lap-chart-canvas { display: block; width: 100%; }
+
+    /* ── Grid panel ──────────────────────────────────────────────────────────── */
+    #grid-table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    #grid-table th {
+      color: var(--lo);
+      font-size: 9px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-weight: normal;
+      padding: 3px 6px 6px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    #grid-table td {
+      padding: 5px 6px;
+      font-size: 11px;
+      white-space: nowrap;
+      border-bottom: 1px solid var(--bg-mid);
+    }
+    .grid-pos  { width: 36px; color: var(--lo); }
+    .grid-num  { width: 36px; color: var(--mid); }
+    .grid-driver { color: var(--hi); }
+    .grid-team { width: 160px; color: var(--lo); font-size: 10px; }
+    .grid-time { width: 90px; color: var(--mid); font-size: 10px; text-align: right; }
+    .grid-notime { color: var(--dim); }
+
+    /* ── Standings panel ─────────────────────────────────────────────────────── */
+    #stand-tables {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+    .stand-section { flex: 1 1 260px; }
+    .stand-title {
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--lo);
+      text-transform: uppercase;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+    .stand-table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    .stand-table th {
+      color: var(--lo);
+      font-size: 9px;
+      letter-spacing: 1px;
+      font-weight: normal;
+      padding: 2px 6px 5px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    .stand-table td {
+      padding: 4px 6px;
+      font-size: 11px;
+      border-bottom: 1px solid var(--bg-mid);
+    }
+    .stand-pos  { width: 28px; color: var(--lo); }
+    .stand-name { color: var(--hi); }
+    .stand-team { color: var(--lo); font-size: 10px; }
+    .stand-pts  { width: 44px; color: var(--mid); text-align: right; }
+    #stand-note {
+      font-size: 9px;
+      color: var(--dim);
+      letter-spacing: 1px;
+      padding: 10px 0 14px;
+    }
 
     /* ── Footer ──────────────────────────────────────────────────────────────── */
     #race-footer {
@@ -518,7 +591,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding-bottom: 8px;
+      padding-bottom: 0;
       box-shadow: 0 3px 12px rgba(0,0,0,0.6);
     }
 
@@ -586,36 +659,6 @@
       font-size: 11px;
       letter-spacing: 1px;
     }
-
-    /* ── Mobile ──────────────────────────────────────────────────────────────── */
-    @media (max-width: 767px) {
-      body { padding: 0 4px 16px; font-size: 12px; }
-
-      #race-info-bar { flex-direction: column; gap: 4px; align-items: flex-start; }
-
-      #tab-bar { display: flex; }
-
-      #main-content { flex-direction: column; }
-
-      #strip-panel { display: none; }
-
-      #commentary-panel {
-        flex: none;
-        width: 100%;
-        max-height: 300px;
-        border-left: none;
-        border-top: 1px solid var(--border);
-        padding-left: 0;
-        padding-top: 8px;
-      }
-
-      .hide-mobile { display: none !important; }
-
-      #legend { display: none; }
-
-      #timing-panel.tab-hidden,
-      #commentary-panel.tab-hidden { display: none; }
-    }
   </style>
 </head>
 <body>
@@ -652,12 +695,6 @@
     </span>
   </div>
 
-  <!-- ── Tab bar (mobile only) ───────────────────────────────────────────────── -->
-  <div id="tab-bar">
-    <button class="tab-btn active" data-panel="timing">TIMING</button>
-    <button class="tab-btn"        data-panel="commentary">COMMENTARY</button>
-  </div>
-
   <!-- ── Race controls ───────────────────────────────────────────────────────── -->
   <div id="controls">
     <button id="btn-start">START RACE</button>
@@ -682,6 +719,15 @@
     </select>
   </div>
 
+  <!-- ── Tab bar ─────────────────────────────────────────────────────────────── -->
+  <div id="tab-bar">
+    <button class="tab-btn" data-panel="grid">GRID</button>
+    <button class="tab-btn active" data-panel="race">RACE</button>
+    <button class="tab-btn" data-panel="chart">LAP CHART</button>
+    <button class="tab-btn" data-panel="comm">COMMENTARY</button>
+    <button class="tab-btn" data-panel="stand">STANDINGS</button>
+  </div>
+
   <!-- ── Not available notice ─────────────────────────────────────────────────── -->
   <div id="not-available-notice"></div>
 
@@ -690,32 +736,98 @@
   <!-- ── Main content ────────────────────────────────────────────────────────── -->
   <div id="main-content">
 
-    <!-- Timing sheet -->
-    <div id="timing-panel">
-      <div id="timing-table-scroll">
-      <table id="timing-table">
-        <thead>
-          <tr>
-            <th class="col-pos">POS</th>
-            <th class="col-num">#</th>
-            <th class="col-driver">DRIVER</th>
-            <th class="col-team    hide-mobile">TEAM</th>
-            <th class="col-tyre-mfr hide-mobile">TYR</th>
-            <th class="col-lastlap hide-mobile">LAST LAP</th>
-            <th class="col-gap gap-toggle" id="gap-toggle-header">INT ▾</th>
-            <th class="col-tyre">COMP/AGE</th>
-            <th class="col-wear  hide-mobile">WEAR</th>
-            <th class="col-fuel  hide-mobile">FUEL</th>
-            <th class="col-stops hide-mobile">STP</th>
-            <th class="col-health">HEALTH</th>
-          </tr>
-        </thead>
-        <tbody id="timing-body"></tbody>
-      </table>
-      </div>
-    </div>
+    <!-- Left panel — switches between views -->
+    <div id="left-panel">
 
-    <!-- Car spacing strip -->
+      <!-- GRID tab -->
+      <div id="panel-grid" class="view-panel">
+        <table id="grid-table">
+          <thead>
+            <tr>
+              <th class="grid-pos">POS</th>
+              <th class="grid-num">#</th>
+              <th class="grid-driver">DRIVER</th>
+              <th class="grid-team">TEAM</th>
+              <th class="grid-time">Q TIME</th>
+            </tr>
+          </thead>
+          <tbody id="grid-body"></tbody>
+        </table>
+      </div>
+
+      <!-- RACE tab (default) -->
+      <div id="panel-race" class="view-panel active">
+        <div id="timing-table-scroll">
+        <table id="timing-table">
+          <thead>
+            <tr>
+              <th class="col-pos">POS</th>
+              <th class="col-num">#</th>
+              <th class="col-driver">DRIVER</th>
+              <th class="col-team    hide-mobile">TEAM</th>
+              <th class="col-tyre-mfr hide-mobile">TYR</th>
+              <th class="col-lastlap hide-mobile">LAST LAP</th>
+              <th class="col-gap gap-toggle" id="gap-toggle-header">INT ▾</th>
+              <th class="col-tyre">COMP/AGE</th>
+              <th class="col-wear  hide-mobile">WEAR</th>
+              <th class="col-fuel  hide-mobile">FUEL</th>
+              <th class="col-stops hide-mobile">STP</th>
+              <th class="col-health">HEALTH</th>
+            </tr>
+          </thead>
+          <tbody id="timing-body"></tbody>
+        </table>
+        </div>
+      </div>
+
+      <!-- LAP CHART tab -->
+      <div id="panel-chart" class="view-panel">
+        <div id="lap-chart-title">LAP CHART</div>
+        <canvas id="lap-chart-canvas"></canvas>
+      </div>
+
+      <!-- COMMENTARY tab -->
+      <div id="panel-comm">
+        <div id="commentary-title">
+          <span>RACE COMMENTARY</span>
+          <button id="commentary-filter-btn">ALL</button>
+        </div>
+        <div id="commentary-feed"></div>
+      </div>
+
+      <!-- STANDINGS tab -->
+      <div id="panel-stand" class="view-panel">
+        <div id="stand-note">Showing points through last completed round</div>
+        <div id="stand-tables">
+          <div class="stand-section">
+            <div class="stand-title">Drivers</div>
+            <table class="stand-table">
+              <thead><tr>
+                <th class="stand-pos">POS</th>
+                <th class="stand-name">DRIVER</th>
+                <th class="stand-team">TEAM</th>
+                <th class="stand-pts">PTS</th>
+              </tr></thead>
+              <tbody id="stand-driver-body"></tbody>
+            </table>
+          </div>
+          <div class="stand-section">
+            <div class="stand-title">Constructors</div>
+            <table class="stand-table">
+              <thead><tr>
+                <th class="stand-pos">POS</th>
+                <th class="stand-name">TEAM</th>
+                <th class="stand-pts">PTS</th>
+              </tr></thead>
+              <tbody id="stand-con-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end #left-panel -->
+
+    <!-- Car spacing strip — always visible -->
     <div id="strip-panel">
       <div id="strip-controls">
         <button id="strip-zoom-out">−</button>
@@ -727,22 +839,7 @@
       </div>
     </div>
 
-    <!-- Commentary feed -->
-    <div id="commentary-panel">
-      <div id="commentary-title">
-        <span>RACE COMMENTARY</span>
-        <button id="commentary-filter-btn">ALL</button>
-      </div>
-      <div id="commentary-feed"></div>
-    </div>
-
-  </div>
-
-  <!-- ── Lap chart ────────────────────────────────────────────────────────────── -->
-  <div id="lap-chart-panel">
-    <div id="lap-chart-title">LAP CHART</div>
-    <canvas id="lap-chart-canvas"></canvas>
-  </div>
+  </div><!-- end #main-content -->
 
   <!-- ── Footer ──────────────────────────────────────────────────────────────── -->
   <div id="race-footer">
@@ -765,6 +862,7 @@
       advanceDevEvent, retreatDevEvent, isDevMode, enterDevMode, exitDevMode,
       getTodayDayOffset, getWorldSeed, setWorldSeed,
       getEventDate, formatShortDate, ensurePastResultsCached,
+      getStandings,
     } from './championship.js';
     import { getSeasonSnapshot, getDisplayYear } from './worldstate.js';
 
@@ -776,7 +874,6 @@
     }
 
     // ── Championship context ───────────────────────────────────────────────────
-    // Resolve event from URL params if provided, otherwise use today's current event
     const pSeason = params.get('season');
     const pRound  = params.get('round');
 
@@ -791,14 +888,11 @@
     setRendererCircuit(circuit);
 
     // ── Season snapshot ────────────────────────────────────────────────────────
-    // Ensure the prior season is cached so getCarNumbers can find the reigning champion.
     const simFns = { initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession, getSeasonSnapshot };
     if (event.season > 1) await ensurePastResultsCached(event.season - 1, simFns);
-    // Resolve all team/driver/engine/tyre stats for this season from worldstate.js.
-    // This ensures the simulation uses era-appropriate stats rather than S1 defaults.
     const snapshot = getSeasonSnapshot(event.season, worldSeed);
 
-    // Update info bar with championship context
+    // Update info bar
     const circuitNameEl = document.getElementById('circuit-name');
     if (circuitNameEl) {
       circuitNameEl.textContent =
@@ -844,9 +938,6 @@
     }
 
     // ── Ensure qualifying result exists ────────────────────────────────────────
-    // Qualifying and race share the same day. If the viewer skips qualifying and
-    // comes straight to the race, silently run qualifying with its deterministic
-    // seed so the grid is identical to what watching qualifying would produce.
     if (!loadQualiResults(event.season, event.round)) {
       const qualiEvent = getEventForRound(event.season, event.round, 'qualifying');
       const qualiSeed  = getSeedForEvent(qualiEvent, worldSeed);
@@ -855,7 +946,6 @@
       saveQualiResults(event.season, event.round, silentResults);
     }
 
-    // Load qualifying results for this round (guaranteed to exist now)
     const qualiResults = loadQualiResults(event.season, event.round);
 
     // ── Renderer ───────────────────────────────────────────────────────────────
@@ -877,12 +967,11 @@
     const btnReset   = document.getElementById('btn-reset');
     const seedInput  = document.getElementById('seed-input');
     const speedSel   = document.getElementById('speed-select');
-    // Apply day-gating to START RACE button
+
     if (!isRaceAvailable && !hasRaceResult(event.season, event.round)) {
       btnStart.disabled = true;
     }
 
-    // Seed input defaults to championship seed
     seedInput.value = raceSeed;
 
     btnStart.addEventListener('click', startRace);
@@ -902,16 +991,107 @@
       updateStepButtons();
     });
 
-    // ── Mobile tab switching ───────────────────────────────────────────────────
+    // ── Tab switching ──────────────────────────────────────────────────────────
+    let standingsLoaded = false;
+
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
+        const target = btn.dataset.panel;
+
+        // Update button active state
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        const target = btn.dataset.panel;
-        document.getElementById('timing-panel').classList.toggle('tab-hidden', target !== 'timing');
-        document.getElementById('commentary-panel').classList.toggle('tab-hidden', target !== 'commentary');
+
+        // Hide all standard view panels
+        document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+        // Hide commentary (managed separately)
+        document.getElementById('panel-comm').classList.remove('active');
+
+        if (target === 'comm') {
+          document.getElementById('panel-comm').classList.add('active');
+        } else {
+          document.getElementById(`panel-${target}`).classList.add('active');
+        }
+
+        // Lap chart: force re-render so canvas gets correct dimensions after display:block
+        if (target === 'chart') {
+          setTimeout(() => renderer.render(), 0);
+        }
+
+        // Standings: lazy-load on first visit
+        if (target === 'stand' && !standingsLoaded) {
+          buildStandings();
+          standingsLoaded = true;
+        }
       });
     });
+
+    // ── Build grid from qualifying results ────────────────────────────────────
+    function fmtQualTime(secs) {
+      if (!secs || secs <= 0) return null;
+      const m = Math.floor(secs / 60);
+      const s = (secs % 60).toFixed(3).padStart(6, '0');
+      return `${m}:${s}`;
+    }
+
+    function buildGrid() {
+      if (!qualiResults) return;
+      const tbody = document.getElementById('grid-body');
+      tbody.innerHTML = '';
+      qualiResults.forEach((r, i) => {
+        const timeStr = r.crashed ? null : fmtQualTime(r.lapTime);
+        const teamObj = snapshot?.teams?.find(t => t.id === r.teamId);
+        const teamLabel = teamObj
+          ? (teamObj.shortName || teamObj.id || r.teamId)
+          : (r.teamId || '');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="grid-pos">${i + 1}</td>
+          <td class="grid-num">${r.carNumber ?? ''}</td>
+          <td class="grid-driver">${r.driver ?? ''}</td>
+          <td class="grid-team">${teamLabel.toUpperCase()}</td>
+          <td class="grid-time ${timeStr ? '' : 'grid-notime'}">${timeStr ?? 'NO TIME'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    buildGrid();
+
+    // ── Build standings (lazy) ─────────────────────────────────────────────────
+    function buildStandings() {
+      const standings = getStandings(event.season);
+      if (!standings || (!standings.drivers?.length && !standings.constructors?.length)) {
+        document.getElementById('stand-note').textContent = 'No results yet this season';
+        return;
+      }
+
+      const dbody = document.getElementById('stand-driver-body');
+      standings.drivers.forEach((d, i) => {
+        const teamObj = snapshot?.teams?.find(t => t.id === d.teamId);
+        const teamLabel = (teamObj?.shortName || d.teamId || '').toUpperCase();
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="stand-pos">${i + 1}</td>
+          <td class="stand-name">${d.driverName ?? ''}</td>
+          <td class="stand-team">${teamLabel}</td>
+          <td class="stand-pts">${d.points}</td>
+        `;
+        dbody.appendChild(tr);
+      });
+
+      const cbody = document.getElementById('stand-con-body');
+      standings.constructors.forEach((c, i) => {
+        const teamObj = snapshot?.teams?.find(t => t.id === c.teamId);
+        const teamLabel = (teamObj?.shortName || c.teamId || '').toUpperCase();
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="stand-pos">${i + 1}</td>
+          <td class="stand-name">${teamLabel}</td>
+          <td class="stand-pts">${c.points}</td>
+        `;
+        cbody.appendChild(tr);
+      });
+    }
 
     // ── Step button state ──────────────────────────────────────────────────────
     function updateStepButtons() {
@@ -958,7 +1138,6 @@
     }
 
     // ── replayRace ─────────────────────────────────────────────────────────────
-    // Re-runs animation with same seed (same result) without clearing localStorage
     function replayRace() {
       clearTimeout(loopId);
       paused = false;
@@ -1035,7 +1214,6 @@
       btnReset.disabled        = true;
       seedInput.disabled       = false;
 
-      // Re-apply day-gating if needed
       if (!isRaceAvailable && !hasRaceResult(event.season, event.round)) {
         btnStart.disabled = true;
       }
@@ -1056,7 +1234,6 @@
       updateStepButtons();
       console.log('Race complete. Full log available at: window.raceLog');
 
-      // Save championship result
       import('./state.js').then(({ cars }) => {
         const finishers = cars.filter(c => c.status !== 'retired')
                               .sort((a, b) => a.position - b.position);

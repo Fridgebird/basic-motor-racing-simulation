@@ -17,6 +17,8 @@
       font-weight: normal;
       font-style: oblique;
     }
+    @font-face { font-family:'IBMPlex'; src:url('IBMPlexSans-VariableFont_wdth,wght.ttf') format('truetype'); font-weight:100 900; }
+    @font-face { font-family:'TechRounded'; src:url('TechnicalRoundedVP-ThinOblique.otf') format('opentype'); font-weight:normal; }
 
     :root {
       --bg:      #0d1117;
@@ -41,177 +43,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 0 8px 32px;
-    }
-
-    /* ── Topbar ──────────────────────────────────────────────────────────────── */
-    #topbar {
-      width: 100%;
-      max-width: 900px;
-      background: var(--bg-deep);
-      border: 1px solid var(--border);
-      border-bottom: 2px solid var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 14px;
-      margin-bottom: 8px;
-    }
-    .b-flat {
-      font-size: 14px;
-      letter-spacing: 3px;
-      color: var(--hi);
-      text-transform: uppercase;
-      line-height: 1;
-    }
-    .b-flat em { font-style: normal; color: var(--mid); }
-    .topbar-nav { display: flex; gap: 16px; margin-left: auto; margin-right: 16px; }
-    .topbar-nav-link {
-      color: var(--lo);
-      text-decoration: none;
-      font-size: 10px;
-      letter-spacing: 0.08em;
-    }
-    .topbar-nav-link:hover { color: var(--mid); }
-    .topbar-nav-link.current { color: var(--mid); }
-
-    /* ── Season header ───────────────────────────────────────────────────────── */
-    #season-header {
-      width: 100%;
-      max-width: 900px;
-      padding: 10px 4px 8px;
-      border-bottom: 1px solid var(--border);
-    }
-    #season-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    #season-title {
-      font-size: 9px;
-      letter-spacing: 3px;
-      color: var(--mid);
-      text-transform: uppercase;
-      flex: 1;
-    }
-    .season-nav-btn {
-      font-family: inherit;
-      font-size: 9px;
-      letter-spacing: 1px;
-      color: var(--lo);
-      background: none;
-      border: 1px solid var(--border);
-      padding: 3px 8px;
-      cursor: pointer;
-    }
-    .season-nav-btn:hover { color: var(--hi); border-color: var(--mid); }
-
-    /* ── Calendar table ──────────────────────────────────────────────────────── */
-    #calendar-wrap {
-      width: 100%;
-      max-width: 900px;
-    }
-
-    #calendar-table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    #calendar-table th {
-      color: var(--lo);
-      font-size: 9px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      font-weight: normal;
-      text-align: left;
-      padding: 3px 8px 6px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    #calendar-table td {
-      padding: 8px 8px;
-      font-size: 11px;
-      white-space: nowrap;
-      vertical-align: middle;
-    }
-
-    .cal-row {
-      border-bottom: 1px solid var(--bg-mid);
-    }
-
-    /* Column widths */
-    .cal-round   { width: 36px;  color: var(--lo); font-size: 11px; }
-    .cal-event   { min-width: 140px; color: var(--hi); }
-    .cal-circuit { min-width: 120px; color: var(--lo); }
-    .cal-info    { width: 28px; }
-    .cal-actions { width: auto; text-align: right; }
-
-    .event-name  { color: var(--hi); font-size: 11px; }
-    .circuit-name-text { color: var(--lo); font-size: 10px; letter-spacing: 0.05em; }
-
-    /* Upcoming rows */
-    .cal-row.upcoming td { color: var(--dim); }
-    .cal-row.upcoming .event-name { color: var(--lo); }
-
-    /* Action buttons */
-    .action-btns {
-      display: flex;
-      gap: 6px;
-      justify-content: flex-end;
-      align-items: center;
-    }
-
-    .btn-cal {
-      background: var(--bg-deep);
-      border: 1px solid var(--border);
-      color: var(--lo);
-      font-family: inherit;
-      font-size: 9px;
-      letter-spacing: 0.08em;
-      padding: 3px 8px;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-block;
-    }
-    .btn-cal:hover { color: var(--mid); border-color: var(--mid); }
-
-    .btn-watch {
-      color: var(--mid);
-      border-color: var(--lo);
-    }
-    .btn-watch:hover { color: var(--hi); border-color: var(--mid); }
-
-    .btn-info {
-      padding: 3px 6px;
-      color: var(--dim);
-      border-color: var(--dim);
-      font-size: 10px;
-    }
-    .btn-info:hover { color: var(--lo); border-color: var(--lo); }
-
-    .btn-locked {
-      color: var(--dim);
-      border-color: var(--bg-mid);
-      pointer-events: none;
-      cursor: default;
-      opacity: 0.5;
-    }
-
-    .btn-spoiler {
-      color: var(--lo);
-      border-color: var(--dim);
-      border-style: dashed;
-    }
-    .btn-spoiler:hover { color: var(--mid); border-color: var(--lo); }
-
-    /* Separator between quali and race button groups */
-    .btn-separator {
-      display: inline-block;
-      width: 1px;
-      height: 16px;
-      background: var(--border);
-      margin: 0 4px;
-      vertical-align: middle;
+      padding: 0 8px 48px;
     }
 
     /* ── Sticky header ──────────────────────────────────────────────────────── */
@@ -224,9 +56,26 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding-bottom: 12px;
       box-shadow: 0 3px 12px rgba(0,0,0,0.6);
     }
+
+    /* ── Topbar ──────────────────────────────────────────────────────────────── */
+    #topbar {
+      width: 100%;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-bottom: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      height: 44px;
+    }
+    .b-flat { font-size: 15px; color: var(--hi); letter-spacing: 0.04em; flex-shrink: 0; }
+    .b-flat em { font-style: normal; color: var(--mid); }
+    .topbar-nav { display: flex; gap: 16px; margin-left: auto; margin-right: 16px; }
+    .topbar-nav-link { color: var(--lo); text-decoration: none; font-size: 10px; letter-spacing: 0.08em; }
+    .topbar-nav-link:hover { color: var(--mid); }
+    .topbar-nav-link.current { color: var(--mid); }
 
     /* ── Dev bar ──────────────────────────────────────────────────────────────── */
     #dev-bar {
@@ -237,7 +86,6 @@
       justify-content: center;
       gap: 12px;
       padding: 6px 8px;
-      margin-bottom: 6px;
       background: var(--bg-deep);
       border: 1px solid var(--border);
       font-size: 11px;
@@ -263,23 +111,191 @@
       padding: 2px 4px;
     }
     .dev-label { color: var(--dim); }
+
+    /* ── Info bar ──────────────────────────────────────────────────────────────── */
+    #info-bar {
+      width: 100%;
+      background: var(--bg-mid);
+      border-bottom: 1px solid var(--border);
+      padding: 6px 16px;
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--lo);
+      text-transform: uppercase;
+    }
+
+    /* ── Main content ──────────────────────────────────────────────────────────── */
+    #main {
+      width: 100%;
+      max-width: 760px;
+      padding: 28px 16px 0;
+    }
+
+    /* ── Hero ──────────────────────────────────────────────────────────────────── */
+    .hero-eyebrow {
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .hero-race-name {
+      font-size: 26px;
+      letter-spacing: 2px;
+      color: var(--hi);
+      text-transform: uppercase;
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+
+    .hero-circuit-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 6px;
+    }
+
+    .event-flag {
+      width: 72px;
+      height: 36px;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+    }
+
+    .hero-circuit-name {
+      font-size: 14px;
+      letter-spacing: 1px;
+      color: var(--mid);
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+
+    .hero-circuit-location {
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: var(--lo);
+    }
+
+    .hero-circuit-meta {
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      color: var(--dim);
+      text-transform: uppercase;
+      margin-top: 12px;
+      margin-bottom: 24px;
+    }
+
+    /* ── Action panel ──────────────────────────────────────────────────────────── */
+    #action-panel {
+      display: flex;
+      gap: 0;
+      margin-bottom: 28px;
+      border: 1px solid var(--border);
+      background: var(--bg-mid);
+    }
+
+    .action-group {
+      flex: 1;
+      padding: 16px 20px;
+    }
+
+    .action-group + .action-group {
+      border-left: 1px solid var(--border);
+    }
+
+    .action-group-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--lo);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .action-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .action-btn {
+      display: block;
+      font-family: inherit;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-decoration: none;
+      padding: 8px 14px;
+      border: 1px solid var(--border);
+      background: var(--bg-deep);
+      color: var(--lo);
+      text-transform: uppercase;
+      cursor: pointer;
+      text-align: center;
+    }
+    .action-btn:hover { color: var(--mid); border-color: var(--mid); }
+    .action-btn.primary { color: var(--mid); border-color: var(--lo); }
+    .action-btn.primary:hover { color: var(--hi); border-color: var(--mid); }
+    .action-btn.spoiler { border-style: dashed; color: var(--lo); border-color: var(--dim); }
+    .action-btn.spoiler:hover { color: var(--mid); border-color: var(--lo); }
+
+    /* ── Track image ──────────────────────────────────────────────────────────── */
+    #track-image {
+      display: block;
+      width: 100%;
+      max-width: 600px;
+      height: auto;
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    /* ── Stats grid ──────────────────────────────────────────────────────────── */
+    #circuit-info {
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 9px;
+      color: var(--lo);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+      margin-bottom: 10px;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 6px 0;
+    }
+    .stat-label { font-size: 10px; color: var(--lo); letter-spacing: 0.06em; padding: 3px 0; }
+    .stat-value { font-size: 11px; color: var(--mid); padding: 3px 0; }
+
+    /* ── Profile text ──────────────────────────────────────────────────────────── */
+    .circuit-profile {
+      font-family: 'TechRounded', 'IBMPlex', 'Segoe UI', system-ui, sans-serif;
+      font-size: 13px;
+      color: var(--mid);
+      line-height: 1.75;
+      max-width: 600px;
+    }
   </style>
 </head>
 <body>
 
   <div id="sticky-header">
-    <!-- ── Topbar ────────────────────────────────────────────────────────────── -->
     <div id="topbar">
       <div class="b-flat">Simple <em>Motor Racing</em></div>
       <nav class="topbar-nav">
-        <a href="index.html" class="topbar-nav-link current">CALENDAR</a>
+        <a href="index.html" class="topbar-nav-link current">HOME</a>
+        <a href="calendar.html" class="topbar-nav-link">CALENDAR</a>
         <a href="drivers.html" class="topbar-nav-link">DRIVERS</a>
         <a href="team.html" class="topbar-nav-link">TEAMS</a>
         <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
       </nav>
     </div>
-
-    <!-- ── Dev bar ───────────────────────────────────────────────────────────── -->
     <div id="dev-bar">
       <button id="dev-prev">◀ PREV</button>
       <span id="dev-label"></span>
@@ -289,40 +305,67 @@
       <button id="dev-reset" style="margin-left:8px;color:#cc2233;border-color:#cc2233">RESET WORLD</button>
       <button id="dev-exit" style="color:#cc2233;border-color:#cc2233">EXIT DEV</button>
     </div>
-
-    <!-- ── Season header ─────────────────────────────────────────────────────── -->
-    <div id="season-header">
-      <button id="season-prev" class="season-nav-btn" style="display:none">← S?</button>
-      <span id="season-title">–</span>
-      <button id="season-next" class="season-nav-btn" style="display:none">S? →</button>
-    </div>
+    <div id="info-bar">Today's Race</div>
   </div>
 
-  <!-- ── Calendar ─────────────────────────────────────────────────────────────── -->
-  <div id="calendar-wrap">
-    <table id="calendar-table">
-      <thead>
-        <tr>
-          <th class="cal-round">RND</th>
-          <th class="cal-event">EVENT</th>
-          <th class="cal-circuit">CIRCUIT</th>
-          <th class="cal-info"></th>
-          <th class="cal-actions">QUALIFYING</th>
-          <th class="cal-actions">RACE</th>
-        </tr>
-      </thead>
-      <tbody id="calendar-body"></tbody>
-    </table>
+  <div id="main">
+    <div class="hero-eyebrow">TODAY'S RACE</div>
+    <div class="hero-race-name" id="hero-race-name">–</div>
+
+    <div class="hero-circuit-row">
+      <img class="event-flag" id="event-flag" src="" alt="" style="display:none">
+      <div>
+        <div class="hero-circuit-name" id="hero-circuit-name">–</div>
+        <div class="hero-circuit-location" id="hero-circuit-location">–</div>
+      </div>
+    </div>
+
+    <div class="hero-circuit-meta" id="hero-circuit-meta">–</div>
+
+    <div id="action-panel">
+      <div class="action-group">
+        <div class="action-group-label">Qualifying</div>
+        <div class="action-btns">
+          <a id="btn-watch-quali" href="" class="action-btn primary">WATCH QUALIFYING →</a>
+          <a id="btn-result-quali" href="" class="action-btn spoiler">QUALIFYING RESULT →</a>
+        </div>
+      </div>
+      <div class="action-group">
+        <div class="action-group-label">Race</div>
+        <div class="action-btns">
+          <a id="btn-watch-race" href="" class="action-btn primary">WATCH RACE →</a>
+          <a id="btn-result-race" href="" class="action-btn spoiler">RACE RESULT →</a>
+        </div>
+      </div>
+    </div>
+
+    <img id="track-image" src="" alt="" style="display:none">
+
+    <div id="circuit-info">
+      <div class="section-title">Circuit</div>
+      <div class="stat-grid" id="stat-grid"></div>
+    </div>
+
+    <div class="circuit-profile" id="circuit-profile"></div>
   </div>
 
   <script type="module">
     import {
-      getCurrentEvent, getCircuit, getEventForRound,
-      getTodayDayOffset, getWorldSeed, setWorldSeed,
-      advanceDevEvent, retreatDevEvent, isDevMode, enterDevMode, exitDevMode,
-      resetWorld, getEventDate, formatShortDate,
+      getCurrentEvent, getCircuit, getTodayDayOffset,
+      getWorldSeed, setWorldSeed, advanceDevEvent, retreatDevEvent,
+      isDevMode, enterDevMode, exitDevMode, resetWorld, getEventDate, formatShortDate,
     } from './championship.js';
-    import { SEASON_SCHEDULE, CIRCUITS } from './data.js';
+    import { SEASON_SCHEDULE } from './data.js';
+
+    const NAT_CODE = {
+      'australia':      'au', 'new zealand':  'nz', 'argentina':    'ar',
+      'mexico':         'mx', 'japan':        'jp', 'kenya':        'ke',
+      'belgium':        'be', 'france':       'fr', 'italy':        'it',
+      'germany':        'de', 'czechoslovakia':'cz', 'england':      'gb',
+      'sweden':         'se', 'finland':      'fi', 'hong kong':    'hk',
+      'canada':         'ca', 'united states':'us', 'pakistan':     'pk',
+      'brazil':         'br', 'south africa': 'za',
+    };
 
     // ── Dev mode entry via ?dev=1 ──────────────────────────────────────────────
     const params = new URLSearchParams(location.search);
@@ -331,39 +374,105 @@
       history.replaceState(null, '', location.pathname);
     }
 
-    // ── Resolve context ────────────────────────────────────────────────────────
     const todayOffset  = getTodayDayOffset();
-    const currentEvent = getCurrentEvent();
+    const event        = getCurrentEvent();
+    const circuit      = getCircuit(event);
     const numRounds    = Math.max(...SEASON_SCHEDULE.map(e => e.round));
+    const year         = 1929 + event.season;
 
-    let viewSeason = currentEvent.season;
+    // ── Info bar ───────────────────────────────────────────────────────────────
+    document.getElementById('info-bar').textContent =
+      `Today's Race · Round ${event.round} of ${numRounds} · ${year}`;
 
-    // ── Season header + nav ────────────────────────────────────────────────────
-    const prevBtn   = document.getElementById('season-prev');
-    const nextBtn   = document.getElementById('season-next');
-    const titleEl   = document.getElementById('season-title');
+    // ── Hero ───────────────────────────────────────────────────────────────────
+    document.getElementById('hero-race-name').textContent  = `${year} ${circuit.eventName}`;
+    document.getElementById('hero-circuit-name').textContent = circuit.name;
 
-    function updateSeasonHeader() {
-      const year = 1929 + viewSeason;
-      titleEl.textContent   = `${year} — Calendar`;
-      prevBtn.textContent   = `← ${year - 1}`;
-      nextBtn.textContent   = `${year + 1} →`;
-      prevBtn.style.display = viewSeason > 1 ? 'inline-block' : 'none';
-      nextBtn.style.display = viewSeason < currentEvent.season ? 'inline-block' : 'none';
+    const locationParts = [circuit.location, circuit.country].filter(Boolean);
+    document.getElementById('hero-circuit-location').textContent = locationParts.join(' · ');
+
+    const metaParts = [circuit.type, circuit.character].filter(Boolean);
+    document.getElementById('hero-circuit-meta').textContent = metaParts.join('  ·  ');
+
+    // ── Flag ───────────────────────────────────────────────────────────────────
+    const flagCode = NAT_CODE[(circuit.country || '').toLowerCase()];
+    if (flagCode) {
+      const flagEl   = document.getElementById('event-flag');
+      flagEl.src     = `https://flagcdn.com/w160/${flagCode}.png`;
+      flagEl.alt     = circuit.country;
+      flagEl.style.display = '';
     }
 
-    prevBtn.addEventListener('click', () => { viewSeason--; updateSeasonHeader(); buildCalendar(viewSeason); });
-    nextBtn.addEventListener('click', () => { viewSeason++; updateSeasonHeader(); buildCalendar(viewSeason); });
+    // ── Action buttons ─────────────────────────────────────────────────────────
+    const dayOffset = (event.season - 1) * numRounds + (event.round - 1);
+    const isToday   = dayOffset === todayOffset;
+
+    const qualiWatchHref  = `qualifying.html?season=${event.season}&round=${event.round}`;
+    const qualiResultHref = `results.html?season=${event.season}&round=${event.round}&type=qualifying`;
+    const raceWatchHref   = `race.html?season=${event.season}&round=${event.round}`;
+    const raceResultHref  = `results.html?season=${event.season}&round=${event.round}&type=race`;
+
+    document.getElementById('btn-watch-quali').href  = qualiWatchHref;
+    document.getElementById('btn-result-quali').href = qualiResultHref;
+    document.getElementById('btn-watch-race').href   = raceWatchHref;
+    document.getElementById('btn-result-race').href  = raceResultHref;
+
+    if (isToday) {
+      document.getElementById('btn-result-quali').addEventListener('click', e => {
+        if (!confirm('Show qualifying result? This contains spoilers.')) e.preventDefault();
+      });
+      document.getElementById('btn-result-race').addEventListener('click', e => {
+        if (!confirm("Show today's race result? This contains spoilers.")) e.preventDefault();
+      });
+    }
+
+    // ── Track image ────────────────────────────────────────────────────────────
+    const trackImg      = document.getElementById('track-image');
+    trackImg.src        = `tracks/${circuit.id}.png`;
+    trackImg.alt        = circuit.name;
+    trackImg.style.display = '';
+    trackImg.onerror    = () => { trackImg.style.display = 'none'; };
+
+    // ── Circuit stats ──────────────────────────────────────────────────────────
+    const raceDistKm = circuit.lengthKm
+      ? (circuit.lengthKm * circuit.totalLaps).toFixed(0) : null;
+    const lengthStr  = circuit.lengthKm ? `${circuit.lengthKm.toFixed(3)} km` : '–';
+    const distStr    = raceDistKm
+      ? `${circuit.totalLaps} laps · ${raceDistKm} km`
+      : `${circuit.totalLaps} laps`;
+
+    const statRows = [
+      ['Length',        lengthStr],
+      ['Race distance', distStr],
+      ['Abrasiveness',  abrasiveness(circuit.trackAbrasiveness)],
+      ['Overtaking',    overtaking(circuit.overtakingDifficulty)],
+    ];
+
+    const statGrid = document.getElementById('stat-grid');
+    statRows.forEach(([label, value]) => {
+      const lEl = document.createElement('div');
+      lEl.className   = 'stat-label';
+      lEl.textContent = label;
+      const vEl = document.createElement('div');
+      vEl.className   = 'stat-value';
+      vEl.textContent = value;
+      statGrid.append(lEl, vEl);
+    });
+
+    // ── Profile text ───────────────────────────────────────────────────────────
+    if (circuit.profile) {
+      document.getElementById('circuit-profile').textContent = circuit.profile;
+    }
 
     // ── Dev bar ────────────────────────────────────────────────────────────────
-    const devBar = document.getElementById('dev-bar');
     if (isDevMode()) {
-      const todayDateStr  = formatShortDate(getEventDate(todayOffset));
-      const todayEventStr = `Race Day — R${currentEvent.round} · ${1929 + currentEvent.season}`;
+      const devBar       = document.getElementById('dev-bar');
+      const todayDateStr = formatShortDate(getEventDate(todayOffset));
+      const eventStr     = `Race Day — R${event.round} · ${year}`;
 
       devBar.style.display = 'flex';
       document.getElementById('dev-label').textContent =
-        `DEV · Day ${todayOffset} · ${todayDateStr} · ${todayEventStr}`;
+        `DEV · Day ${todayOffset} · ${todayDateStr} · ${eventStr}`;
       document.getElementById('world-seed-input').value = getWorldSeed();
 
       document.getElementById('dev-prev').addEventListener('click', () => {
@@ -386,90 +495,23 @@
       });
     }
 
-    // ── Build calendar rows (one per round) ───────────────────────────────────
-    function watchBtn(href, unlocked) {
-      if (!unlocked) return `<span class="btn-cal btn-watch btn-locked">WATCH</span>`;
-      return `<a href="${href}" class="btn-cal btn-watch">WATCH</a>`;
-    }
-    function resultBtn(href, unlocked, isToday) {
-      if (!unlocked) return `<span class="btn-cal btn-locked">RESULT</span>`;
-      if (isToday) {
-        return `<a href="${href}" class="btn-cal btn-spoiler" onclick="return confirm('Show today\\'s result? This contains spoilers.')">RESULT</a>`;
-      }
-      return `<a href="${href}" class="btn-cal">RESULT</a>`;
+    // ── Helpers ────────────────────────────────────────────────────────────────
+    function abrasiveness(val) {
+      if (val <= 0.30) return 'Smooth';
+      if (val <= 0.45) return 'Moderate';
+      if (val <= 0.55) return 'Aggressive';
+      return 'Destructive';
     }
 
-    function buildCalendar(s) {
-      const seasonStart = (s - 1) * numRounds;
-      const tbody = document.getElementById('calendar-body');
-      tbody.innerHTML = '';
-
-      // Group schedule by round
-      const rounds = [];
-      SEASON_SCHEDULE.forEach(entry => {
-        let round = rounds.find(r => r.round === entry.round);
-        if (!round) {
-          round = { round: entry.round, circuitId: entry.circuitId };
-          rounds.push(round);
-        }
-      });
-
-      rounds.forEach(roundData => {
-        const { round, circuitId } = roundData;
-        const circuit = CIRCUITS[circuitId];
-
-        // Qualifying and race share the same day — both use round-1 as the offset
-        const sharedOffset = seasonStart + (round - 1);
-        const qualiOffset  = sharedOffset;
-        const raceOffset   = sharedOffset;
-
-        const qualiUnlocked = qualiOffset <= todayOffset;
-        const raceUnlocked  = raceOffset  <= todayOffset;
-        const qualiToday    = qualiOffset === todayOffset;
-        const raceToday     = raceOffset  === todayOffset;
-        const isUpcoming    = !qualiUnlocked;
-
-        const qualiResultHref = `results.html?season=${s}&round=${round}&type=qualifying`;
-        const qualiWatchHref  = `qualifying.html?season=${s}&round=${round}`;
-        const raceResultHref  = `results.html?season=${s}&round=${round}&type=race`;
-        const raceWatchHref   = `race.html?season=${s}&round=${round}`;
-        const circuitHref     = `circuit.html?circuitId=${circuitId}`;
-
-        const tr = document.createElement('tr');
-        tr.className = `cal-row${isUpcoming ? ' upcoming' : ''}`;
-
-        tr.innerHTML = `
-          <td class="cal-round">R${round}</td>
-          <td class="cal-event">
-            <div class="event-name">${circuit.eventName}</div>
-          </td>
-          <td class="cal-circuit">
-            <span class="circuit-name-text">${circuit.name}</span>
-          </td>
-          <td class="cal-info">
-            <a href="${circuitHref}" class="btn-cal btn-info" title="Circuit info">ⓘ</a>
-          </td>
-          <td class="cal-actions">
-            <div class="action-btns">
-              ${watchBtn(qualiWatchHref, qualiUnlocked)}
-              ${resultBtn(qualiResultHref, qualiUnlocked, qualiToday)}
-            </div>
-          </td>
-          <td class="cal-actions">
-            <div class="action-btns">
-              ${watchBtn(raceWatchHref, raceUnlocked)}
-              ${resultBtn(raceResultHref, raceUnlocked, raceToday)}
-            </div>
-          </td>
-        `;
-
-        tbody.appendChild(tr);
-      });
+    function overtaking(val) {
+      if (!val) return '—';
+      if (val <= 0.55) return 'Very difficult';
+      if (val <= 0.75) return 'Difficult';
+      if (val <= 0.95) return 'Moderate';
+      if (val <= 1.10) return 'Average';
+      if (val <= 1.30) return 'Good';
+      return 'Excellent';
     }
-
-    // ── Initial render ─────────────────────────────────────────────────────────
-    updateSeasonHeader();
-    buildCalendar(viewSeason);
   </script>
 
 </body>

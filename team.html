@@ -35,7 +35,7 @@
     .nav-btn { font-family:inherit; font-size:9px; letter-spacing:1px; color:var(--lo); background:none; border:1px solid var(--border); padding:5px 12px; cursor:pointer; text-transform:uppercase; }
     .nav-btn:hover:not(:disabled) { color:var(--hi); border-color:var(--mid); }
     .nav-btn:disabled { opacity:0.25; cursor:default; }
-    #team-counter { font-size:9px; letter-spacing:2px; color:var(--dim); }
+    #team-counter { font-size:9px; letter-spacing:2px; color:var(--lo); }
 
     #profile-card { border:1px solid var(--border); background:var(--bg-mid); margin-bottom:20px; overflow:hidden; }
 
@@ -57,7 +57,7 @@
     .stat-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
 
     #season-pane { padding:16px 20px; }
-    #season-pane-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    #season-pane-header { display:flex; align-items:center; justify-content:space-between; padding:10px 20px; border-bottom:1px solid var(--border); }
     #season-label { font-size:11px; letter-spacing:2px; color:var(--hi); }
     .season-btn { font-family:inherit; font-size:10px; color:var(--lo); background:none; border:1px solid var(--border); padding:3px 8px; cursor:pointer; }
     .season-btn:hover:not(:disabled) { color:var(--hi); border-color:var(--mid); }
@@ -102,7 +102,8 @@
     <div id="topbar">
       <span class="b-flat">Simple <em>Motor Racing</em></span>
       <nav class="topbar-nav">
-        <a href="index.html" class="topbar-nav-link">CALENDAR</a>
+        <a href="index.html" class="topbar-nav-link">HOME</a>
+        <a href="calendar.html" class="topbar-nav-link">CALENDAR</a>
         <a href="drivers.html" class="topbar-nav-link">DRIVERS</a>
         <a href="team.html" class="topbar-nav-link current">TEAMS</a>
         <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
@@ -120,7 +121,6 @@
 
   <div id="page" style="display:none">
     <div id="profile-card">
-      <div id="car-wrap"><div id="car-sprite"></div><div id="team-logo"></div></div>
       <div id="team-header">
         <div id="livery-bar"></div>
         <div>
@@ -134,12 +134,13 @@
         <div class="stat-block"><div class="stat-value" id="s-pts">—</div><div class="stat-label">Points</div></div>
         <div class="stat-block"><div class="stat-value" id="s-titles">—</div><div class="stat-label">Titles</div></div>
       </div>
+      <div id="season-pane-header">
+        <button class="season-btn" id="btn-season-prev">◀</button>
+        <span id="season-label">—</span>
+        <button class="season-btn" id="btn-season-next">▶</button>
+      </div>
+      <div id="car-wrap"><div id="car-sprite"></div><div id="team-logo"></div></div>
       <div id="season-pane">
-        <div id="season-pane-header">
-          <button class="season-btn" id="btn-season-prev">◀</button>
-          <span id="season-label">—</span>
-          <button class="season-btn" id="btn-season-next">▶</button>
-        </div>
         <div id="season-tech"></div>
         <div class="section-label">Drivers</div>
         <div id="driver-list"></div>

@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar — Simple Motor Racing</title>
+  <style>
+    @font-face {
+      font-family: 'Square';
+      src: url('Square.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Square';
+      src: url('Squareo.ttf') format('truetype');
+      font-weight: normal;
+      font-style: oblique;
+    }
+
+    :root {
+      --bg:      #0d1117;
+      --bg-deep: #080c12;
+      --bg-mid:  #0a0f18;
+      --border:  #1e2f44;
+      --hi:      #ffffff;
+      --mid:     #8ab4d4;
+      --lo:      #4a6a88;
+      --dim:     #2a4055;
+      --accent:  #cc2233;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--hi);
+      font-family: 'Square', 'Courier New', monospace;
+      font-size: 13px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 8px 32px;
+    }
+
+    /* ── Topbar ──────────────────────────────────────────────────────────────── */
+    #topbar {
+      width: 100%;
+      max-width: 900px;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-bottom: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      margin-bottom: 8px;
+    }
+    .b-flat {
+      font-size: 14px;
+      letter-spacing: 3px;
+      color: var(--hi);
+      text-transform: uppercase;
+      line-height: 1;
+    }
+    .b-flat em { font-style: normal; color: var(--mid); }
+    .topbar-nav { display: flex; gap: 16px; margin-left: auto; margin-right: 16px; }
+    .topbar-nav-link {
+      color: var(--lo);
+      text-decoration: none;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+    }
+    .topbar-nav-link:hover { color: var(--mid); }
+    .topbar-nav-link.current { color: var(--mid); }
+
+    /* ── Season header ───────────────────────────────────────────────────────── */
+    #season-header {
+      width: 100%;
+      max-width: 900px;
+      padding: 10px 4px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    #season-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    #season-title {
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: var(--mid);
+      text-transform: uppercase;
+      flex: 1;
+    }
+    .season-nav-btn {
+      font-family: inherit;
+      font-size: 9px;
+      letter-spacing: 1px;
+      color: var(--lo);
+      background: none;
+      border: 1px solid var(--border);
+      padding: 3px 8px;
+      cursor: pointer;
+    }
+    .season-nav-btn:hover { color: var(--hi); border-color: var(--mid); }
+
+    /* ── Calendar table ──────────────────────────────────────────────────────── */
+    #calendar-wrap {
+      width: 100%;
+      max-width: 900px;
+    }
+
+    #calendar-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    #calendar-table th {
+      color: var(--lo);
+      font-size: 9px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-weight: normal;
+      text-align: left;
+      padding: 3px 8px 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #calendar-table td {
+      padding: 8px 8px;
+      font-size: 11px;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    .cal-row {
+      border-bottom: 1px solid var(--bg-mid);
+    }
+
+    /* Column widths */
+    .cal-round   { width: 36px;  color: var(--lo); font-size: 11px; }
+    .cal-event   { min-width: 140px; color: var(--hi); }
+    .cal-circuit { min-width: 120px; color: var(--lo); }
+    .cal-info    { width: 28px; }
+    .cal-actions { width: auto; text-align: right; }
+
+    .event-name  { color: var(--hi); font-size: 11px; }
+    .circuit-name-text { color: var(--lo); font-size: 10px; letter-spacing: 0.05em; }
+
+    /* Upcoming rows */
+    .cal-row.upcoming td { color: var(--dim); }
+    .cal-row.upcoming .event-name { color: var(--lo); }
+
+    /* Action buttons */
+    .action-btns {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .btn-cal {
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      color: var(--lo);
+      font-family: inherit;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      padding: 3px 8px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-cal:hover { color: var(--mid); border-color: var(--mid); }
+
+    .btn-watch {
+      color: var(--mid);
+      border-color: var(--lo);
+    }
+    .btn-watch:hover { color: var(--hi); border-color: var(--mid); }
+
+    .btn-info {
+      padding: 3px 6px;
+      color: var(--dim);
+      border-color: var(--dim);
+      font-size: 10px;
+    }
+    .btn-info:hover { color: var(--lo); border-color: var(--lo); }
+
+    .btn-locked {
+      color: var(--dim);
+      border-color: var(--bg-mid);
+      pointer-events: none;
+      cursor: default;
+      opacity: 0.5;
+    }
+
+    .btn-spoiler {
+      color: var(--lo);
+      border-color: var(--dim);
+      border-style: dashed;
+    }
+    .btn-spoiler:hover { color: var(--mid); border-color: var(--lo); }
+
+    /* Separator between quali and race button groups */
+    .btn-separator {
+      display: inline-block;
+      width: 1px;
+      height: 16px;
+      background: var(--border);
+      margin: 0 4px;
+      vertical-align: middle;
+    }
+
+    /* ── Sticky header ──────────────────────────────────────────────────────── */
+    #sticky-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      width: 100%;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-bottom: 12px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.6);
+    }
+
+    /* ── Dev bar ──────────────────────────────────────────────────────────────── */
+    #dev-bar {
+      width: 100%;
+      max-width: 900px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 6px 8px;
+      margin-bottom: 6px;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--lo);
+    }
+    #dev-bar button {
+      background: var(--bg-deep);
+      color: var(--lo);
+      border: 1px solid var(--border);
+      font-family: inherit;
+      font-size: 11px;
+      padding: 2px 8px;
+      cursor: pointer;
+    }
+    #dev-bar button:hover { color: var(--mid); border-color: var(--mid); }
+    #dev-bar input[type=number] {
+      width: 80px;
+      background: var(--bg-deep);
+      color: var(--mid);
+      border: 1px solid var(--border);
+      font-family: inherit;
+      font-size: 11px;
+      padding: 2px 4px;
+    }
+    .dev-label { color: var(--dim); }
+  </style>
+</head>
+<body>
+
+  <div id="sticky-header">
+    <!-- ── Topbar ────────────────────────────────────────────────────────────── -->
+    <div id="topbar">
+      <div class="b-flat">Simple <em>Motor Racing</em></div>
+      <nav class="topbar-nav">
+        <a href="index.html" class="topbar-nav-link">HOME</a>
+        <a href="calendar.html" class="topbar-nav-link current">CALENDAR</a>
+        <a href="drivers.html" class="topbar-nav-link">DRIVERS</a>
+        <a href="team.html" class="topbar-nav-link">TEAMS</a>
+        <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
+      </nav>
+    </div>
+
+    <!-- ── Dev bar ───────────────────────────────────────────────────────────── -->
+    <div id="dev-bar">
+      <button id="dev-prev">◀ PREV</button>
+      <span id="dev-label"></span>
+      <button id="dev-next">NEXT ▶</button>
+      <span class="dev-label">KEY:</span>
+      <input type="number" id="world-seed-input">
+      <button id="dev-reset" style="margin-left:8px;color:#cc2233;border-color:#cc2233">RESET WORLD</button>
+      <button id="dev-exit" style="color:#cc2233;border-color:#cc2233">EXIT DEV</button>
+    </div>
+
+    <!-- ── Season header ─────────────────────────────────────────────────────── -->
+    <div id="season-header">
+      <button id="season-prev" class="season-nav-btn" style="display:none">← S?</button>
+      <span id="season-title">–</span>
+      <button id="season-next" class="season-nav-btn" style="display:none">S? →</button>
+    </div>
+  </div>
+
+  <!-- ── Calendar ─────────────────────────────────────────────────────────────── -->
+  <div id="calendar-wrap">
+    <table id="calendar-table">
+      <thead>
+        <tr>
+          <th class="cal-round">RND</th>
+          <th class="cal-event">EVENT</th>
+          <th class="cal-circuit">CIRCUIT</th>
+          <th class="cal-info"></th>
+          <th class="cal-actions">QUALIFYING</th>
+          <th class="cal-actions">RACE</th>
+        </tr>
+      </thead>
+      <tbody id="calendar-body"></tbody>
+    </table>
+  </div>
+
+  <script type="module">
+    import {
+      getCurrentEvent, getCircuit, getEventForRound,
+      getTodayDayOffset, getWorldSeed, setWorldSeed,
+      advanceDevEvent, retreatDevEvent, isDevMode, enterDevMode, exitDevMode,
+      resetWorld, getEventDate, formatShortDate,
+    } from './championship.js';
+    import { SEASON_SCHEDULE, CIRCUITS } from './data.js';
+
+    // ── Dev mode entry via ?dev=1 ──────────────────────────────────────────────
+    const params = new URLSearchParams(location.search);
+    if (params.get('dev') === '1') {
+      enterDevMode();
+      history.replaceState(null, '', location.pathname);
+    }
+
+    // ── Resolve context ────────────────────────────────────────────────────────
+    const todayOffset  = getTodayDayOffset();
+    const currentEvent = getCurrentEvent();
+    const numRounds    = Math.max(...SEASON_SCHEDULE.map(e => e.round));
+
+    let viewSeason = currentEvent.season;
+
+    // ── Season header + nav ────────────────────────────────────────────────────
+    const prevBtn   = document.getElementById('season-prev');
+    const nextBtn   = document.getElementById('season-next');
+    const titleEl   = document.getElementById('season-title');
+
+    function updateSeasonHeader() {
+      const year = 1929 + viewSeason;
+      titleEl.textContent   = `${year} — Calendar`;
+      prevBtn.textContent   = `← ${year - 1}`;
+      nextBtn.textContent   = `${year + 1} →`;
+      prevBtn.style.display = viewSeason > 1 ? 'inline-block' : 'none';
+      nextBtn.style.display = viewSeason < currentEvent.season ? 'inline-block' : 'none';
+    }
+
+    prevBtn.addEventListener('click', () => { viewSeason--; updateSeasonHeader(); buildCalendar(viewSeason); });
+    nextBtn.addEventListener('click', () => { viewSeason++; updateSeasonHeader(); buildCalendar(viewSeason); });
+
+    // ── Dev bar ────────────────────────────────────────────────────────────────
+    const devBar = document.getElementById('dev-bar');
+    if (isDevMode()) {
+      const todayDateStr  = formatShortDate(getEventDate(todayOffset));
+      const todayEventStr = `Race Day — R${currentEvent.round} · ${1929 + currentEvent.season}`;
+
+      devBar.style.display = 'flex';
+      document.getElementById('dev-label').textContent =
+        `DEV · Day ${todayOffset} · ${todayDateStr} · ${todayEventStr}`;
+      document.getElementById('world-seed-input').value = getWorldSeed();
+
+      document.getElementById('dev-prev').addEventListener('click', () => {
+        retreatDevEvent(); location.reload();
+      });
+      document.getElementById('dev-next').addEventListener('click', () => {
+        advanceDevEvent(); location.reload();
+      });
+      document.getElementById('world-seed-input').addEventListener('change', e => {
+        setWorldSeed(parseInt(e.target.value, 10) || 0);
+        location.reload();
+      });
+      document.getElementById('dev-reset').addEventListener('click', () => {
+        if (confirm('Clear all race and qualifying results? This cannot be undone.')) {
+          resetWorld(); location.reload();
+        }
+      });
+      document.getElementById('dev-exit').addEventListener('click', () => {
+        exitDevMode(); location.reload();
+      });
+    }
+
+    // ── Build calendar rows (one per round) ───────────────────────────────────
+    function watchBtn(href, unlocked) {
+      if (!unlocked) return `<span class="btn-cal btn-watch btn-locked">WATCH</span>`;
+      return `<a href="${href}" class="btn-cal btn-watch">WATCH</a>`;
+    }
+    function resultBtn(href, unlocked, isToday) {
+      if (!unlocked) return `<span class="btn-cal btn-locked">RESULT</span>`;
+      if (isToday) {
+        return `<a href="${href}" class="btn-cal btn-spoiler" onclick="return confirm('Show today\\'s result? This contains spoilers.')">RESULT</a>`;
+      }
+      return `<a href="${href}" class="btn-cal">RESULT</a>`;
+    }
+
+    function buildCalendar(s) {
+      const seasonStart = (s - 1) * numRounds;
+      const tbody = document.getElementById('calendar-body');
+      tbody.innerHTML = '';
+
+      // Group schedule by round
+      const rounds = [];
+      SEASON_SCHEDULE.forEach(entry => {
+        let round = rounds.find(r => r.round === entry.round);
+        if (!round) {
+          round = { round: entry.round, circuitId: entry.circuitId };
+          rounds.push(round);
+        }
+      });
+
+      rounds.forEach(roundData => {
+        const { round, circuitId } = roundData;
+        const circuit = CIRCUITS[circuitId];
+
+        // Qualifying and race share the same day — both use round-1 as the offset
+        const sharedOffset = seasonStart + (round - 1);
+        const qualiOffset  = sharedOffset;
+        const raceOffset   = sharedOffset;
+
+        const qualiUnlocked = qualiOffset <= todayOffset;
+        const raceUnlocked  = raceOffset  <= todayOffset;
+        const qualiToday    = qualiOffset === todayOffset;
+        const raceToday     = raceOffset  === todayOffset;
+        const isUpcoming    = !qualiUnlocked;
+
+        const qualiResultHref = `results.html?season=${s}&round=${round}&type=qualifying`;
+        const qualiWatchHref  = `qualifying.html?season=${s}&round=${round}`;
+        const raceResultHref  = `results.html?season=${s}&round=${round}&type=race`;
+        const raceWatchHref   = `race.html?season=${s}&round=${round}`;
+        const circuitHref     = `circuit.html?circuitId=${circuitId}`;
+
+        const tr = document.createElement('tr');
+        tr.className = `cal-row${isUpcoming ? ' upcoming' : ''}`;
+
+        tr.innerHTML = `
+          <td class="cal-round">R${round}</td>
+          <td class="cal-event">
+            <div class="event-name">${circuit.eventName}</div>
+          </td>
+          <td class="cal-circuit">
+            <span class="circuit-name-text">${circuit.name}</span>
+          </td>
+          <td class="cal-info">
+            <a href="${circuitHref}" class="btn-cal btn-info" title="Circuit info">ⓘ</a>
+          </td>
+          <td class="cal-actions">
+            <div class="action-btns">
+              ${watchBtn(qualiWatchHref, qualiUnlocked)}
+              ${resultBtn(qualiResultHref, qualiUnlocked, qualiToday)}
+            </div>
+          </td>
+          <td class="cal-actions">
+            <div class="action-btns">
+              ${watchBtn(raceWatchHref, raceUnlocked)}
+              ${resultBtn(raceResultHref, raceUnlocked, raceToday)}
+            </div>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ── Initial render ─────────────────────────────────────────────────────────
+    updateSeasonHeader();
+    buildCalendar(viewSeason);
+  </script>
+
+</body>
+</html>

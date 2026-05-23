@@ -508,6 +508,7 @@
     .grid-driver { color: var(--hi); }
     .grid-team { width: 160px; color: var(--lo); font-size: 10px; }
     .grid-time { width: 90px; color: var(--mid); font-size: 10px; text-align: right; }
+    .grid-gap  { width: 80px; color: var(--lo);  font-size: 10px; text-align: right; }
     .grid-notime { color: var(--dim); }
 
     /* ── Standings panel ─────────────────────────────────────────────────────── */
@@ -749,6 +750,7 @@
               <th class="grid-driver">DRIVER</th>
               <th class="grid-team">TEAM</th>
               <th class="grid-time">Q TIME</th>
+              <th class="grid-gap">GAP</th>
             </tr>
           </thead>
           <tbody id="grid-body"></tbody>
@@ -1036,21 +1038,26 @@
 
     function buildGrid() {
       if (!qualiResults) return;
-      const tbody = document.getElementById('grid-body');
+      const tbody    = document.getElementById('grid-body');
       tbody.innerHTML = '';
+      const poleTime = qualiResults[0]?.lapTime || null;
+
       qualiResults.forEach((r, i) => {
-        const timeStr = r.crashed ? null : fmtQualTime(r.lapTime);
-        const teamObj = snapshot?.teams?.find(t => t.id === r.teamId);
-        const teamLabel = teamObj
-          ? (teamObj.shortName || teamObj.id || r.teamId)
-          : (r.teamId || '');
+        const timeStr  = r.lapTime ? fmtQualTime(r.lapTime) : null;
+        const gapStr   = !timeStr  ? '–'
+                       : i === 0   ? 'POLE'
+                       : poleTime  ? `+${(r.lapTime - poleTime).toFixed(3)}`
+                       : '–';
+        const teamObj  = snapshot?.teams?.find(t => t.id === r.teamId);
+        const teamLabel = (teamObj?.shortName || teamObj?.id || r.teamId || '').toUpperCase();
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="grid-pos">${i + 1}</td>
           <td class="grid-num">${r.carNumber ?? ''}</td>
-          <td class="grid-driver">${r.driver ?? ''}</td>
-          <td class="grid-team">${teamLabel.toUpperCase()}</td>
+          <td class="grid-driver">${r.driverName ?? ''}</td>
+          <td class="grid-team">${teamLabel}</td>
           <td class="grid-time ${timeStr ? '' : 'grid-notime'}">${timeStr ?? 'NO TIME'}</td>
+          <td class="grid-gap">${gapStr}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -1067,12 +1074,12 @@
 
       const dbody = document.getElementById('stand-driver-body');
       standings.drivers.forEach((d, i) => {
-        const teamObj = snapshot?.teams?.find(t => t.id === d.teamId);
+        const teamObj   = snapshot?.teams?.find(t => t.id === d.teamId);
         const teamLabel = (teamObj?.shortName || d.teamId || '').toUpperCase();
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="stand-pos">${i + 1}</td>
-          <td class="stand-name">${d.driverName ?? ''}</td>
+          <td class="stand-name">${d.name ?? ''}</td>
           <td class="stand-team">${teamLabel}</td>
           <td class="stand-pts">${d.points}</td>
         `;
@@ -1081,8 +1088,8 @@
 
       const cbody = document.getElementById('stand-con-body');
       standings.constructors.forEach((c, i) => {
-        const teamObj = snapshot?.teams?.find(t => t.id === c.teamId);
-        const teamLabel = (teamObj?.shortName || c.teamId || '').toUpperCase();
+        const teamObj   = snapshot?.teams?.find(t => t.id === c.id);
+        const teamLabel = (teamObj?.shortName || c.id || '').toUpperCase();
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="stand-pos">${i + 1}</td>

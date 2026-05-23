@@ -977,7 +977,9 @@ export async function runQualifyingSession(rng, circuit) {
     const trackEvolution = drawOrder.length > 1 ? drawIndex / (drawOrder.length - 1) : 0;
     const result = await simulateQualiLap(car, rng, circuit, trackEvolution);
     rawResults.push({
+      driverId:         car.driver.id,
       driverName:       car.driver.name,
+      carNumber:        car.driver.number,
       teamId:           car.team.id,
       setup:            car.setup,       // carry setup through to race (parc ferme)
       lapTime:          result.lapTime,

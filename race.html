@@ -267,7 +267,7 @@
     .col-tyre-mfr { width: 30px; color: var(--mid); }
     .col-wear    { width: 44px; }
     .col-fuel    { width: 54px; }
-    .col-stops   { width: 34px; color: var(--mid); }
+    .col-stops   { width: 34px; color: var(--mid); display: none; }
     .col-health  { width: 90px; }
 
     /* Driver cell internals */
@@ -462,6 +462,15 @@
     .c-lap    { color: var(--lo); }
     .c-tag    { font-weight: bold; }
     .c-detail { color: var(--mid); }
+    .c-team-mark {
+      display: inline-block;
+      width: 2px;
+      height: 11px;
+      border-radius: 1px;
+      vertical-align: middle;
+      margin: 0;
+      flex-shrink: 0;
+    }
 
     .tag-pit   { color: #e8c400; }
     .tag-out   { color: #ff4444; }
@@ -547,6 +556,7 @@
       border-bottom: 1px solid var(--bg-mid);
     }
     .stand-pos  { width: 28px; color: var(--lo); }
+    .stand-num  { width: 32px; color: var(--mid); }
     .stand-name { color: var(--hi); }
     .stand-team { color: var(--lo); font-size: 10px; }
     .stand-pts  { width: 44px; color: var(--mid); text-align: right; }
@@ -649,6 +659,38 @@
       width: 100px;
     }
 
+    /* ── Live commentary bar ────────────────────────────────────────────────────── */
+    #live-comm-bar {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 10px;
+      background: var(--bg-deep);
+      border-bottom: 1px solid var(--border);
+      min-height: 26px;
+      overflow: hidden;
+    }
+    #live-comm-label {
+      font-size: 8px;
+      letter-spacing: 2px;
+      color: var(--dim);
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    #live-comm-text {
+      font-size: 11px;
+      color: var(--mid);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+    #live-comm-text .c-lap  { color: var(--lo); }
+    #live-comm-text .c-tag  { font-weight: bold; }
+    #live-comm-text .c-detail { color: var(--mid); }
+
     /* ── Not available notice ─────────────────────────────────────────────────── */
     #not-available-notice {
       display: none;
@@ -729,6 +771,12 @@
     <button class="tab-btn" data-panel="stand">STANDINGS</button>
   </div>
 
+  <!-- ── Live commentary bar ───────────────────────────────────────────────────── -->
+  <div id="live-comm-bar">
+    <span id="live-comm-label">LATEST</span>
+    <span id="live-comm-text">—</span>
+  </div>
+
   <!-- ── Not available notice ─────────────────────────────────────────────────── -->
   <div id="not-available-notice"></div>
 
@@ -806,6 +854,7 @@
             <table class="stand-table">
               <thead><tr>
                 <th class="stand-pos">POS</th>
+                <th class="stand-num">#</th>
                 <th class="stand-name">DRIVER</th>
                 <th class="stand-team">TEAM</th>
                 <th class="stand-pts">PTS</th>
@@ -864,9 +913,9 @@
       advanceDevEvent, retreatDevEvent, isDevMode, enterDevMode, exitDevMode,
       getTodayDayOffset, getWorldSeed, setWorldSeed,
       getEventDate, formatShortDate, ensurePastResultsCached,
-      getStandings,
+      getStandings, getStandingsThroughRound,
     } from './championship.js';
-    import { getSeasonSnapshot, getDisplayYear } from './worldstate.js';
+    import { getSeasonSnapshot, getDisplayYear, getCarNumbers } from './worldstate.js';
 
     // ── Dev mode entry via ?dev=1 ──────────────────────────────────────────────
     const params = new URLSearchParams(location.search);
@@ -893,6 +942,23 @@
     const simFns = { initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession, getSeasonSnapshot };
     if (event.season > 1) await ensurePastResultsCached(event.season - 1, simFns);
     const snapshot = getSeasonSnapshot(event.season, worldSeed);
+
+    const carNumbers = getCarNumbers(event.season, worldSeed);
+
+    function getTeamLabel(teamId) {
+      const teamObj = snapshot?.teams?.find(t => t.id === teamId);
+      if (!teamObj) return (teamId || '').toUpperCase();
+      const shortName = (teamObj.shortName || teamObj.id || '').toUpperCase();
+      if (teamObj.isWorks) return shortName;
+      const engineObj = snapshot?.engines?.[teamObj.engine];
+      const engineName = (engineObj?.name || '').toUpperCase();
+      if (!engineName || shortName === engineName) return shortName;
+      return `${shortName} - ${engineName}`;
+    }
+
+    function getTeamColour(teamId) {
+      return snapshot?.teams?.find(t => t.id === teamId)?.colour ?? '#4a6a88';
+    }
 
     // Update info bar
     const circuitNameEl = document.getElementById('circuit-name');
@@ -1028,6 +1094,16 @@
       });
     });
 
+    // ── Live commentary bar ────────────────────────────────────────────────────
+    {
+      const liveCommText = document.getElementById('live-comm-text');
+      const commFeed     = document.getElementById('commentary-feed');
+      new MutationObserver(() => {
+        const latest = commFeed.firstElementChild;
+        if (latest) liveCommText.innerHTML = latest.innerHTML;
+      }).observe(commFeed, { childList: true });
+    }
+
     // ── Build grid from qualifying results ────────────────────────────────────
     function fmtQualTime(secs) {
       if (!secs || secs <= 0) return null;
@@ -1048,13 +1124,15 @@
                        : i === 0   ? 'POLE'
                        : poleTime  ? `+${(r.lapTime - poleTime).toFixed(3)}`
                        : '–';
-        const teamObj  = snapshot?.teams?.find(t => t.id === r.teamId);
-        const teamLabel = (teamObj?.shortName || teamObj?.id || r.teamId || '').toUpperCase();
+        const driverSnap = snapshot?.drivers?.find(d => d.id === r.driverId || d.name === r.driverName);
+        const carNum   = carNumbers.get(driverSnap?.id ?? r.driverId) ?? '';
+        const colour   = getTeamColour(r.teamId);
+        const teamLabel = getTeamLabel(r.teamId);
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="grid-pos">${i + 1}</td>
-          <td class="grid-num">${r.carNumber ?? ''}</td>
-          <td class="grid-driver">${r.driverName ?? ''}</td>
+          <td class="grid-num">${carNum}</td>
+          <td class="grid-driver"><span class="team-dot" style="background:${colour};vertical-align:middle;margin-right:5px;"></span>${r.driverName ?? ''}</td>
           <td class="grid-team">${teamLabel}</td>
           <td class="grid-time ${timeStr ? '' : 'grid-notime'}">${timeStr ?? 'NO TIME'}</td>
           <td class="grid-gap">${gapStr}</td>
@@ -1066,7 +1144,9 @@
 
     // ── Build standings (lazy) ─────────────────────────────────────────────────
     function buildStandings() {
-      const standings = getStandings(event.season);
+      const standings = event.round > 1
+        ? getStandingsThroughRound(event.season, event.round - 1)
+        : null;
       if (!standings || (!standings.drivers?.length && !standings.constructors?.length)) {
         document.getElementById('stand-note').textContent = 'No results yet this season';
         return;
@@ -1074,12 +1154,14 @@
 
       const dbody = document.getElementById('stand-driver-body');
       standings.drivers.forEach((d, i) => {
-        const teamObj   = snapshot?.teams?.find(t => t.id === d.teamId);
-        const teamLabel = (teamObj?.shortName || d.teamId || '').toUpperCase();
+        const colour    = getTeamColour(d.teamId);
+        const teamLabel = getTeamLabel(d.teamId);
+        const num       = carNumbers.get(d.driverId) ?? '';
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="stand-pos">${i + 1}</td>
-          <td class="stand-name">${d.name ?? ''}</td>
+          <td class="stand-num">${num}</td>
+          <td class="stand-name"><span class="team-dot" style="background:${colour};vertical-align:middle;margin-right:5px;"></span>${d.name ?? ''}</td>
           <td class="stand-team">${teamLabel}</td>
           <td class="stand-pts">${d.points}</td>
         `;
@@ -1088,12 +1170,12 @@
 
       const cbody = document.getElementById('stand-con-body');
       standings.constructors.forEach((c, i) => {
-        const teamObj   = snapshot?.teams?.find(t => t.id === c.id);
-        const teamLabel = (teamObj?.shortName || c.id || '').toUpperCase();
+        const colour    = getTeamColour(c.id);
+        const teamLabel = getTeamLabel(c.id);
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="stand-pos">${i + 1}</td>
-          <td class="stand-name">${teamLabel}</td>
+          <td class="stand-name"><span class="team-dot" style="background:${colour};vertical-align:middle;margin-right:5px;"></span>${teamLabel}</td>
           <td class="stand-pts">${c.points}</td>
         `;
         cbody.appendChild(tr);

@@ -295,6 +295,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .t-driver-short { display: none; }
     .t-team-tag {
       font-size: 8px;
       color: var(--mid);
@@ -303,6 +304,12 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    @media (max-width: 600px) and (orientation: portrait) {
+      .t-driver-full { display: none; }
+      .t-driver-short { display: inline; }
+      .t-team-tag { display: none; }
     }
 
     /* Position cell */

@@ -355,11 +355,22 @@ export class Renderer {
         const info = document.createElement('div');
         info.className = 'driver-info';
 
-        const nameDiv = document.createElement('a');
-        nameDiv.className  = 't-driver';
-        nameDiv.href       = `driver.html?id=${car.driver.id}&season=${this.season}`;
-        nameDiv.style.cssText = 'color:inherit;text-decoration:none;';
-        nameDiv.textContent = car.driver.name.toUpperCase();
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 't-driver';
+
+        const fullLink = document.createElement('a');
+        fullLink.className    = 't-driver-full';
+        fullLink.href         = `driver.html?id=${car.driver.id}&season=${this.season}`;
+        fullLink.style.cssText = 'color:inherit;text-decoration:none;';
+        fullLink.textContent  = car.driver.name.toUpperCase();
+
+        const nameParts = car.driver.name.toUpperCase().split(' ');
+        const shortSpan = document.createElement('span');
+        shortSpan.className   = 't-driver-short';
+        shortSpan.textContent = `${nameParts[0][0]} ${nameParts[nameParts.length - 1].slice(0, 3)}`;
+
+        nameDiv.appendChild(fullLink);
+        nameDiv.appendChild(shortSpan);
 
         const tagDiv = document.createElement('div');
         tagDiv.className = 't-team-tag';

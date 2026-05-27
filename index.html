@@ -146,6 +146,14 @@
       color: var(--hi);
       text-transform: uppercase;
       line-height: 1.15;
+      margin-bottom: 8px;
+    }
+
+    .hero-subtitle {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--lo);
+      text-transform: uppercase;
       margin-bottom: 16px;
     }
 
@@ -311,6 +319,7 @@
   <div id="main">
     <div class="hero-eyebrow">TODAY'S RACE</div>
     <div class="hero-race-name" id="hero-race-name">–</div>
+    <div class="hero-subtitle" id="hero-subtitle">–</div>
 
     <div class="hero-circuit-row">
       <img class="event-flag" id="event-flag" src="" alt="" style="display:none">
@@ -385,7 +394,8 @@
       `Today's Race · Round ${event.round} of ${numRounds} · ${year}`;
 
     // ── Hero ───────────────────────────────────────────────────────────────────
-    document.getElementById('hero-race-name').textContent  = `${year} ${circuit.eventName}`;
+    document.getElementById('hero-race-name').textContent   = `${year} ${circuit.eventName}`;
+    document.getElementById('hero-subtitle').textContent    = `World Championship · Round ${event.round} of ${numRounds}`;
     document.getElementById('hero-circuit-name').textContent = circuit.name;
 
     const locationParts = [circuit.location, circuit.country].filter(Boolean);

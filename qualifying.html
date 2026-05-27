@@ -325,6 +325,12 @@
       padding: 2px 4px;
       border-radius: 2px;
     }
+
+    /* ── Responsive: stack panels on narrow screens ─────────────────────────── */
+    @media (max-width: 640px) {
+      #main { flex-direction: column; }
+      #on-track-panel { width: 100%; }
+    }
   </style>
 </head>
 <body>
@@ -362,7 +368,23 @@
 
     <!-- On-track panel -->
     <div id="on-track-panel">
-      <div class="panel-title">ON TRACK</div>
+
+      <div class="control-row">
+        <label>Speed</label>
+        <select id="speed-select">
+          <option value="200">Fast</option>
+          <option value="2350">Normal</option>
+          <option value="4500" selected>Slow</option>
+          <option value="0">Instant</option>
+        </select>
+      </div>
+
+      <button id="btn-start-quali">START QUALIFYING</button>
+      <button id="btn-pause-quali">PAUSE</button>
+      <button id="btn-goto-quali-result">QUALIFYING RESULT →</button>
+      <button id="btn-goto-race">GO TO RACE →</button>
+
+      <div class="panel-title" style="margin-top:12px">ON TRACK</div>
 
       <div id="driver-info-row">
         <div id="driver-colour-bar"></div>
@@ -400,20 +422,6 @@
       </div>
       <div id="draw-progress"></div>
 
-      <div class="control-row">
-        <label>Speed</label>
-        <select id="speed-select">
-          <option value="200">Fast</option>
-          <option value="2350">Normal</option>
-          <option value="4500" selected>Slow</option>
-          <option value="0">Instant</option>
-        </select>
-      </div>
-
-      <button id="btn-start-quali">START QUALIFYING</button>
-      <button id="btn-pause-quali">PAUSE</button>
-      <button id="btn-goto-quali-result">QUALIFYING RESULT →</button>
-      <button id="btn-goto-race">GO TO RACE →</button>
     </div>
 
     <!-- Leaderboard panel -->

@@ -139,6 +139,9 @@ Draws the Spectrum-style timing display onto Canvas:
 - ~~**Home page and calendar split**~~ ✓ Done — `index.html` rewritten as a home page showing today's race (hero, circuit stats, action buttons with spoiler confirm); calendar moved to `calendar.html`; HOME nav link added to all pages.
 - ~~**Live commentary bar**~~ ✓ Done — Always-visible single-line strip in the sticky header mirrors the latest commentary entry via MutationObserver; shows colour-coded tags and team colour mark; visible on all tabs.
 - ~~**Commentary team colour markers**~~ ✓ Done — 2px coloured bar before each driver name in the commentary feed; space between [TAG] and bar, bar flush against name. PASS entries show a second colour bar before the passed driver's name (different team colour).
+- ~~**Home page race subtitle**~~ ✓ Done — "World Championship · Round X of Y" subtitle added below the race title on `index.html`.
+- ~~**Qualifying page mobile layout**~~ ✓ Done — `flex-direction: column` media query at 640px; provisional classification stacks below on-track panel instead of off-screen to the right. Speed selector and start/pause/result buttons moved to top of on-track panel, above the ON TRACK heading.
+- ~~**Qualifying leaderboard update delay**~~ ✓ Done — removed the `sectorPause() × 2` delay between lap result appearing and provisional classification refreshing; classification now updates immediately when position is shown.
 - **GitHub Actions canonical results** — a daily cron job pre-computes all past race and qualifying results and pushes a canonical JSON to the repo. Visitors fetch this instead of computing locally. Eliminates the cold-start cost entirely and enables server-side narrative features (season recaps, RSS feed of results, push notifications). Requires a GitHub Actions workflow, a small Node script to run the simulation headlessly, and a fetch-first / compute-fallback strategy on the client. Worth implementing once the game has real users.
 
 ---

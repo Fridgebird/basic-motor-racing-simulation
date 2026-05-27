@@ -219,25 +219,27 @@
     #timing-table-scroll { overflow-x: auto; }
 
     #timing-table {
-      border-collapse: collapse;
+      border-collapse: separate;
+      border-spacing: 0;
       table-layout: fixed;
     }
 
     /* Frozen columns — POS, #, DRIVER always visible */
-    .col-pos, .col-num, .col-driver { position: sticky; }
+    /* will-change forces a compositor layer so the background paints at the sticky position */
+    .col-pos, .col-num, .col-driver { position: sticky; will-change: transform; }
     .col-pos    { left: 0; }
     .col-num    { left: 38px; }
     .col-driver { left: 70px; border-right: 1px solid var(--border); box-shadow: 4px 0 8px #000; }
     #timing-table th.col-team,
     #timing-table td.col-team { padding-left: 10px; }
-    th.col-pos, th.col-num, th.col-driver { z-index: 2; }
-    td.col-pos, td.col-num, td.col-driver { z-index: 1; }
+    th.col-pos  { z-index: 4; } th.col-num  { z-index: 5; } th.col-driver { z-index: 6; }
+    td.col-pos  { z-index: 1; } td.col-num  { z-index: 2; } td.col-driver { z-index: 3; }
     #timing-table th.col-pos, #timing-table th.col-num, #timing-table th.col-driver,
     #timing-table td.col-pos, #timing-table td.col-num, #timing-table td.col-driver {
       background: var(--bg-deep);
     }
 
-    #timing-table thead tr { border-bottom: 1px solid var(--border); }
+    #timing-table thead th { border-bottom: 1px solid var(--border); }
 
     #timing-table th {
       color: var(--mid);
@@ -307,11 +309,17 @@
     }
 
     @media (max-width: 600px) and (orientation: portrait) {
+      /* Short driver name, no team tag */
       .t-driver-full { display: none; }
       .t-driver-short { display: inline; }
       .t-team-tag { display: none; }
-      .col-tyre-mfr { display: none; }
-      .col-driver { width: 68px; }
+      /* Hide low-priority columns so the 5 essential ones fit without horizontal scrolling */
+      .col-num, .col-tyre-mfr, .col-wear, .col-fuel, .col-health { display: none; }
+      /* Tighten remaining scrollable columns */
+      .col-driver  { width: 68px; left: 38px; }
+      .col-lastlap { width: 65px; }
+      .col-gap     { width: 65px; }
+      .col-tyre    { width: 70px; }
     }
 
     /* Position cell */
@@ -354,7 +362,7 @@
 
     tr.first-retired td { border-top: 1px solid var(--border); padding-top: 5px; }
 
-    #timing-body tr { will-change: transform; }
+    /* will-change intentionally omitted — applied inline by FLIP animation JS only */
 
     @keyframes pass-flash {
       0%   { background-color: rgba(0, 200, 100, 0.30); }

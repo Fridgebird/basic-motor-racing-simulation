@@ -651,7 +651,6 @@
         const provisionalBest = rawResults.filter(r => !r.retired)
           .reduce((best, r) => (best === null || r.lapTime < best ? r.lapTime : best), null);
         showLapResult(result, provisionalBest, rawResults);
-        await delay(sectorPause() * 2);
 
         rawResults.push({
           driverId:         car.driver.id,

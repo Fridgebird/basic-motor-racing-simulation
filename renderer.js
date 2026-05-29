@@ -537,16 +537,12 @@ export class Renderer {
         row.style.transition = 'none';
         row.style.transform  = `translateY(${delta}px)`;
 
-        // Flash: green for rows moving up (gained), red for rows dropping
-        if (delta > 0) row.classList.add('anim-pass');
-        else           row.classList.add('anim-drop');
-
-        // Suppress flash on persistent-state columns — inline style beats CSS cascade
+        // Flash: apply per-cell so icon columns (persistent state) are excluded
+        const flashClass = delta > 0 ? 'anim-pass' : 'anim-drop';
+        const noFlash = ['col-wear', 'col-fuel', 'col-health'];
         for (const td of row.cells) {
-          if (td.classList.contains('col-wear') ||
-              td.classList.contains('col-fuel') ||
-              td.classList.contains('col-health')) {
-            td.style.animationName = 'none';
+          if (!noFlash.some(c => td.classList.contains(c))) {
+            td.classList.add(flashClass);
           }
         }
 
@@ -563,8 +559,7 @@ export class Renderer {
         // Clean up flash classes after the animation completes
         setTimeout(() => {
           for (const row of movedRows) {
-            row.classList.remove('anim-pass', 'anim-drop');
-            for (const td of row.cells) { td.style.animationName = ''; }
+            for (const td of row.cells) { td.classList.remove('anim-pass', 'anim-drop'); }
           }
         }, 650);
       }

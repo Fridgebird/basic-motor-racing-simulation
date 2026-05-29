@@ -429,15 +429,8 @@
       0%   { background-color: rgba(255, 60, 60, 0.22); }
       100% { background-color: transparent; }
     }
-    #timing-table tr.anim-pass td { animation: pass-flash 600ms ease-out forwards; }
-    #timing-table tr.anim-drop td { animation: drop-flash 600ms ease-out forwards; }
-    /* Don't flash status-indicator columns — they carry persistent state, not position info */
-    #timing-table tr.anim-pass td.col-wear,
-    #timing-table tr.anim-pass td.col-fuel,
-    #timing-table tr.anim-pass td.col-health,
-    #timing-table tr.anim-drop td.col-wear,
-    #timing-table tr.anim-drop td.col-fuel,
-    #timing-table tr.anim-drop td.col-health { animation: none !important; }
+    #timing-table td.anim-pass { animation: pass-flash 600ms ease-out forwards; }
+    #timing-table td.anim-drop { animation: drop-flash 600ms ease-out forwards; }
 
     td.warn-red    { color: #ff4444; }
     td.warn-yellow { color: #e8c400; }

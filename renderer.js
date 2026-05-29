@@ -470,22 +470,24 @@ export class Renderer {
         tr.appendChild(tyreTd);
       }
 
-      // WEAR — colour-coded; dot icon on portrait
+      // WEAR — colour-coded; fading dot on portrait (opacity = 1 - wear)
       const wearPct = Math.round(car.tyreWear * 100);
       const wearTd  = document.createElement('td');
       wearTd.className = 'col-wear';
-      wearTd.innerHTML = `<span class="val-full">${wearPct}%</span><span class="val-icon">●</span>`;
+      const wearOpacity = (1 - car.tyreWear).toFixed(2);
+      wearTd.innerHTML = `<span class="val-full">${wearPct}%</span><span class="val-icon tyre-dot" style="opacity:${wearOpacity}">●</span>`;
       if (!retired) {
         if      (wearPct >= 71) wearTd.classList.add('warn-red');
         else if (wearPct >= 41) wearTd.classList.add('warn-yellow');
       }
       tr.appendChild(wearTd);
 
-      // FUEL — colour-coded; dot icon on portrait
-      const fuelKg = Math.round(car.fuel);
-      const fuelTd = document.createElement('td');
+      // FUEL — colour-coded; fill-bar on portrait
+      const fuelKg  = Math.round(car.fuel);
+      const fuelFill = Math.max(0, Math.min(1, car.fuel / (car.fuelCapacity ?? 120)));
+      const fuelTd  = document.createElement('td');
       fuelTd.className = 'col-fuel';
-      fuelTd.innerHTML = `<span class="val-full">${fuelKg}kg</span><span class="val-icon">●</span>`;
+      fuelTd.innerHTML = `<span class="val-full">${fuelKg}kg</span><span class="val-icon fuel-bar" style="--fill:${fuelFill.toFixed(2)}"></span>`;
       if (!retired) {
         if      (fuelKg < 15) fuelTd.classList.add('warn-red');
         else if (fuelKg < 30) fuelTd.classList.add('warn-yellow');
@@ -507,7 +509,7 @@ export class Renderer {
       }
       const healthTd = document.createElement('td');
       healthTd.className = 'col-health';
-      const healthIcon = (retired || car.degradedLabel) ? '<span class="val-icon">●</span>' : '';
+      const healthIcon = (retired || car.degradedLabel) ? '<span class="val-icon health-icon">?</span>' : '';
       healthTd.innerHTML = `<span class="val-full">${healthStr}</span>${healthIcon}`;
       if (retired)               healthTd.classList.add('health-out');
       else if (car.degradedLabel) healthTd.classList.add('health-dmg');

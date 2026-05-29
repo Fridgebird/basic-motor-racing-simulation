@@ -257,6 +257,45 @@
     .val-short { display: none; }
     .val-icon  { display: none; }
 
+    /* Fuel fill-bar */
+    .fuel-bar {
+      display: inline-block;
+      width: 4px;
+      height: 10px;
+      border: 1px solid currentColor;
+      border-radius: 1px;
+      position: relative;
+      vertical-align: middle;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    .fuel-bar::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: calc(var(--fill, 1) * 100%);
+      background: currentColor;
+    }
+
+    /* Tyre dot — opacity reflects freshness */
+    .tyre-dot { vertical-align: middle; font-size: 10px; }
+
+    /* Health question mark in circle */
+    .health-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 11px;
+      height: 11px;
+      border: 1px solid currentColor;
+      border-radius: 50%;
+      font-size: 8px;
+      font-weight: bold;
+      vertical-align: middle;
+      line-height: 1;
+      box-sizing: border-box;
+    }
+
     #timing-table td {
       padding: 3px 5px;
       white-space: nowrap;
@@ -388,6 +427,13 @@
     }
     #timing-table tr.anim-pass td { animation: pass-flash 600ms ease-out forwards; }
     #timing-table tr.anim-drop td { animation: drop-flash 600ms ease-out forwards; }
+    /* Don't flash status-indicator columns — they carry persistent state, not position info */
+    #timing-table tr.anim-pass td.col-wear,
+    #timing-table tr.anim-pass td.col-fuel,
+    #timing-table tr.anim-pass td.col-health,
+    #timing-table tr.anim-drop td.col-wear,
+    #timing-table tr.anim-drop td.col-fuel,
+    #timing-table tr.anim-drop td.col-health { animation: none; }
 
     td.warn-red    { color: #ff4444; }
     td.warn-yellow { color: #e8c400; }

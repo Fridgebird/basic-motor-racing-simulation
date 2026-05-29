@@ -258,11 +258,12 @@
     span.val-icon { display: none; }
 
     /* Fuel fill-bar — nested span fills from bottom */
+    /* Uses --icon-fg so tr.gained/lost colour change does not bleed into the icon */
     .fuel-bar {
       display: inline-block;
       width: 6px;
       height: 12px;
-      border: 1px solid currentColor;
+      border: 1px solid var(--icon-fg);
       border-radius: 1px;
       position: relative;
       vertical-align: middle;
@@ -272,7 +273,7 @@
     .fuel-fill {
       position: absolute;
       bottom: 0; left: 0; right: 0;
-      background: currentColor;
+      background: var(--icon-fg);
     }
 
     /* Tyre wear circle — outlined ring, inner fill fades from full (fresh) to transparent (worn) */
@@ -280,7 +281,7 @@
       display: inline-block;
       width: 13px;
       height: 13px;
-      border: 1px solid currentColor;
+      border: 1px solid var(--icon-fg);
       border-radius: 50%;
       position: relative;
       vertical-align: middle;
@@ -290,12 +291,12 @@
     .tyre-fill {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: currentColor;
+      background: var(--icon-fg);
       border-radius: 50%;
     }
 
     /* Health exclamation mark */
-    .health-icon { vertical-align: middle; font-size: 13px; line-height: 1; }
+    .health-icon { vertical-align: middle; font-size: 13px; line-height: 1; color: var(--icon-fg); }
 
     #timing-table td {
       padding: 3px 5px;
@@ -313,10 +314,10 @@
     .col-gap     { width: 70px; color: var(--mid); }
     .col-tyre    { width: 82px; }
     .col-tyre-mfr { width: 30px; color: var(--mid); }
-    .col-wear    { width: 44px; }
-    .col-fuel    { width: 54px; }
+    .col-wear    { width: 44px; --icon-fg: var(--mid); }
+    .col-fuel    { width: 54px; --icon-fg: var(--mid); }
     .col-stops   { width: 34px; color: var(--mid); display: none; }
-    .col-health  { width: 90px; }
+    .col-health  { width: 90px; --icon-fg: var(--mid); }
 
     /* Driver cell internals */
     .driver-cell {
@@ -366,9 +367,9 @@
       .col-driver { position: static; left: auto; border-right: none; box-shadow: none; }
       /* Compact column widths — sized to fit 320px phones without horizontal scroll */
       .col-driver  { width: 56px; }
-      .col-lastlap { width: 56px; }
+      .col-lastlap { width: 50px; }
       .col-gap     { width: 56px; }
-      .col-tyre    { width: 60px; }
+      .col-tyre    { width: 52px; }
       /* Wear / fuel / health — narrow icon-only columns, centred */
       .col-wear, .col-fuel, .col-health { width: 18px; padding: 3px 2px; text-align: center; }
       /* Show tenths-only values for lap time and gap */
@@ -432,10 +433,10 @@
     #timing-table td.anim-pass { animation: pass-flash 600ms ease-out forwards; }
     #timing-table td.anim-drop { animation: drop-flash 600ms ease-out forwards; }
 
-    td.warn-red    { color: #ff4444; }
-    td.warn-yellow { color: #e8c400; }
-    td.health-out { color: #ff4444; }
-    td.health-dmg { color: #ff8800; }
+    td.warn-red    { color: #ff4444; --icon-fg: #ff4444; }
+    td.warn-yellow { color: #e8c400; --icon-fg: #e8c400; }
+    td.health-out  { color: #ff4444; --icon-fg: #ff4444; }
+    td.health-dmg  { color: #ff8800; --icon-fg: #ff8800; }
 
     /* ── Spacing strip ────────────────────────────────────────────────────────── */
     #strip-panel {
@@ -890,9 +891,9 @@
               <th class="col-driver">DRIVER</th>
               <th class="col-team    hide-mobile">TEAM</th>
               <th class="col-tyre-mfr hide-mobile">TYR</th>
-              <th class="col-lastlap hide-mobile">LAST LAP</th>
+              <th class="col-lastlap hide-mobile">LAST</th>
               <th class="col-gap gap-toggle" id="gap-toggle-header">INT ▾</th>
-              <th class="col-tyre">COMP/AGE</th>
+              <th class="col-tyre">COMP</th>
               <th class="col-wear  hide-mobile">WEAR</th>
               <th class="col-fuel  hide-mobile">FUEL</th>
               <th class="col-stops hide-mobile">STP</th>

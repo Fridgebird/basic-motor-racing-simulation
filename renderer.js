@@ -367,7 +367,7 @@ export class Renderer {
         const nameParts = car.driver.name.toUpperCase().split(' ');
         const shortSpan = document.createElement('span');
         shortSpan.className   = 't-driver-short';
-        shortSpan.textContent = `${nameParts[0][0]} ${nameParts[nameParts.length - 1].slice(0, 3)}`;
+        shortSpan.textContent = nameParts[nameParts.length - 1].slice(0, 3);
 
         nameDiv.appendChild(fullLink);
         nameDiv.appendChild(shortSpan);

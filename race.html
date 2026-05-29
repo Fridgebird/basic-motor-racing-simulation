@@ -372,8 +372,8 @@
       .col-tyre    { width: 52px; }
       /* Wear / fuel / health — narrow icon-only columns, centred */
       .col-wear, .col-fuel, .col-health { width: 18px; padding: 3px 2px; text-align: center; }
-      /* Health header removed — column is icon-only width */
-      th.col-health { font-size: 0; }
+      /* Health header removed — column is icon-only width; needs ID in selector to beat #timing-table th */
+      #timing-table th.col-health { font-size: 0; }
       /* Show tenths-only values for lap time and gap */
       .col-lastlap .val-full, .col-gap .val-full { display: none; }
       .col-lastlap .val-short, .col-gap .val-short { display: inline; }
@@ -442,7 +442,7 @@
 
     /* ── Spacing strip ────────────────────────────────────────────────────────── */
     #strip-panel {
-      flex: 0 0 70px;
+      flex: 0 0 60px;
       display: flex;
       flex-direction: column;
       align-items: stretch;
@@ -450,10 +450,10 @@
     #strip-controls {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
+      gap: 6px;
       height: 20px;
       margin-bottom: 6px;
-      gap: 2px;
     }
     #strip-controls button {
       flex: 0 0 18px;
@@ -962,7 +962,7 @@
         <button id="strip-zoom-in">+</button>
       </div>
       <div id="strip-scroll">
-        <canvas id="spacing-strip" width="64" height="560"></canvas>
+        <canvas id="spacing-strip" width="56" height="560"></canvas>
       </div>
     </div>
 

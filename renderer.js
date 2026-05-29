@@ -395,11 +395,16 @@ export class Renderer {
       // TYRE MFR — single letter: G = Goodyear, P = Pirelli; hidden on mobile
       tr.appendChild(cell(car.tyres.name[0].toUpperCase(), 'col-tyre-mfr hide-mobile'));
 
-      // LAST LAP — hidden on mobile; purple if this driver holds the fastest lap
+      // LAST LAP — full precision desktop, tenths-only on portrait
       {
         const lapTd = document.createElement('td');
-        lapTd.className = 'col-lastlap hide-mobile';
-        lapTd.textContent = car.lastLapTime != null ? formatLapTime(car.lastLapTime) : '—';
+        lapTd.className = 'col-lastlap';
+        if (car.lastLapTime != null) {
+          const full = formatLapTime(car.lastLapTime);
+          lapTd.innerHTML = `<span class="val-full">${full}</span><span class="val-short">${truncToTenths(full)}</span>`;
+        } else {
+          lapTd.textContent = '—';
+        }
         if (this._fastestLap && car.lastLapTime != null
             && car.lastLapTime === this._fastestLap.time
             && car.driver.name === this._fastestLap.driver) {
@@ -425,7 +430,12 @@ export class Renderer {
           : null;
         gapStr = formatGap(interval);
       }
-      tr.appendChild(cell(gapStr, 'col-gap'));
+      {
+        const gapTd = document.createElement('td');
+        gapTd.className = 'col-gap';
+        gapTd.innerHTML = `<span class="val-full">${gapStr}</span><span class="val-short">${truncToTenths(gapStr)}</span>`;
+        tr.appendChild(gapTd);
+      }
 
       // COMP — pip dots for compound history + lap count on current stint
       // Previous stints shown as small dimmed pips; current as full-brightness pip
@@ -460,18 +470,22 @@ export class Renderer {
         tr.appendChild(tyreTd);
       }
 
-      // WEAR — colour-coded; hidden on mobile
+      // WEAR — colour-coded; dot icon on portrait
       const wearPct = Math.round(car.tyreWear * 100);
-      const wearTd  = cell(`${wearPct}%`, 'col-wear hide-mobile');
+      const wearTd  = document.createElement('td');
+      wearTd.className = 'col-wear';
+      wearTd.innerHTML = `<span class="val-full">${wearPct}%</span><span class="val-icon">●</span>`;
       if (!retired) {
         if      (wearPct >= 71) wearTd.classList.add('warn-red');
         else if (wearPct >= 41) wearTd.classList.add('warn-yellow');
       }
       tr.appendChild(wearTd);
 
-      // FUEL — colour-coded; hidden on mobile
+      // FUEL — colour-coded; dot icon on portrait
       const fuelKg = Math.round(car.fuel);
-      const fuelTd = cell(`${fuelKg}kg`, 'col-fuel hide-mobile');
+      const fuelTd = document.createElement('td');
+      fuelTd.className = 'col-fuel';
+      fuelTd.innerHTML = `<span class="val-full">${fuelKg}kg</span><span class="val-icon">●</span>`;
       if (!retired) {
         if      (fuelKg < 15) fuelTd.classList.add('warn-red');
         else if (fuelKg < 30) fuelTd.classList.add('warn-yellow');
@@ -481,7 +495,7 @@ export class Renderer {
       // STOPS — hidden on mobile
       tr.appendChild(cell(String(car.stopsMade), 'col-stops hide-mobile'));
 
-      // HEALTH — damage label or retirement cause
+      // HEALTH — damage label or retirement cause; dot icon on portrait
       let healthStr = '';
       if (retired) {
         const cause = car.retiredReason === 'crash'
@@ -491,8 +505,11 @@ export class Renderer {
       } else if (car.degradedLabel) {
         healthStr = car.degradedLabel.toUpperCase();
       }
-      const healthTd = cell(healthStr, 'col-health');
-      if (retired)              healthTd.classList.add('health-out');
+      const healthTd = document.createElement('td');
+      healthTd.className = 'col-health';
+      const healthIcon = (retired || car.degradedLabel) ? '<span class="val-icon">●</span>' : '';
+      healthTd.innerHTML = `<span class="val-full">${healthStr}</span>${healthIcon}`;
+      if (retired)               healthTd.classList.add('health-out');
       else if (car.degradedLabel) healthTd.classList.add('health-dmg');
       tr.appendChild(healthTd);
 
@@ -1061,4 +1078,13 @@ function formatGap(gap) {
   const m = Math.floor(gap / 60);
   const s = (gap % 60).toFixed(1).padStart(4, '0');
   return `+${m}:${s}`;
+}
+
+// Truncate a formatted time/gap string to tenths for compact portrait display.
+function truncToTenths(s) {
+  if (!s) return s;
+  if (s === 'LEADER')   return 'LDR';
+  if (s === 'INTERVAL') return 'INT';
+  const dot = s.indexOf('.');
+  return dot !== -1 ? s.slice(0, dot + 2) : s;
 }

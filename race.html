@@ -249,7 +249,13 @@
       font-size: 10px;
       letter-spacing: 1px;
       text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
     }
+
+    /* Portrait-compact helpers — hidden by default, shown on portrait mobile */
+    .val-short { display: none; }
+    .val-icon  { display: none; }
 
     #timing-table td {
       padding: 3px 5px;
@@ -313,13 +319,21 @@
       .t-driver-full { display: none; }
       .t-driver-short { display: inline; }
       .t-team-tag { display: none; }
-      /* Hide low-priority columns so the 5 essential ones fit without horizontal scrolling */
-      .col-num, .col-tyre-mfr, .col-wear, .col-fuel, .col-health { display: none; }
-      /* Tighten remaining scrollable columns */
+      /* Hide columns that have no compact representation */
+      .col-num, .col-tyre-mfr { display: none; }
+      /* Compact column widths */
       .col-driver  { width: 68px; left: 38px; }
       .col-lastlap { width: 65px; }
       .col-gap     { width: 65px; }
       .col-tyre    { width: 70px; }
+      /* Wear / fuel / health — narrow icon-only columns */
+      .col-wear, .col-fuel, .col-health { width: 16px; padding: 3px 3px; }
+      /* Show tenths-only values for lap time and gap */
+      .col-lastlap .val-full, .col-gap .val-full { display: none; }
+      .col-lastlap .val-short, .col-gap .val-short { display: inline; }
+      /* Show dot icons for wear / fuel / health; hide full text */
+      .col-wear .val-full, .col-fuel .val-full, .col-health .val-full { display: none; }
+      .col-wear .val-icon, .col-fuel .val-icon, .col-health .val-icon { display: inline; }
     }
 
     /* Position cell */

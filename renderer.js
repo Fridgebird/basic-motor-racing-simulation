@@ -470,24 +470,25 @@ export class Renderer {
         tr.appendChild(tyreTd);
       }
 
-      // WEAR — colour-coded; fading dot on portrait (opacity = 1 - wear)
+      // WEAR — colour-coded; outlined circle whose fill fades on portrait (full = fresh, empty ring = worn)
       const wearPct = Math.round(car.tyreWear * 100);
       const wearTd  = document.createElement('td');
       wearTd.className = 'col-wear';
       const wearOpacity = (1 - car.tyreWear).toFixed(2);
-      wearTd.innerHTML = `<span class="val-full">${wearPct}%</span><span class="val-icon tyre-dot" style="opacity:${wearOpacity}">●</span>`;
+      wearTd.innerHTML = `<span class="val-full">${wearPct}%</span><span class="val-icon tyre-circle"><span class="tyre-fill" style="opacity:${wearOpacity}"></span></span>`;
       if (!retired) {
         if      (wearPct >= 71) wearTd.classList.add('warn-red');
         else if (wearPct >= 41) wearTd.classList.add('warn-yellow');
       }
       tr.appendChild(wearTd);
 
-      // FUEL — colour-coded; fill-bar on portrait
-      const fuelKg  = Math.round(car.fuel);
+      // FUEL — colour-coded; fill-bar on portrait (nested span for reliable height update)
+      const fuelKg   = Math.round(car.fuel);
       const fuelFill = Math.max(0, Math.min(1, car.fuel / (car.fuelCapacity ?? 120)));
-      const fuelTd  = document.createElement('td');
+      const fuelPct  = Math.round(fuelFill * 100);
+      const fuelTd   = document.createElement('td');
       fuelTd.className = 'col-fuel';
-      fuelTd.innerHTML = `<span class="val-full">${fuelKg}kg</span><span class="val-icon fuel-bar" style="--fill:${fuelFill.toFixed(2)}"></span>`;
+      fuelTd.innerHTML = `<span class="val-full">${fuelKg}kg</span><span class="val-icon fuel-bar"><span class="fuel-fill" style="height:${fuelPct}%"></span></span>`;
       if (!retired) {
         if      (fuelKg < 15) fuelTd.classList.add('warn-red');
         else if (fuelKg < 30) fuelTd.classList.add('warn-yellow');
@@ -509,7 +510,7 @@ export class Renderer {
       }
       const healthTd = document.createElement('td');
       healthTd.className = 'col-health';
-      const healthIcon = (retired || car.degradedLabel) ? '<span class="val-icon health-icon">?</span>' : '';
+      const healthIcon = (retired || car.degradedLabel) ? '<span class="val-icon health-icon">&#x2757;&#xFE0E;</span>' : '';
       healthTd.innerHTML = `<span class="val-full">${healthStr}</span>${healthIcon}`;
       if (retired)               healthTd.classList.add('health-out');
       else if (car.degradedLabel) healthTd.classList.add('health-dmg');

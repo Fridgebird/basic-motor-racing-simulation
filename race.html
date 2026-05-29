@@ -257,11 +257,11 @@
     .val-short { display: none; }
     .val-icon  { display: none; }
 
-    /* Fuel fill-bar */
+    /* Fuel fill-bar — nested span fills from bottom */
     .fuel-bar {
       display: inline-block;
-      width: 4px;
-      height: 10px;
+      width: 6px;
+      height: 12px;
       border: 1px solid currentColor;
       border-radius: 1px;
       position: relative;
@@ -269,32 +269,33 @@
       box-sizing: border-box;
       overflow: hidden;
     }
-    .fuel-bar::after {
-      content: '';
+    .fuel-fill {
       position: absolute;
       bottom: 0; left: 0; right: 0;
-      height: calc(var(--fill, 1) * 100%);
       background: currentColor;
     }
 
-    /* Tyre dot — opacity reflects freshness */
-    .tyre-dot { vertical-align: middle; font-size: 10px; }
-
-    /* Health question mark in circle */
-    .health-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 11px;
-      height: 11px;
+    /* Tyre wear circle — outlined ring, inner fill fades from full (fresh) to transparent (worn) */
+    .tyre-circle {
+      display: inline-block;
+      width: 13px;
+      height: 13px;
       border: 1px solid currentColor;
       border-radius: 50%;
-      font-size: 8px;
-      font-weight: bold;
+      position: relative;
       vertical-align: middle;
-      line-height: 1;
       box-sizing: border-box;
+      overflow: hidden;
     }
+    .tyre-fill {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: currentColor;
+      border-radius: 50%;
+    }
+
+    /* Health exclamation mark */
+    .health-icon { vertical-align: middle; font-size: 13px; line-height: 1; }
 
     #timing-table td {
       padding: 3px 5px;
@@ -366,7 +367,7 @@
       .col-gap     { width: 65px; }
       .col-tyre    { width: 70px; }
       /* Wear / fuel / health — narrow icon-only columns */
-      .col-wear, .col-fuel, .col-health { width: 16px; padding: 3px 3px; }
+      .col-wear, .col-fuel, .col-health { width: 18px; padding: 3px 2px; }
       /* Show tenths-only values for lap time and gap */
       .col-lastlap .val-full, .col-gap .val-full { display: none; }
       .col-lastlap .val-short, .col-gap .val-short { display: inline; }
@@ -433,7 +434,7 @@
     #timing-table tr.anim-pass td.col-health,
     #timing-table tr.anim-drop td.col-wear,
     #timing-table tr.anim-drop td.col-fuel,
-    #timing-table tr.anim-drop td.col-health { animation: none; }
+    #timing-table tr.anim-drop td.col-health { animation: none !important; }
 
     td.warn-red    { color: #ff4444; }
     td.warn-yellow { color: #e8c400; }

@@ -51,7 +51,7 @@ export class Renderer {
 
     // Zoom levels — seconds of race gap visible in one strip-height
     this._zoomLevels = [240, 120, 60, 30, 15, 5];
-    this._zoomIdx    = 0;   // start fully zoomed out (240s)
+    this._zoomIdx    = 3;   // default 30s view
 
     const zoomIn  = document.getElementById('strip-zoom-in');
     const zoomOut = document.getElementById('strip-zoom-out');
@@ -215,8 +215,7 @@ export class Renderer {
     this._commentaryFilter = 'all';
     const filterBtn = document.getElementById('commentary-filter-btn');
     if (filterBtn) filterBtn.textContent = 'ALL';
-    this._zoomIdx = 0;
-    if (this._zoomLabel) this._zoomLabel.textContent = `${this._zoomLevels[0]} s`;
+    this._zoomIdx = 3;   // reset to default 30s
     if (this._stripCanvas) {
       this._stripCanvas.getContext('2d')
         .clearRect(0, 0, this._stripCanvas.width, this._stripCanvas.height);

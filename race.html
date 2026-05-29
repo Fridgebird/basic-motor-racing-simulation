@@ -372,6 +372,8 @@
       .col-tyre    { width: 52px; }
       /* Wear / fuel / health — narrow icon-only columns, centred */
       .col-wear, .col-fuel, .col-health { width: 18px; padding: 3px 2px; text-align: center; }
+      /* Health header removed — column is icon-only width */
+      th.col-health { font-size: 0; }
       /* Show tenths-only values for lap time and gap */
       .col-lastlap .val-full, .col-gap .val-full { display: none; }
       .col-lastlap .val-short, .col-gap .val-short { display: inline; }
@@ -957,7 +959,6 @@
     <div id="strip-panel">
       <div id="strip-controls">
         <button id="strip-zoom-out">−</button>
-        <span id="strip-zoom-label">120 s</span>
         <button id="strip-zoom-in">+</button>
       </div>
       <div id="strip-scroll">

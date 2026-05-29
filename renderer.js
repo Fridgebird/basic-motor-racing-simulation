@@ -541,6 +541,15 @@ export class Renderer {
         if (delta > 0) row.classList.add('anim-pass');
         else           row.classList.add('anim-drop');
 
+        // Suppress flash on persistent-state columns — inline style beats CSS cascade
+        for (const td of row.cells) {
+          if (td.classList.contains('col-wear') ||
+              td.classList.contains('col-fuel') ||
+              td.classList.contains('col-health')) {
+            td.style.animationName = 'none';
+          }
+        }
+
         movedRows.push(row);
       }
 
@@ -555,6 +564,7 @@ export class Renderer {
         setTimeout(() => {
           for (const row of movedRows) {
             row.classList.remove('anim-pass', 'anim-drop');
+            for (const td of row.cells) { td.style.animationName = ''; }
           }
         }, 650);
       }

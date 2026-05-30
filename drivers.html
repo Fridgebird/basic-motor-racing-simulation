@@ -30,6 +30,7 @@
     #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--lo); text-align:center; width:100%; animation:pulse 1.6s ease-in-out infinite; }
 
     #page { width:100%; max-width:860px; padding:16px 16px 24px; }
+    #as-of-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-align:right; padding:0 0 8px; }
 
     #controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; width:100%; max-width:860px; padding:8px 16px; }
     #search { font-family:inherit; font-size:10px; letter-spacing:1px; background:var(--bg-mid); border:1px solid var(--border); color:var(--hi); padding:5px 12px; width:180px; outline:none; }
@@ -88,6 +89,7 @@
   <div id="loading-state">COMPUTING HISTORY…</div>
 
   <div id="page" style="display:none">
+    <div id="as-of-label"></div>
     <table id="driver-table">
       <thead>
         <tr>
@@ -114,6 +116,7 @@
     }                          from './worldstate.js';
     import {
       getCurrentEvent, getWorldSeed, getCareerStats, ensurePastResultsCached,
+      getLastCompletedRace, formatAsOfLabel, getStandingsThroughRound,
     }                          from './championship.js';
     import { initRace, cars }  from './state.js';
     import {
@@ -182,20 +185,34 @@
         await ensurePastResultsCached(s, simFns);
       }
 
+      // Build current-season driver standings (before today's race, no spoilers)
+      const lastCompleted = getLastCompletedRace();
+      const csDriverMap = new Map(); // driverId → {wins, pts}
+      if (lastCompleted && lastCompleted.season === currentSeason) {
+        const csStandings = getStandingsThroughRound(currentSeason, lastCompleted.round);
+        csStandings.drivers.forEach(d => {
+          if (d.driverId != null) csDriverMap.set(d.driverId, { wins: d.wins, pts: d.points });
+        });
+      }
+      document.getElementById('as-of-label').textContent = lastCompleted ? formatAsOfLabel(lastCompleted) : '';
+
       const activeRoster = getActiveRoster(currentSeason, worldSeed);
       const activeIds    = new Set(activeRoster.map(e => e.driverId));
 
       const rows = [];
 
       for (const pd of DRIVER_POOL) {
-        const career = getCareerStats(pd.id);
-        if (!career.length) continue; // never raced
+        const career = getCareerStats(pd.id); // completed seasons only (no current-season summary)
+        const cs     = csDriverMap.get(pd.id);
+        if (!career.length && !cs) continue; // never raced
 
         const totals = career.reduce((acc, s) => ({
           wins:   acc.wins   + s.wins,
           titles: acc.titles + (s.champion ? 1 : 0),
           pts:    acc.pts    + s.points,
         }), { wins: 0, titles: 0, pts: 0 });
+        if (cs) { totals.wins += cs.wins; totals.pts += cs.pts; }
+        const seasonCount = career.length + (cs ? 1 : 0);
 
         let status, teamId;
         if (activeIds.has(pd.id)) {
@@ -230,7 +247,7 @@
           <td class="col-name"><a href="driver.html?id=${pd.id}&season=${currentSeason}">${pd.lastName.toUpperCase()}, ${pd.firstName.toUpperCase()}</a></td>
           <td class="col-nat">${flagHtml}</td>
           <td>${teamLink}</td>
-          <td class="col-num">${career.length}</td>
+          <td class="col-num">${seasonCount}</td>
           <td class="col-num">${totals.wins}</td>
           <td class="col-num">${totals.titles}</td>
           <td class="col-num">${totals.pts}</td>

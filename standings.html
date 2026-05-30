@@ -28,7 +28,8 @@
 
     #page { width:100%; max-width:860px; padding:24px 16px; }
 
-    #season-nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    #season-nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    #as-of-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-align:center; padding:0 0 16px; }
     .nav-btn { font-family:inherit; font-size:9px; letter-spacing:1px; color:var(--lo); background:none; border:1px solid var(--border); padding:5px 12px; cursor:pointer; text-transform:uppercase; }
     .nav-btn:hover:not(:disabled) { color:var(--hi); border-color:var(--mid); }
     .nav-btn:disabled { opacity:0.25; cursor:default; }
@@ -77,6 +78,7 @@
       <span id="season-label">—</span>
       <button class="nav-btn" id="btn-next">NEXT ▶</button>
     </div>
+    <div id="as-of-label"></div>
     <div id="standings-wrap">
       <div class="table-section">
         <div class="table-header">DRIVERS' CHAMPIONSHIP</div>
@@ -110,7 +112,8 @@
     import { TEAMS, ENGINES }  from './data.js';
     import { getDisplayYear, getSeasonSnapshot, getTeamEngine } from './worldstate.js';
     import {
-      getCurrentEvent, getWorldSeed, getStandings, ensurePastResultsCached,
+      getCurrentEvent, getWorldSeed, getStandings, getStandingsThroughRound,
+      ensurePastResultsCached, getLastCompletedRace, formatAsOfLabel,
     }                          from './championship.js';
     import { initRace, cars }  from './state.js';
     import {
@@ -130,6 +133,8 @@
     let viewedSeason = parseInt(params.get('season') || currentSeason, 10);
     viewedSeason = Math.max(1, Math.min(viewedSeason, currentSeason));
 
+    let lastCompleted = null; // set after ensurePastResultsCached completes
+
     function teamLabel(teamId, season) {
       const team = TEAMS.find(t => t.id === teamId);
       if (!team) return (teamId || '').toUpperCase();
@@ -146,7 +151,16 @@
       document.getElementById('btn-prev').disabled = season <= 1;
       document.getElementById('btn-next').disabled = season >= currentSeason;
 
-      const { drivers, constructors } = getStandings(season);
+      const asOfEl = document.getElementById('as-of-label');
+      let drivers, constructors;
+      if (season === currentSeason && lastCompleted) {
+        const cutoffRound = lastCompleted.season === currentSeason ? lastCompleted.round : 0;
+        ({ drivers, constructors } = getStandingsThroughRound(season, cutoffRound));
+        asOfEl.textContent = formatAsOfLabel(lastCompleted);
+      } else {
+        ({ drivers, constructors } = getStandings(season));
+        asOfEl.textContent = '';
+      }
 
       const driversTbody = document.getElementById('drivers-tbody');
       driversTbody.innerHTML = '';
@@ -216,6 +230,7 @@
       for (let s = 1; s <= currentSeason; s++) {
         await ensurePastResultsCached(s, simFns);
       }
+      lastCompleted = getLastCompletedRace();
       document.getElementById('loading-state').style.display = 'none';
       document.getElementById('page').style.display = '';
       renderStandings(viewedSeason);

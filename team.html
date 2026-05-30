@@ -28,6 +28,7 @@
 
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
     #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--mid); text-align:center; width:100%; animation:pulse 1.6s ease-in-out infinite; }
+    #as-of-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-align:right; padding:0 0 12px; }
 
     #page { width:100%; max-width:760px; padding:16px 16px 24px; }
 
@@ -120,6 +121,7 @@
   <div id="loading-state">COMPUTING HISTORY…</div>
 
   <div id="page" style="display:none">
+    <div id="as-of-label"></div>
     <div id="profile-card">
       <div id="team-header">
         <div id="livery-bar"></div>
@@ -173,7 +175,8 @@
     }                                       from './worldstate.js';
     import {
       getCurrentEvent, getWorldSeed, getConstructorHistory, loadSeasonSummary,
-      ensurePastResultsCached, getStandings,
+      ensurePastResultsCached, getStandings, getStandingsThroughRound,
+      getLastCompletedRace, formatAsOfLabel,
     }                                       from './championship.js';
     import { initRace, cars }               from './state.js';
     import {
@@ -213,6 +216,10 @@
 
     let viewedSeason = parseInt(params.get('season') || currentSeason, 10);
     viewedSeason = Math.max(1, Math.min(viewedSeason, currentSeason));
+
+    // Set after ensurePastResultsCached completes (spoiler-free cutoff)
+    let lastCompleted            = null;
+    let currentSeasonCtorStandings = null;
 
     function updateCarImage(team, season) {
       const chassisEra = Math.floor((season - 1) / 5) + 1;
@@ -322,13 +329,17 @@
     }
 
     function renderTeam(idx) {
-      const team       = SORTED_TEAMS[idx];
-      const ctorHistory = getConstructorHistory(team.id);
+      const team        = SORTED_TEAMS[idx];
+      const ctorHistory = getConstructorHistory(team.id); // completed seasons only
+      const csEntry     = currentSeasonCtorStandings?.constructors.find(c => c.id === team.id);
+
       const totals = ctorHistory.reduce((acc, s) => ({
         wins:   acc.wins   + s.wins,
         pts:    acc.pts    + s.points,
         titles: acc.titles + (s.champion ? 1 : 0),
       }), { wins:0, pts:0, titles:0 });
+      if (csEntry) { totals.wins += csEntry.wins; totals.pts += csEntry.points; }
+      const seasonCount = ctorHistory.length + (csEntry ? 1 : 0);
 
       document.getElementById('info-bar').textContent        = `Constructor Profile · ${team.name}`;
       document.getElementById('livery-bar').style.background = team.colour;
@@ -348,16 +359,39 @@
       }
 
       document.getElementById('team-meta').textContent       = `${team.nationality.toUpperCase()} · EST. ${getDisplayYear(1)}`;
-      document.getElementById('s-seasons').textContent       = ctorHistory.length || '—';
+      document.getElementById('s-seasons').textContent       = seasonCount || '—';
       document.getElementById('s-wins').textContent          = totals.wins;
       document.getElementById('s-pts').textContent           = totals.pts;
       document.getElementById('s-titles').textContent        = totals.titles;
+
+      document.getElementById('as-of-label').textContent = lastCompleted ? formatAsOfLabel(lastCompleted) : '';
 
       renderSeasonPane(team, viewedSeason);
 
       // History table — most recent first
       const tbody = document.getElementById('history-body');
       tbody.innerHTML = '';
+
+      // Current partial season row (top, most recent)
+      if (csEntry) {
+        const csYear = getDisplayYear(currentSeason);
+        const csPos  = (currentSeasonCtorStandings.constructors.findIndex(c => c.id === team.id) + 1) || '?';
+        const activeRosterNow = getActiveRoster(currentSeason, worldSeed).filter(e => e.teamId === team.id);
+        const csDriverNames   = activeRosterNow.map(e => {
+          const pd = DRIVER_POOL.find(d => d.id === e.driverId);
+          return pd ? pd.lastName : '—';
+        }).join(' / ');
+        const csTr = document.createElement('tr');
+        csTr.innerHTML = `
+          <td class="h-year">${csYear}</td>
+          <td class="h-pos">${csPos}</td>
+          <td>${csDriverNames}</td>
+          <td class="h-pts">${csEntry.points}</td>
+          <td class="h-wins">${csEntry.wins}</td>
+        `;
+        tbody.appendChild(csTr);
+      }
+
       [...ctorHistory].reverse().forEach(hs => {
         const year      = getDisplayYear(hs.season);
         const standings = getStandings(hs.season);
@@ -413,6 +447,10 @@
       for (let s = 1; s <= currentSeason; s++) {
         loadingEl.textContent = `COMPUTING SEASON ${getDisplayYear(s)}…`;
         await ensurePastResultsCached(s, simFns);
+      }
+      lastCompleted = getLastCompletedRace();
+      if (lastCompleted && lastCompleted.season === currentSeason) {
+        currentSeasonCtorStandings = getStandingsThroughRound(currentSeason, lastCompleted.round);
       }
       loadingEl.style.display = 'none';
       document.getElementById('team-nav').style.display = '';

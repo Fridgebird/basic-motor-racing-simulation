@@ -60,6 +60,32 @@ export function getCircuit(event) {
 }
 
 /**
+ * Returns {season, round, circuitId} for the last race that has been completed
+ * before today's event, or null if today is the very first event.
+ */
+export function getLastCompletedRace() {
+  const event = getCurrentEvent();
+  const numRounds = Math.max(...SEASON_SCHEDULE.map(e => e.round));
+  let season = event.season;
+  let round  = event.round - 1;
+  if (round < 1) { season--; round = numRounds; }
+  if (season < 1) return null;
+  const entry = SEASON_SCHEDULE.find(e => e.round === round && e.eventType === 'race');
+  return entry ? { season, round, circuitId: entry.circuitId } : null;
+}
+
+/**
+ * Returns a formatted "as of" label string for display on standings/profile pages.
+ * e.g. "AS OF 1930 · ROUND 3 · GRAN PREMIO DE ARGENTINA"
+ */
+export function formatAsOfLabel(lastCompleted) {
+  if (!lastCompleted) return 'NO RACES COMPLETED';
+  const circuit = CIRCUITS[lastCompleted.circuitId];
+  const year    = 1929 + lastCompleted.season;
+  return `AS OF ${year} · ROUND ${lastCompleted.round} · ${(circuit?.eventName ?? '').toUpperCase()}`;
+}
+
+/**
  * Deterministic seed for a given event.
  * Same event on any device on any day produces the same seed.
  * worldSeed shifts the entire universe — all events get a different outcome.
@@ -303,7 +329,7 @@ export async function ensurePastResultsCached(season, simFns) {
 
   for (let r = 1; r <= numRounds; r++) {
     const absOffset = seasonStart + (r - 1);
-    if (absOffset > todayOffset) break;    // skip future rounds
+    if (absOffset >= todayOffset) break;   // skip today's and future rounds
 
     const circuitId = SEASON_SCHEDULE.find(e => e.round === r).circuitId;
     const circuit   = CIRCUITS[circuitId];
@@ -356,9 +382,16 @@ export async function ensurePastResultsCached(season, simFns) {
     }
   }
 
-  // Build and cache a compact season summary for profile pages
-  if (!loadSeasonSummary(season)) {
-    saveSeasonSummary(season, buildSeasonSummary(season));
+  // Build and cache a compact season summary for profile pages.
+  // Only write for fully-completed seasons; clear any stale summary for in-progress ones.
+  const isSeasonComplete = (seasonStart + numRounds - 1) < todayOffset;
+  if (isSeasonComplete) {
+    if (!loadSeasonSummary(season)) {
+      saveSeasonSummary(season, buildSeasonSummary(season));
+    }
+  } else {
+    const staleKey = SEASON_SUMMARY_KEY(season);
+    if (localStorage.getItem(staleKey)) localStorage.removeItem(staleKey);
   }
 }
 

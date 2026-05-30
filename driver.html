@@ -56,6 +56,7 @@
     .stat-value { font-size:18px; color:var(--hi); letter-spacing:1px; }
     .stat-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
 
+    #as-of-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-align:right; padding:8px 0 4px; }
     #season-history { border:1px solid var(--border); }
     .history-header { padding:6px 12px; font-size:9px; letter-spacing:2px; color:var(--lo); border-bottom:1px solid var(--border); background:var(--bg-deep); }
     .history-table { width:100%; border-collapse:collapse; }
@@ -117,6 +118,8 @@
       </div>
     </div>
 
+    <div id="as-of-label"></div>
+
     <div id="season-history">
       <div class="history-header">SEASON HISTORY</div>
       <table class="history-table">
@@ -143,7 +146,7 @@
     }                               from './worldstate.js';
     import {
       getCurrentEvent, getWorldSeed, getCareerStats, ensurePastResultsCached,
-      getStandings,
+      getStandings, getStandingsThroughRound, getLastCompletedRace, formatAsOfLabel,
     }                               from './championship.js';
     import { initRace, cars }       from './state.js';
     import {
@@ -176,6 +179,10 @@
       const found = viewIds.indexOf(requestedId);
       if (found >= 0) currentIdx = found;
     }
+
+    // Set after ensurePastResultsCached completes (spoiler-free cutoff)
+    let lastCompleted      = null;
+    let currentSeasonStandings = null;
 
     const NAT_CODE = {
       'american':'us',   'argentinian':'ar', 'australian':'au', 'austrian':'at',
@@ -241,8 +248,10 @@
       document.getElementById('driver-meta').textContent = `${nat} · Born ${birthYear ?? '—'} · Age ${age}`;
       document.getElementById('info-bar').textContent    = `Driver Profile · ${poolDriver.firstName} ${poolDriver.lastName}`;
 
-      // Career stats needed here for departure reason and below for totals/table
+      // Career stats: completed seasons from summaries (no current-season summary = no spoiler)
       const career = getCareerStats(dId);
+      // Current partial season (before today's race)
+      const csEntry = currentSeasonStandings?.drivers.find(d => d.driverId === dId);
 
       const teamDot  = document.getElementById('team-dot');
       const teamName = document.getElementById('team-name');
@@ -267,8 +276,15 @@
         pts:    acc.pts    + s.points,
         champs: acc.champs + (s.champion ? 1 : 0),
       }), { races:0, wins:0, pods:0, pts:0, champs:0 });
+      if (csEntry) {
+        totals.wins += csEntry.wins;
+        totals.pods += csEntry.podiums;
+        totals.pts  += csEntry.points;
+        totals.races += lastCompleted?.season === currentSeason ? lastCompleted.round : 0;
+      }
+      const seasonCount = career.length + (csEntry ? 1 : 0);
 
-      document.getElementById('s-seasons').textContent = career.length || '—';
+      document.getElementById('s-seasons').textContent = seasonCount || '—';
       document.getElementById('s-races').textContent   = totals.races  || '—';
       document.getElementById('s-wins').textContent    = totals.wins;
       document.getElementById('s-podiums').textContent = totals.pods;
@@ -278,6 +294,24 @@
       // History table — most recent season first
       const tbody = document.getElementById('history-body');
       tbody.innerHTML = '';
+
+      // Current partial season row (top, most recent)
+      if (csEntry) {
+        const csYear = getDisplayYear(currentSeason);
+        const csPos  = (currentSeasonStandings.drivers.findIndex(d => d.driverId === dId) + 1) || '?';
+        const csTeam = TEAMS.find(t => t.id === csEntry.teamId);
+        const csTName = csTeam ? csTeam.shortName.toUpperCase() : '—';
+        const csTr = document.createElement('tr');
+        csTr.innerHTML = `
+          <td class="h-year">${csYear}</td>
+          <td><a href="team.html?id=${csEntry.teamId}&season=${currentSeason}">${csTName}</a></td>
+          <td class="h-pos">${csPos}</td>
+          <td class="h-pts">${csEntry.points}</td>
+          <td class="h-wins">${csEntry.wins}</td>
+        `;
+        tbody.appendChild(csTr);
+      }
+
       [...career].reverse().forEach(hs => {
         const year     = getDisplayYear(hs.season);
         const standings = getStandings(hs.season);
@@ -297,6 +331,8 @@
         tbody.appendChild(tr);
       });
 
+      document.getElementById('as-of-label').textContent = lastCompleted ? formatAsOfLabel(lastCompleted) : '';
+
       const isRetiredView = viewIds.length === 1 && !activeDriverIds.includes(viewIds[0]);
       document.getElementById('driver-counter').textContent = isRetiredView ? 'RETIRED' : `${idx + 1} / ${viewIds.length}`;
       document.getElementById('btn-prev').disabled = idx === 0;
@@ -311,6 +347,10 @@
     (async () => {
       for (let s = 1; s <= currentSeason; s++) {
         await ensurePastResultsCached(s, simFns);
+      }
+      lastCompleted = getLastCompletedRace();
+      if (lastCompleted && lastCompleted.season === currentSeason) {
+        currentSeasonStandings = getStandingsThroughRound(currentSeason, lastCompleted.round);
       }
       document.getElementById('loading-state').style.display = 'none';
       document.getElementById('driver-nav').style.display = '';

@@ -710,7 +710,7 @@ export class Renderer {
       const verb   = wheelToWheelVerb(entry.sector);
       const passedCar    = this._displayCars?.find(c => c.driver.name === ev.passed);
       const passedColour = passedCar?.team?.colour ?? '#4a6a88';
-      detail   = `${entry.car.toUpperCase()} ${verb} <span class="c-team-mark" style="background:${passedColour}"></span>${ev.passed.toUpperCase()}${posStr}`;
+      detail   = `${entry.car.toUpperCase()} ${verb} <span class="c-team-mark" style="color:${passedColour}">■</span>${ev.passed.toUpperCase()}${posStr}`;
 
     } else {
       return null;
@@ -724,7 +724,7 @@ export class Renderer {
     div.innerHTML =
       `<span class="c-lap">${lapStr}</span> ` +
       `<span class="c-tag ${tagClass}">[${tag}]</span> ` +
-      `<span class="c-team-mark" style="background:${teamColour}"></span>` +
+      `<span class="c-team-mark" style="color:${teamColour}">■</span>` +
       `<span class="c-detail">${detail}</span>`;
     return div;
   }

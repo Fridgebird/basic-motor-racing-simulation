@@ -823,12 +823,15 @@
       pv.textContent = '–';
       pv.className   = 'pos-value';
       const portraitEl = document.getElementById('driver-portrait');
-      portraitEl.textContent              = '';
+      portraitEl.textContent              = '🏁';
       portraitEl.style.backgroundImage    = '';
       portraitEl.style.backgroundSize     = '';
       portraitEl.style.backgroundPosition = '';
-      portraitEl.style.backgroundColor    = '';
-      portraitEl.style.color              = '';
+      portraitEl.style.backgroundColor    = 'transparent';
+      portraitEl.style.color              = 'var(--hi)';
+      portraitEl.style.fontSize           = '28px';
+      portraitEl.style.lineHeight         = '46px';
+      portraitEl.style.textAlign          = 'center';
     }
 
     function formatTime(seconds) {

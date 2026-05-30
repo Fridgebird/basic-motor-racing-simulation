@@ -252,7 +252,7 @@ export class Renderer {
       lapSector = currentCircuit ? `${currentCircuit.totalLaps} LAPS` : '';
     } else if (lap >= currentCircuit.totalLaps && sector >= 3) {
       status    = `FINISHED · ${running} CLASSIFIED`;
-      lapSector = `LAP ${currentCircuit.totalLaps} / ${currentCircuit.totalLaps}`;
+      lapSector = `🏁 LAP ${currentCircuit.totalLaps} / ${currentCircuit.totalLaps}`;
     } else {
       status    = `${running} RUNNING`;
       lapSector = `LAP ${lap} / ${currentCircuit.totalLaps}   S${sector}`;
@@ -363,13 +363,15 @@ export class Renderer {
         fullLink.style.cssText = 'color:inherit;text-decoration:none;';
         fullLink.textContent  = car.driver.name.toUpperCase();
 
-        const nameParts = car.driver.name.toUpperCase().split(' ');
-        const shortSpan = document.createElement('span');
-        shortSpan.className   = 't-driver-short';
-        shortSpan.textContent = nameParts[nameParts.length - 1].slice(0, 3);
+        const nameParts  = car.driver.name.toUpperCase().split(' ');
+        const shortLink  = document.createElement('a');
+        shortLink.className   = 't-driver-short';
+        shortLink.href        = `driver.html?id=${car.driver.id}&season=${this.season}`;
+        shortLink.style.cssText = 'color:inherit;text-decoration:none;';
+        shortLink.textContent = nameParts[nameParts.length - 1].slice(0, 3);
 
         nameDiv.appendChild(fullLink);
-        nameDiv.appendChild(shortSpan);
+        nameDiv.appendChild(shortLink);
 
         const tagDiv = document.createElement('div');
         tagDiv.className = 't-team-tag';

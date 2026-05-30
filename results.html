@@ -553,12 +553,13 @@
         // Champion declaration — shown only on the final round result
         const lastRound = Math.max(...SEASON_SCHEDULE.map(e => e.round));
         if (round === lastRound && drivers.length && constructors.length) {
+          const displayYear = 1929 + season;
           const banner = document.createElement('div');
           banner.className = 'champion-banner';
           banner.innerHTML = `
-            <div class="champion-label">Season ${season} · Drivers' World Champion</div>
+            <div class="champion-label">${displayYear} · Drivers' World Champion</div>
             <div class="champion-name">${drivers[0].name.toUpperCase()}</div>
-            <div class="champion-label" style="margin-top:12px">Season ${season} · Constructors' Champion</div>
+            <div class="champion-label" style="margin-top:12px">${displayYear} · Constructors' Champion</div>
             <div class="champion-name">${displayTeam(constructors[0].id)}</div>
           `;
           panel.appendChild(banner);

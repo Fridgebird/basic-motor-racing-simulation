@@ -51,16 +51,16 @@ export const TYRE_MANUFACTURERS = TYRES;
 
 export const COMPOUNDS = {
   soft: {
-    wearMultiplier: 1.4,
+    wearMultiplier: 1.40,
     gripModifier:   10,
   },
   medium: {
-    wearMultiplier: 1.0,
+    wearMultiplier: 0.85,  // more durable — covers 20–30 lap closing stints
     gripModifier:    0,
   },
   hard: {
-    wearMultiplier: 0.75,
-    gripModifier:  -30,
+    wearMultiplier: 0.50,  // ~2.8× longer than soft; justifies 1% fresh pace deficit
+    gripModifier:   -8,    // ~1% slower fresh (was -30 → ~2.4% — too harsh)
   },
 };
 

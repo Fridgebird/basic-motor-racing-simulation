@@ -60,7 +60,7 @@ export const COMPOUNDS = {
   },
   hard: {
     wearMultiplier: 0.50,  // ~2.8× longer than soft; justifies 1% fresh pace deficit
-    gripModifier:   -8,    // ~1% slower fresh (was -30 → ~2.4% — too harsh)
+    gripModifier:   -4,    // ~0.5s/lap slower fresh — below breakeven where hard wins overall
   },
 };
 

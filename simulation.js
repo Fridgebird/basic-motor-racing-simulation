@@ -100,7 +100,10 @@ export function initStrategies(rng) {
     const estLaps        = estimateStintLaps(car, startCompound);
     const burnPerLap     = currentCircuit.baseFuelBurnPerLap * car.engine.fuelBurnRate;
     const fuelMarginLaps = car.team.strategy.fuelMarginLaps;
-    const fuelLapsTarget = estLaps + fuelMarginLaps;
+    // Cap at race distance — no point loading fuel for more laps than the race has.
+    // Without this, hard starters (whose stint estimate may exceed total laps) fill to tank capacity.
+    const stintCapped    = Math.min(estLaps, currentCircuit.totalLaps);
+    const fuelLapsTarget = stintCapped + fuelMarginLaps;
     car.fuel        = Math.min(car.fuelCapacity, Math.ceil(fuelLapsTarget * burnPerLap));
     car.compound    = startCompound;
     car.tyreHistory = [startCompound[0].toUpperCase()];
@@ -595,7 +598,7 @@ function chooseStartingCompound(car, rng) {
 //   only hard can reach, OR nothing can reach → full aggression-based distribution (S/M/H)
 //
 // An aggressive driver may always choose a softer compound (accepting an extra stop).
-// A harder-than-necessary compound is never chosen — if medium makes the flag, hard won't be.
+// Conservative drivers may choose hard even when medium makes the flag (35% weight × (1-aggression)).
 // One rng() call always consumed so the sequence stays deterministic.
 function chooseNextCompound(car, rng) {
   const lapsRemaining = currentCircuit.totalLaps - race.lap;
@@ -622,8 +625,11 @@ function chooseNextCompound(car, rng) {
     chosen = 'soft';
 
   } else if (minViable === 'medium') {
-    // Medium is softest viable — soft (extra stop) or medium by aggression; never hard
-    chosen = roll < pSoft ? 'soft' : 'medium';
+    // Medium is softest viable — soft (extra stop), medium, or hard (conservative drivers)
+    const pHardHere = (1 - agg) * 0.35;
+    if      (roll < pSoft)            chosen = 'soft';
+    else if (roll < 1 - pHardHere)   chosen = 'medium';
+    else                              chosen = 'hard';
 
   } else {
     // Only hard makes the flag, or nothing does — full aggression distribution

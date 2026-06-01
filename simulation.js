@@ -590,22 +590,59 @@ function chooseStartingCompound(car, rng) {
   return 'hard';
 }
 
-// At each pit stop: choose compound based on what can reach the flag and driver aggression.
+// At each pit stop: choose the fastest compound for remaining laps using pace estimation.
 //
-// Rule (softest-viable constraint):
-//   soft can reach  → always soft (no reason to be harder)
-//   medium can reach (not soft) → soft or medium by aggressiveness; hard excluded
-//   only hard can reach, OR nothing can reach → full aggression-based distribution (S/M/H)
+// Rule (fastest-viable):
+//   For each compound that can reach the flag, compute average tyre factor over the
+//   remaining laps via midpoint-wear approximation (same technique as crossoverPitBenefits).
+//   Pick the compound with the lowest average factor — ties broken in favour of harder
+//   (iterate hard→medium→soft with strict <, so hard wins on equal pace).
 //
-// An aggressive driver may always choose a softer compound (accepting an extra stop).
-// Conservative drivers may choose hard even when medium makes the flag (35% weight × (1-aggression)).
-// One rng() call always consumed so the sequence stays deterministic.
+//   Aggression-based variance is applied to the fastest-viable result:
+//   - fastest is soft  : always soft (already the aggressive/fast choice)
+//   - fastest is medium: pSoftGamble = agg × 0.25  (driver gambles on softer for more sprint)
+//   - fastest is hard  : pSoft = agg × 0.10, pMedium = agg × 0.25  (driver risks extra stop)
+//   - no viable compound: full aggression distribution (S/M/H), unchanged from before
+//
+// minViable (softest viable) preserved in return value for race-log compat.
+// One rng() call always consumed so the RNG sequence stays deterministic.
 function chooseNextCompound(car, rng) {
-  const lapsRemaining = currentCircuit.totalLaps - race.lap;
-  const estimates     = {};
+  const lapsRemaining  = currentCircuit.totalLaps - race.lap;
+  const aggressionMult = 1.0 + (car.driver.aggression / 100) * AGGRESSION_WEAR_SCALE;
+  const sumWearWeights = currentCircuit.sectors.reduce((s, sec) => s + sec.wearWeight, 0);
 
-  // Find the softest compound that can reach the flag
-  let minViable = null;
+  let fuelWearMult = 1.0;
+  if (car.team.strategy.tyreLifeModel === 'fuelCorrected') {
+    const estAvgFuel = car.fuelCapacity * 0.35;
+    fuelWearMult = 1.0 + (estAvgFuel / car.fuelCapacity) * FUEL_WEAR_COEFF;
+  }
+
+  function wearPerLapFor(compound) {
+    return car.tyres.wearRate
+      * COMPOUNDS[compound].wearMultiplier
+      * sumWearWeights
+      * aggressionMult
+      * fuelWearMult
+      * currentCircuit.trackAbrasiveness
+      * (currentCircuit.lengthKm / REFERENCE_CIRCUIT_KM);
+  }
+
+  function tyreFactorAt(wear, compound) {
+    const effectiveMaxGrip = Math.min(100, car.tyres.maxGrip + COMPOUNDS[compound].gripModifier);
+    const grip = (effectiveMaxGrip / 100) * Math.max(0, 1 - wear);
+    return 1.0 + (1 - grip) * tyreConfig.penaltyCoeff;
+  }
+
+  // Average tyre factor for a fresh compound over lapsRemaining — midpoint approximation
+  function avgFactorFor(compound) {
+    const wpl     = wearPerLapFor(compound);
+    const endWear = Math.min(1.0, lapsRemaining * wpl);
+    return tyreFactorAt(endWear / 2, compound);
+  }
+
+  const estimates = {};
+  let minViable = null;  // softest viable — kept for race-log compat
+
   for (const compound of ['soft', 'medium', 'hard']) {
     const estLaps  = estimateStintLaps(car, compound);
     const canReach = estLaps >= lapsRemaining;
@@ -613,29 +650,42 @@ function chooseNextCompound(car, rng) {
     if (canReach && minViable === null) minViable = compound;
   }
 
-  // Aggression-based probabilities (same as starting compound)
+  // Find fastest viable — iterate hardest first so ties favour the harder compound
+  let fastestViable = null;
+  let fastestFactor = Infinity;
+  for (const compound of ['hard', 'medium', 'soft']) {
+    if (!estimates[compound].canReach) continue;
+    const f = avgFactorFor(compound);
+    if (f < fastestFactor) { fastestFactor = f; fastestViable = compound; }
+  }
+
   const agg   = car.driver.aggression / 100;
   const pSoft = agg * 0.75;
   const pHard = (1 - agg) * 0.55;
   const roll  = rng();  // always consumed
 
   let chosen;
-  if (minViable === 'soft') {
-    // Soft makes the flag — always soft regardless of aggressiveness
+  if (!fastestViable) {
+    // Nothing reaches the flag — full aggression distribution
+    if      (roll < pSoft)      chosen = 'soft';
+    else if (roll < 1 - pHard)  chosen = 'medium';
+    else                        chosen = 'hard';
+
+  } else if (fastestViable === 'soft') {
+    // Soft is fastest and viable — always take it
     chosen = 'soft';
 
-  } else if (minViable === 'medium') {
-    // Medium is softest viable — soft (extra stop), medium, or hard (conservative drivers)
-    const pHardHere = (1 - agg) * 0.35;
-    if      (roll < pSoft)            chosen = 'soft';
-    else if (roll < 1 - pHardHere)   chosen = 'medium';
-    else                              chosen = 'hard';
+  } else if (fastestViable === 'medium') {
+    // Medium is fastest — aggressive drivers may gamble on soft for a sprint finish
+    chosen = roll < agg * 0.25 ? 'soft' : 'medium';
 
   } else {
-    // Only hard makes the flag, or nothing does — full aggression distribution
-    if      (roll < pSoft)       chosen = 'soft';
-    else if (roll < 1 - pHard)  chosen = 'medium';
-    else                         chosen = 'hard';
+    // Hard is fastest — some drivers still gamble on softer compounds
+    const pSoftGamble   = agg * 0.10;
+    const pMediumGamble = agg * 0.25;
+    if      (roll < pSoftGamble)                  chosen = 'soft';
+    else if (roll < pSoftGamble + pMediumGamble)  chosen = 'medium';
+    else                                           chosen = 'hard';
   }
 
   return { compound: chosen, estimates, minViable };

@@ -51,15 +51,15 @@ export const TYRE_MANUFACTURERS = TYRES;
 
 export const COMPOUNDS = {
   soft: {
-    wearMultiplier: 1.40,
+    wearMultiplier: 2.80,  // ~15 laps on medium circuit, ~9 on abrasive — a genuine gamble
     gripModifier:   10,
   },
   medium: {
-    wearMultiplier: 0.85,  // more durable — covers 20–30 lap closing stints
+    wearMultiplier: 0.85,  // ~49 laps on medium circuit — comfortable one-stopper
     gripModifier:    0,
   },
   hard: {
-    wearMultiplier: 0.50,  // ~2.8× longer than soft; justifies 1% fresh pace deficit
+    wearMultiplier: 0.50,  // ~84 laps — can reach the flag with no stop on most circuits
     gripModifier:   -4,    // ~0.5s/lap slower fresh — below breakeven where hard wins overall
   },
 };

@@ -641,26 +641,23 @@ function chooseNextCompound(car, rng) {
   return { compound: chosen, estimates, minViable };
 }
 
-// Returns true if switching to a fresh viable compound now yields a net time
-// benefit over running on the current worn compound.
+// Returns true if switching to a fresh compound now yields a net time benefit.
 //
-// Two conditions must BOTH hold:
+// ONE-STOP BRANCH (viableCompound exists — one compound can reach the flag):
+//   Two conditions must both hold:
+//   - MARGINAL: current worn lap time >= last lap on fresh new compound
+//     (no pit cost here — both "stop now" and "stop later" share one stop, cost cancels)
+//   - COST-BENEFIT: total gain over remaining laps exceeds pit stop cost
+//     (prevents elective stops too late to claw back pit-lane time)
 //
-//   MARGINAL CONDITION — timing
-//     The lap time on the current worn compound THIS lap is at least as slow as
-//     the lap time the car would have on the very LAST lap of a fresh new-compound
-//     stint. This is the derivative condition for the optimal one-stop pit lap:
-//     no pit-stop cost appears here because in the "stop now vs stop later" case
-//     both options share exactly one stop and the cost cancels out.
-//
-//   COST-BENEFIT GATE — elective stop guard
-//     The total estimated time saving over the remaining laps exceeds the pit
-//     stop cost. This prevents an elective stop late in the race when there are
-//     too few laps left to claw back the pit-lane time loss.
-//
-// Only fires when a viable compound exists (one that reaches the flag).
-// Multi-stop situations — where no compound can reach the flag — are left to
-// the normal wear trigger.
+// MULTI-STOP BRANCH (no compound reaches the flag):
+//   Asks: is stopping NOW for fresh tyres worth the extra pit stop, given the pace
+//   gained over the laps until the natural wear trigger fires anyway?
+//   - Compares average tyre factor on worn current compound vs fresh soft over
+//     those laps, using midpoint approximation (same as one-stop branch).
+//   - Aggression-based threshold: aggressive drivers (agg≈1) accept gains of ~30%
+//     of pit cost; conservative drivers (agg≈0) require ~80% of pit cost.
+//   - Guards: skip if < 10 laps remain or wear trigger is < 5 laps away.
 function crossoverPitBenefits(car) {
   const lapsRemaining  = currentCircuit.totalLaps - race.lap;
   const aggressionMult = 1.0 + (car.driver.aggression / 100) * AGGRESSION_WEAR_SCALE;
@@ -691,6 +688,8 @@ function crossoverPitBenefits(car) {
     return 1.0 + (1 - grip) * tyreConfig.penaltyCoeff;
   }
 
+  const baseLapTime = currentCircuit.sectors.reduce((s, sec) => s + sec.baseSectorTime, 0);
+
   // ── 1. Find softest viable compound ──────────────────────────────────────
   let viableCompound = null;
   let wpl_new        = 0;
@@ -703,9 +702,35 @@ function crossoverPitBenefits(car) {
       break;
     }
   }
-  if (!viableCompound) return false;  // multi-stop territory — leave to wear trigger
 
-  // ── 2. Marginal condition ─────────────────────────────────────────────────
+  // ── Multi-stop branch ─────────────────────────────────────────────────────
+  if (!viableCompound) {
+    if (lapsRemaining < 10) return false;
+
+    const wpl_current    = wearPerLapFor(car.compound);
+    const lapsToTrigger  = (car.team.strategy.wearTrigger - car.tyreWear) / wpl_current;
+    if (lapsToTrigger < 5) return false;  // wear trigger nearly due anyway
+
+    // Average factor on worn current compound from now until natural trigger
+    const wornEndWear  = Math.min(1.0, car.tyreWear + lapsToTrigger * wpl_current);
+    const tf_worn_avg  = tyreFactorAt((car.tyreWear + wornEndWear) / 2, car.compound);
+
+    // Average factor on fresh soft for the same number of laps
+    const wpl_soft     = wearPerLapFor('soft');
+    const freshEndWear = Math.min(1.0, lapsToTrigger * wpl_soft);
+    const tf_fresh_avg = tyreFactorAt(freshEndWear / 2, 'soft');
+
+    const paceGainPerLap = (tf_worn_avg - tf_fresh_avg) * baseLapTime;
+    if (paceGainPerLap <= 0) return false;
+
+    const tyreChangeTime = currentCircuit.baseTyreChangeTime * (1 + (1 - car.team.pitCrewRating / 100));
+    const pitCostEst     = currentCircuit.pitLaneTime + tyreChangeTime;
+    const agg            = car.driver.aggression / 100;
+
+    return (paceGainPerLap * lapsToTrigger) > pitCostEst * (1 - agg * 0.7);
+  }
+
+  // ── 2. Marginal condition (one-stop branch) ───────────────────────────────
   // Pit if: current worn lap time >= last lap time on fresh new compound
   const tf_current    = tyreFactorAt(car.tyreWear, car.compound);
   const wearEndNew    = Math.min(1.0, lapsRemaining * wpl_new);
@@ -713,7 +738,7 @@ function crossoverPitBenefits(car) {
 
   if (tf_current < tf_newLastLap) return false;  // not yet at the crossover
 
-  // ── 3. Cost-benefit gate ──────────────────────────────────────────────────
+  // ── 3. Cost-benefit gate (one-stop branch) ────────────────────────────────
   // Verify total gain over remaining stint exceeds pit stop cost.
   // Uses midpoint-of-stint average wear for both compounds.
   const wpl_current     = wearPerLapFor(car.compound);
@@ -721,7 +746,6 @@ function crossoverPitBenefits(car) {
   const tf_currentAvg   = tyreFactorAt((car.tyreWear + wearEndCurrent) / 2, car.compound);
   const tf_newAvg       = tyreFactorAt(wearEndNew / 2, viableCompound);
 
-  const baseLapTime   = currentCircuit.sectors.reduce((s, sec) => s + sec.baseSectorTime, 0);
   const avgGainPerLap = (tf_currentAvg - tf_newAvg) * baseLapTime;
   if (avgGainPerLap <= 0) return false;  // new compound not faster on average
 

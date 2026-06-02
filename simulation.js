@@ -12,14 +12,19 @@ import { COMPOUNDS, CIRCUIT as DEFAULT_CIRCUIT } from './data.js';
 // Active circuit — set once before running qualifying or a race.
 // Defaults to the backwards-compat CIRCUIT alias (Montjuïc) until explicitly changed.
 let currentCircuit = DEFAULT_CIRCUIT;
+let currentDisplayYear = 1930;
 
-/** Set the circuit for the upcoming qualifying session or race. */
-export function setCurrentCircuit(circuit) {
+/** Set the circuit for the upcoming qualifying session or race.
+ *  Pass displayYear (e.g. getDisplayYear(season)) so era-aware failure labels
+ *  reflect the correct technology period.
+ */
+export function setCurrentCircuit(circuit, displayYear = 1930) {
   // Precompute sumFuelWeights so fuelBurnPerSector always integrates to
   // exactly baseFuelBurnPerLap × fuelBurnRate per lap, regardless of how
   // the individual sector fuelWeight values are distributed.
   const sumFuelWeights = circuit.sectors.reduce((s, sec) => s + sec.fuelWeight, 0);
   currentCircuit = { ...circuit, sumFuelWeights };
+  currentDisplayYear = displayYear;
 }
 import { cars, race, raceLog, lapChartData, updatePositions } from './state.js';
 
@@ -37,11 +42,14 @@ const CRASH_SCALE = 0.004;
 // Spins also apply a flat-spot wear spike to the tyre.
 const SLOW_SCALE  = 0.018;
 
-// Reliability check happens once per lap.
-// At FAILURE_SCALE=0.016, McLaren (engine 85, chassis 92) has ~0.35% failure chance per lap
-// → ~22% any-failure probability over 70 laps; ~7% retirement.
-// Arrows (Megatron, engine 62, chassis 70): ~0.87% → ~46% any failure; ~14% retirement.
-const FAILURE_SCALE = 0.016;
+// Reliability checks happen once per lap — engine and chassis independently.
+// ENGINE_FAILURE_SCALE: at 0.028, midfield engine (reliability 75) has 0.70% chance/lap
+//   → ~39% any engine event over 70 laps; ~12% engine retirement.
+// CHASSIS_FAILURE_SCALE: at 0.034, midfield chassis (reliability 75) has 0.85% chance/lap
+//   → ~45% any chassis event over 70 laps; ~14% chassis retirement.
+// Combined midfield: ~23-28% mechanical retirement per race; backmarkers 45-50%; leaders 12-15%.
+const ENGINE_FAILURE_SCALE  = 0.028;
+const CHASSIS_FAILURE_SCALE = 0.034;
 
 // Driver aggression scales tyre wear. At 0.4, maximum aggression (100) adds 40% extra wear.
 const AGGRESSION_WEAR_SCALE = 0.4;
@@ -79,11 +87,28 @@ const DIRTY_AIR_WEAR_MULT = 0.20;
 const OVERTAKE_RANGE          = 0.30;  // seconds
 const FAILED_OVERTAKE_PENALTY = 0.40;  // seconds
 
-// ─── Failure labels ────────────────────────────────────────────────────────────
-const FAILURE_LABELS = [
-  'Engine', 'Gearbox', 'Turbo', 'Oil pressure',
-  'Hydraulics', 'Suspension', 'Aero damage',
-];
+// ─── Era-aware failure label pools ────────────────────────────────────────────
+// Separate engine and chassis pools so the source of each failure is clear in
+// commentary and the race log. Labels unlock as technology advances.
+// 'Puncture' in the chassis pool is handled specially — see reliability check.
+function getEngineFailureLabels(year) {
+  const labels = ['Engine seizure', 'Overheating', 'Fuel starvation', 'Oil leak',
+                  'Valve failure', 'Blown gasket', 'Crankshaft failure', 'Magneto failure'];
+  if (year >= 1945) labels.push('Supercharger failure');
+  if (year >= 1960) labels.push('Fuel injection failure');
+  if (year >= 1975) labels.push('Turbo failure', 'Intercooler failure');
+  if (year >= 1990) labels.push('Engine management failure');
+  return labels;
+}
+
+function getChassisFailureLabels(year) {
+  const labels = ['Suspension failure', 'Transmission failure', 'Brake failure',
+                  'Steering failure', 'Differential failure', 'Broken wheel', 'Puncture'];
+  if (year >= 1950) labels.push('Hydraulic failure');
+  if (year >= 1960) labels.push('Aerodynamic damage');
+  if (year >= 1980) labels.push('Carbon failure');
+  return labels;
+}
 
 // ─── tick ──────────────────────────────────────────────────────────────────────
 // Advance every car through one sector. Must be called with the rng returned
@@ -310,36 +335,76 @@ export function tick(rng) {
       car.lastLapTime = +car.currentSectorTimes.reduce((a, b) => a + b, 0).toFixed(3);
       car.currentSectorTimes = [];
 
-      // Reliability check — once per lap, not per sector (avoids excessive failures)
-      // Formula: failureThreshold = (1 - engineRel/100 × chassisRel/100) × FAILURE_SCALE
+      // ── Reliability checks — engine then chassis, each independent once per lap ──
+      // Two separate checks so engine failures and chassis failures are distinct events
+      // with their own era-appropriate label pools. Chassis check also handles punctures.
       if (!crashOccurred) {
-        const failureThreshold = (1 - (car.engine.reliability / 100) * (car.team.chassisReliability / 100))
-          * FAILURE_SCALE;
-        const failureRoll = rng();
-        rolls.failureRoll = +failureRoll.toFixed(4);
 
-        if (failureRoll < failureThreshold) {
-          const outcomeRoll = rng();
+        // ── Engine failure check ──────────────────────────────────────────────
+        const engineFailThreshold = (1 - car.engine.reliability / 100) * ENGINE_FAILURE_SCALE;
+        const engineFailRoll = rng();
+        rolls.engineFailRoll = +engineFailRoll.toFixed(4);
+
+        if (engineFailRoll < engineFailThreshold) {
+          const engineLabels = getEngineFailureLabels(currentDisplayYear);
+          const label        = engineLabels[Math.floor(rng() * engineLabels.length)];
+          const outcomeRoll  = rng();
 
           if (outcomeRoll < 0.30) {
-            // 30% chance → mechanical retirement
-            const label = FAILURE_LABELS[Math.floor(rng() * FAILURE_LABELS.length)];
-            events.push({ type: 'mechanical', severity: 'retirement', label });
+            events.push({ type: 'mechanical', severity: 'retirement', label, source: 'engine' });
             car.status        = 'retired';
             car.retiredReason = 'mechanical';
             car.degradedLabel = label;
             car.retiredLap    = race.lap;
-
           } else {
-            // 70% chance → degraded performance for remainder of race
-            // Severity kept small so a damaged car remains a plausible finisher:
-            // 1.005–1.025 adds roughly 0.4–1.9 s/lap; anything worse retires instead.
-            // reliabilityFactor stacks if the car suffers multiple failures.
-            const severity = 1.005 + rng() * 0.02; // 1.005–1.025
+            // 1.005–1.025 adds roughly 0.4–1.9 s/lap; stacks on multiple failures
+            const severity = 1.005 + rng() * 0.02;
             car.reliabilityFactor *= severity;
-            const label = FAILURE_LABELS[Math.floor(rng() * FAILURE_LABELS.length)];
-            car.degradedLabel = label;  // stored on car state for live display
-            events.push({ type: 'mechanical', severity: 'degraded', label, factor: +severity.toFixed(3) });
+            car.degradedLabel = label;
+            events.push({ type: 'mechanical', severity: 'degraded', label, source: 'engine', factor: +severity.toFixed(3) });
+          }
+        }
+
+        // ── Chassis failure check (skipped if engine failure already retired the car) ──
+        if (car.status !== 'retired') {
+          const chassisFailThreshold = (1 - car.team.chassisReliability / 100) * CHASSIS_FAILURE_SCALE;
+          const chassisFailRoll = rng();
+          rolls.chassisFailRoll = +chassisFailRoll.toFixed(4);
+
+          if (chassisFailRoll < chassisFailThreshold) {
+            const chassisLabels = getChassisFailureLabels(currentDisplayYear);
+            const label         = chassisLabels[Math.floor(rng() * chassisLabels.length)];
+
+            if (label === 'Puncture') {
+              // 15% chance → blowout (retirement); 85% → slow puncture (forces a pit next lap)
+              const blowout = rng() < 0.15;
+              if (blowout) {
+                events.push({ type: 'mechanical', severity: 'retirement', label: 'Tyre failure', source: 'chassis' });
+                car.status        = 'retired';
+                car.retiredReason = 'mechanical';
+                car.degradedLabel = 'Tyre failure';
+                car.retiredLap    = race.lap;
+              } else {
+                // Spike tyre wear to near-limit — the pit AI triggers a stop on the next lap
+                car.tyreWear = Math.min(1.0, car.tyreWear + 0.80);
+                car.degradedLabel = 'Puncture';
+                events.push({ type: 'puncture', label: 'Puncture', source: 'chassis' });
+              }
+            } else {
+              const outcomeRoll = rng();
+              if (outcomeRoll < 0.30) {
+                events.push({ type: 'mechanical', severity: 'retirement', label, source: 'chassis' });
+                car.status        = 'retired';
+                car.retiredReason = 'mechanical';
+                car.degradedLabel = label;
+                car.retiredLap    = race.lap;
+              } else {
+                const severity = 1.005 + rng() * 0.02;
+                car.reliabilityFactor *= severity;
+                car.degradedLabel = label;
+                events.push({ type: 'mechanical', severity: 'degraded', label, source: 'chassis', factor: +severity.toFixed(3) });
+              }
+            }
           }
         }
       }

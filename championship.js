@@ -341,7 +341,7 @@ export async function ensurePastResultsCached(season, simFns) {
     if (!loadQualiResults(season, r)) {
       const qualiEvent = getEventForRound(season, r, 'qualifying');
       const qualiSeed  = getSeedForEvent(qualiEvent, getWorldSeed());
-      setCurrentCircuit(circuit);
+      setCurrentCircuit(circuit, 1929 + season);
       const rng     = initRace(qualiSeed, null, circuit, snapshot);
       const results = await runQualifyingSession(rng, circuit);
       saveQualiResults(season, r, results);
@@ -352,7 +352,7 @@ export async function ensurePastResultsCached(season, simFns) {
       const raceEvent    = getEventForRound(season, r, 'race');
       const raceSeed     = getSeedForEvent(raceEvent, getWorldSeed());
       const qualiResults = loadQualiResults(season, r);
-      setCurrentCircuit(circuit);
+      setCurrentCircuit(circuit, 1929 + season);
       const rng = initRace(raceSeed, qualiResults, circuit, snapshot);
       initStrategies(rng);
       runRace(rng);

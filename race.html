@@ -1010,7 +1010,7 @@
     const circuit    = getCircuit(event);
     const worldSeed  = getWorldSeed();
     const raceSeed   = getSeedForEvent(event, worldSeed);
-    setCurrentCircuit(circuit);
+    setCurrentCircuit(circuit, getDisplayYear(event.season));
     setRendererCircuit(circuit);
 
     // ── Season snapshot ────────────────────────────────────────────────────────

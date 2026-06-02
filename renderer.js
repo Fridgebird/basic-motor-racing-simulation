@@ -703,6 +703,11 @@ export class Renderer {
       }
       detail = spinDetail;
 
+    } else if (ev.type === 'puncture') {
+      tag      = 'PNCT';
+      tagClass = 'tag-dmg';
+      detail   = `${entry.car.toUpperCase()} — puncture, pitting next lap`;
+
     } else if (ev.type === 'overtake' && ev.result === 'success') {
       tag      = 'PASS';
       tagClass = 'tag-pass';

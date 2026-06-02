@@ -266,8 +266,8 @@
   <script type="module">
     import {
       getCircuit, getEventForRound, ensurePastResultsCached,
-      hasRaceResult, loadQualiResults, getStandings, getStandingsThroughRound,
-      getTodayDayOffset, getWorldSeed,
+      hasRaceResult, loadQualiResults, saveQualiResults, getStandings, getStandingsThroughRound,
+      getTodayDayOffset, getWorldSeed, getSeedForEvent, addRaceResult,
     } from './championship.js';
     import { TEAMS, ENGINES, SEASON_SCHEDULE } from './data.js';
     import { DRIVER_POOL } from './drivers.js';
@@ -297,6 +297,49 @@
       const simFns = { initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession, getSeasonSnapshot };
       if (season > 1) await ensurePastResultsCached(season - 1, simFns);
       await ensurePastResultsCached(season, simFns);
+
+      // ensurePastResultsCached stops before today to protect spoilers on other pages.
+      // The results page has its own spoiler gate, so compute on demand if still missing.
+      const snapshot = getSeasonSnapshot(season, worldSeed);
+      setCurrentCircuit(circuit, 1929 + season);
+
+      if (!loadQualiResults(season, round)) {
+        const qualiEvent = getEventForRound(season, round, 'qualifying');
+        const qualiSeed  = getSeedForEvent(qualiEvent, worldSeed);
+        const rng = initRace(qualiSeed, null, circuit, snapshot);
+        const results = await runQualifyingSession(rng, circuit);
+        saveQualiResults(season, round, results);
+      }
+
+      if (type === 'race' && !hasRaceResult(season, round)) {
+        const raceEvent = getEventForRound(season, round, 'race');
+        const raceSeed  = getSeedForEvent(raceEvent, worldSeed);
+        const rng = initRace(raceSeed, loadQualiResults(season, round), circuit, snapshot);
+        initStrategies(rng);
+        runRace(rng);
+        const finishers = cars.filter(c => c.status !== 'retired').sort((a, b) => a.position - b.position);
+        const leader = finishers[0];
+        addRaceResult(season, round, [...cars]
+          .sort((a, b) => {
+            if (a.status === 'retired' && b.status !== 'retired') return 1;
+            if (b.status === 'retired' && a.status !== 'retired') return -1;
+            return a.position - b.position;
+          })
+          .map(car => ({
+            driverId:      car.driver.id,
+            driverName:    car.driver.name,
+            teamId:        car.team.id,
+            position:      car.position,
+            retired:       car.status === 'retired',
+            gap:           car.status !== 'retired' && leader
+                             ? +(car.cumulativeTime - leader.cumulativeTime).toFixed(3)
+                             : null,
+            stops:         car.stopsMade,
+            lapsCompleted: car.status === 'retired' ? (car.retiredLap ?? 0) : circuit.totalLaps,
+            dnfReason:     car.retiredReason ?? null,
+            dnfLabel:      car.status === 'retired' ? (car.degradedLabel ?? null) : null,
+          })));
+      }
 
       document.getElementById('loading-msg').style.display = 'none';
       document.getElementById('main').style.display        = 'flex';

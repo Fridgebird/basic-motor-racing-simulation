@@ -1419,6 +1419,7 @@
             stops:         car.stopsMade,
             lapsCompleted: car.status === 'retired' ? (car.retiredLap ?? 0) : circuit.totalLaps,
             dnfReason:     car.retiredReason ?? null,
+            dnfLabel:      car.status === 'retired' ? (car.degradedLabel ?? null) : null,
           }));
         addRaceResult(event.season, event.round, finishOrder);
       });

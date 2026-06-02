@@ -142,7 +142,7 @@
     .col-gap.leader { color: var(--lo); }
     .col-stops      { width: 36px; text-align: center; color: var(--lo); }
     .col-pts        { width: 36px; text-align: right; color: var(--hi); }
-    .col-status     { width: 56px; }
+    .col-status     { min-width: 56px; }
     .col-time       { font-variant-numeric: tabular-nums; }
     .col-time.pole  { color: var(--hi); }
 
@@ -267,19 +267,20 @@
     import {
       getCircuit, getEventForRound, ensurePastResultsCached,
       hasRaceResult, loadQualiResults, getStandings, getStandingsThroughRound,
-      getTodayDayOffset,
+      getTodayDayOffset, getWorldSeed,
     } from './championship.js';
-    import { TEAMS, SEASON_SCHEDULE } from './data.js';
+    import { TEAMS, ENGINES, SEASON_SCHEDULE } from './data.js';
     import { DRIVER_POOL } from './drivers.js';
     import { initRace, cars } from './state.js';
     import { runRace, initStrategies, setCurrentCircuit, runQualifyingSession } from './simulation.js';
-    import { getSeasonSnapshot } from './worldstate.js';
+    import { getSeasonSnapshot, getTeamEngine } from './worldstate.js';
 
     (async () => {
-      const params  = new URLSearchParams(location.search);
-      const season  = parseInt(params.get('season'), 10) || 1;
-      const round   = parseInt(params.get('round'),  10) || 1;
-      const type    = params.get('type') === 'qualifying' ? 'qualifying' : 'race';
+      const params    = new URLSearchParams(location.search);
+      const season    = parseInt(params.get('season'), 10) || 1;
+      const round     = parseInt(params.get('round'),  10) || 1;
+      const type      = params.get('type') === 'qualifying' ? 'qualifying' : 'race';
+      const worldSeed = getWorldSeed();
 
       const event = getEventForRound(season, round, type);
       if (!event) {
@@ -303,18 +304,20 @@
       const container = document.getElementById('results-container');
       const footer    = document.getElementById('results-footer');
 
-      const teamColours = Object.fromEntries(TEAMS.map(t => [t.id, t.colour]));
-      const teamNames   = Object.fromEntries(TEAMS.map(t => [t.id, t.name]));
-      const engByTeam   = Object.fromEntries(TEAMS.map(t => [t.id, t.engine]));
-      const engineNames = { honda: 'Honda', ferrari: 'Ferrari', megatron: 'Megatron', ford: 'Ford' };
+      const teamColours  = Object.fromEntries(TEAMS.map(t => [t.id, t.colour]));
       const POINTS_TABLE = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 
+      function teamLabel(teamId) {
+        const team = TEAMS.find(t => t.id === teamId);
+        if (!team) return (teamId || '').toUpperCase();
+        const engineId   = getTeamEngine(teamId, season, worldSeed);
+        const engineName = (ENGINES[engineId]?.name ?? '').toUpperCase();
+        const shortUp    = team.shortName.toUpperCase();
+        return (!engineName || shortUp === engineName) ? shortUp : `${shortUp}-${engineName}`;
+      }
+
       function displayTeam(teamId, link = true) {
-        const base = (teamNames[teamId] || teamId).toUpperCase();
-        const eng  = engineNames[engByTeam[teamId]];
-        const label = (!eng || base.includes(eng.toUpperCase()))
-          ? base
-          : `${base}-${eng.toUpperCase()}`;
+        const label = teamLabel(teamId);
         if (!link || !teamId) return label;
         return `<a href="team.html?id=${teamId}&season=${season}" style="color:inherit;text-decoration:none">${label}</a>`;
       }
@@ -429,7 +432,9 @@
           let statusHtml = '';
           if (e.retired) {
             const cls = e.dnfReason === 'crash' ? 'status-crash' : 'status-mech';
-            const lbl = e.dnfReason === 'crash' ? 'CRASH' : 'MECH';
+            const lbl = e.dnfReason === 'crash'
+              ? 'CRASH'
+              : (e.dnfLabel ? e.dnfLabel.toUpperCase() : 'MECH');
             statusHtml = `<span class="${cls}">${lbl}</span>`;
           }
 

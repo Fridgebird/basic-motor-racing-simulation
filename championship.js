@@ -377,6 +377,7 @@ export async function ensurePastResultsCached(season, simFns) {
           stops:         car.stopsMade,
           lapsCompleted: car.status === 'retired' ? (car.retiredLap ?? 0) : circuit.totalLaps,
           dnfReason:     car.retiredReason ?? null,
+          dnfLabel:      car.status === 'retired' ? (car.degradedLabel ?? null) : null,
         }));
       addRaceResult(season, r, finishOrder);
     }

@@ -88,12 +88,16 @@ const OVERTAKE_RANGE          = 0.30;  // seconds
 const FAILED_OVERTAKE_PENALTY = 0.40;  // seconds
 
 // ─── Era-aware failure label pools ────────────────────────────────────────────
-// Separate engine and chassis pools so the source of each failure is clear in
-// commentary and the race log. Labels unlock as technology advances.
-// 'Puncture' in the chassis pool is handled specially — see reliability check.
-function getEngineFailureLabels(year) {
-  const labels = ['Engine seizure', 'Overheating', 'Fuel starvation', 'Oil leak',
-                  'Valve failure', 'Blown gasket', 'Crankshaft failure', 'Magneto failure'];
+// Each system has two pools: labels that can appear as degraded failures (car limps
+// on at reduced pace) and labels that always cause immediate retirement (catastrophic).
+// 'Puncture' is handled separately in the chassis reliability check.
+//
+// retirementOnly labels are never shown as health issues — they always retire the car.
+// canDegrade labels can be either degraded or retirement depending on the outcome roll.
+
+function getEngineDegradedLabels(year) {
+  const labels = ['Overheating', 'Fuel starvation', 'Oil leak', 'Valve failure',
+                  'Blown gasket', 'Magneto failure'];
   if (year >= 1945) labels.push('Supercharger failure');
   if (year >= 1960) labels.push('Fuel injection failure');
   if (year >= 1975) labels.push('Turbo failure', 'Intercooler failure');
@@ -101,13 +105,25 @@ function getEngineFailureLabels(year) {
   return labels;
 }
 
-function getChassisFailureLabels(year) {
-  const labels = ['Suspension failure', 'Transmission failure', 'Brake failure',
-                  'Steering failure', 'Differential failure', 'Broken wheel', 'Puncture'];
+function getEngineRetirementLabels(year) {
+  // Catastrophic failures always retire; milder failures can also cause retirement
+  return ['Engine seizure', 'Crankshaft failure', ...getEngineDegradedLabels(year)];
+}
+
+function getChassisDegradedLabels(year) {
+  // Failures a driver can limp on with, at reduced pace
+  const labels = ['Suspension failure'];
   if (year >= 1950) labels.push('Hydraulic failure');
   if (year >= 1960) labels.push('Aerodynamic damage');
   if (year >= 1980) labels.push('Carbon failure');
   return labels;
+}
+
+function getChassisRetirementLabels(year) {
+  // Catastrophic chassis failures that always end the race, plus limping failures
+  // (overheating suspension etc. can escalate to a retirement too)
+  return ['Transmission failure', 'Differential failure', 'Brake failure',
+          'Steering failure', 'Broken wheel', ...getChassisDegradedLabels(year)];
 }
 
 // ─── tick ──────────────────────────────────────────────────────────────────────
@@ -349,17 +365,19 @@ export function tick(rng) {
         rolls.engineFailRoll = +engineFailRoll.toFixed(4);
 
         if (engineFailRoll < engineFailThreshold) {
-          const engineLabels = getEngineFailureLabels(currentDisplayYear);
-          const label        = engineLabels[Math.floor(rng() * engineLabels.length)];
-          const outcomeRoll  = rng();
+          const outcomeRoll = rng();
 
           if (outcomeRoll < 0.30) {
+            const labels = getEngineRetirementLabels(currentDisplayYear);
+            const label  = labels[Math.floor(rng() * labels.length)];
             events.push({ type: 'mechanical', severity: 'retirement', label, source: 'engine' });
             car.status        = 'retired';
             car.retiredReason = 'mechanical';
             car.degradedLabel = label;
             car.retiredLap    = race.lap;
           } else {
+            const labels = getEngineDegradedLabels(currentDisplayYear);
+            const label  = labels[Math.floor(rng() * labels.length)];
             // 1.005–1.025 adds roughly 0.4–1.9 s/lap; stacks on multiple failures
             const severity = 1.005 + rng() * 0.02;
             car.reliabilityFactor *= severity;
@@ -375,11 +393,11 @@ export function tick(rng) {
           rolls.chassisFailRoll = +chassisFailRoll.toFixed(4);
 
           if (chassisFailRoll < chassisFailThreshold) {
-            const chassisLabels = getChassisFailureLabels(currentDisplayYear);
-            const label         = chassisLabels[Math.floor(rng() * chassisLabels.length)];
+            const outcomeRoll = rng();
 
-            if (label === 'Puncture') {
-              // 15% chance → blowout (retirement); 85% → slow puncture (forces a pit next lap)
+            // ~18% of chassis failures are punctures (probability embedded in the outcome split)
+            if (outcomeRoll < 0.18) {
+              // Puncture — 15% blowout (retirement), 85% slow puncture (forces a pit next lap)
               const blowout = rng() < 0.15;
               if (blowout) {
                 events.push({ type: 'mechanical', severity: 'retirement', label: 'Tyre failure', source: 'chassis' });
@@ -388,27 +406,32 @@ export function tick(rng) {
                 car.degradedLabel = 'Tyre failure';
                 car.retiredLap    = race.lap;
               } else {
-                // Slow puncture — spike wear to near-limit so pit AI triggers next lap,
-                // and apply a direct time penalty (flat tyres cost far more than worn tyres).
+                // Slow puncture — spike wear so pit AI triggers; apply direct time penalty.
+                // puncturedOnLap prevents shouldPit from firing THIS lap so the driver runs
+                // at least one sector-set with the flat before pitting.
                 car.tyreWear       = Math.min(1.0, car.tyreWear + 0.80);
                 car.puncturePenalty = +(1.10 + rng() * 0.10).toFixed(3); // 10–20% slower
+                car.puncturedOnLap = race.lap;
                 car.degradedLabel  = 'Puncture';
                 events.push({ type: 'puncture', label: 'Puncture', source: 'chassis' });
               }
+            } else if (outcomeRoll < 0.18 + 0.30 * 0.82) {
+              // Retirement (~24.6% of chassis failures after removing puncture share)
+              const labels = getChassisRetirementLabels(currentDisplayYear);
+              const label  = labels[Math.floor(rng() * labels.length)];
+              events.push({ type: 'mechanical', severity: 'retirement', label, source: 'chassis' });
+              car.status        = 'retired';
+              car.retiredReason = 'mechanical';
+              car.degradedLabel = label;
+              car.retiredLap    = race.lap;
             } else {
-              const outcomeRoll = rng();
-              if (outcomeRoll < 0.30) {
-                events.push({ type: 'mechanical', severity: 'retirement', label, source: 'chassis' });
-                car.status        = 'retired';
-                car.retiredReason = 'mechanical';
-                car.degradedLabel = label;
-                car.retiredLap    = race.lap;
-              } else {
-                const severity = 1.005 + rng() * 0.02;
-                car.reliabilityFactor *= severity;
-                car.degradedLabel = label;
-                events.push({ type: 'mechanical', severity: 'degraded', label, source: 'chassis', factor: +severity.toFixed(3) });
-              }
+              // Degraded (~57.4% of chassis failures)
+              const labels = getChassisDegradedLabels(currentDisplayYear);
+              const label  = labels[Math.floor(rng() * labels.length)];
+              const severity = 1.005 + rng() * 0.02;
+              car.reliabilityFactor *= severity;
+              car.degradedLabel = label;
+              events.push({ type: 'mechanical', severity: 'degraded', label, source: 'chassis', factor: +severity.toFixed(3) });
             }
           }
         }
@@ -884,9 +907,14 @@ function shouldPit(car, rng) {
   if (race.sector !== 3) return false;
 
   // Always consume one rng() call — maintains deterministic sequence
+  // (must happen before any early returns so the sequence stays stable)
   const wearJitter = (rng() - 0.5) * 0.06;  // ±0.03 spread on wear trigger
 
   if (race.lap >= currentCircuit.totalLaps - 3) return false;
+
+  // If a slow puncture fired this lap, force the car to run at least one lap on the flat
+  // so the time penalty is visible before fresh rubber resets everything.
+  if (car.puncturedOnLap === race.lap) return false;
 
   const burnPerLap = currentCircuit.baseFuelBurnPerLap * car.engine.fuelBurnRate;
   const { fuelTrigger, wearTrigger } = car.team.strategy;
@@ -958,6 +986,8 @@ function executePitStop(car, rng) {
   car.tyreHistory.push(newCompound[0].toUpperCase());
   car.tyreWear         = 0;
   car.puncturePenalty  = 1.0;  // fresh rubber clears the flat
+  car.puncturedOnLap   = null;
+  if (car.degradedLabel === 'Puncture') car.degradedLabel = null;  // puncture is fixed by pitting
   car.stintLap         = 0;
   car.stopsMade++;
 

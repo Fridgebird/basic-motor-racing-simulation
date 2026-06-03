@@ -185,6 +185,9 @@ export function initRace(seed, qualiResults = null, circuit = null, snapshot = n
       // Resets to 1.0 on next pit stop. Applied as a direct sector time multiplier
       // on top of the tyre factor, so a flat tyre costs 10–20% per lap not ~6%.
       puncturePenalty:   1.0,
+      // puncturedOnLap: the lap number when a slow puncture was detected.
+      // shouldPit() checks this to force at least one slow lap before allowing a pit.
+      puncturedOnLap:    null,
 
       // ── Pit stops ─────────────────────────────────────────────────────────
       stopsMade: 0,

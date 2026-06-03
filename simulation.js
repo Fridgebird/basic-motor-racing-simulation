@@ -287,7 +287,9 @@ export function tick(rng) {
     factors.driver = +driverFactor.toFixed(4);
 
     // ── Sector time ─────────────────────────────────────────────────────────
-    // All factors multiply the base sector time; higher factor = slower
+    // All factors multiply the base sector time; higher factor = slower.
+    // puncturePenalty is 1.0 normally; 1.10–1.20 when running on a flat tyre.
+    factors.puncture = +car.puncturePenalty.toFixed(3);
     const sectorTime = sectorDef.baseSectorTime
       * engineFactor
       * chassisFactor
@@ -295,6 +297,7 @@ export function tick(rng) {
       * fuelFactor
       * tyreFactor
       * car.reliabilityFactor
+      * car.puncturePenalty
       * driverFactor;
 
     car.cumulativeTime += sectorTime;
@@ -385,9 +388,11 @@ export function tick(rng) {
                 car.degradedLabel = 'Tyre failure';
                 car.retiredLap    = race.lap;
               } else {
-                // Spike tyre wear to near-limit — the pit AI triggers a stop on the next lap
-                car.tyreWear = Math.min(1.0, car.tyreWear + 0.80);
-                car.degradedLabel = 'Puncture';
+                // Slow puncture — spike wear to near-limit so pit AI triggers next lap,
+                // and apply a direct time penalty (flat tyres cost far more than worn tyres).
+                car.tyreWear       = Math.min(1.0, car.tyreWear + 0.80);
+                car.puncturePenalty = +(1.10 + rng() * 0.10).toFixed(3); // 10–20% slower
+                car.degradedLabel  = 'Puncture';
                 events.push({ type: 'puncture', label: 'Puncture', source: 'chassis' });
               }
             } else {
@@ -947,12 +952,13 @@ function executePitStop(car, rng) {
   const stationaryTime = +Math.max(effectiveTyreChange, fuellingTime).toFixed(1);
   const duration       = +(pitLaneTime + stationaryTime).toFixed(1);
 
-  car.cumulativeTime += duration;
-  car.fuel      += fuelAdded;
-  car.compound  = newCompound;
+  car.cumulativeTime  += duration;
+  car.fuel            += fuelAdded;
+  car.compound         = newCompound;
   car.tyreHistory.push(newCompound[0].toUpperCase());
-  car.tyreWear  = 0;
-  car.stintLap  = 0;
+  car.tyreWear         = 0;
+  car.puncturePenalty  = 1.0;  // fresh rubber clears the flat
+  car.stintLap         = 0;
   car.stopsMade++;
 
   return {

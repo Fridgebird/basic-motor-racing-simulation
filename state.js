@@ -181,6 +181,10 @@ export function initRace(seed, qualiResults = null, circuit = null, snapshot = n
       // Multiple failures stack — car deteriorates progressively.
       reliabilityFactor: 1.0,
       degradedLabel:     null,  // e.g. 'Turbo', 'Gearbox' once a failure fires
+      // puncturePenalty is 1.0 normally; set to 1.10–1.20 on a slow puncture.
+      // Resets to 1.0 on next pit stop. Applied as a direct sector time multiplier
+      // on top of the tyre factor, so a flat tyre costs 10–20% per lap not ~6%.
+      puncturePenalty:   1.0,
 
       // ── Pit stops ─────────────────────────────────────────────────────────
       stopsMade: 0,

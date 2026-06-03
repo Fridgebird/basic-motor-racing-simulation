@@ -664,11 +664,15 @@ export class Renderer {
       tag      = 'PIT';
       tagClass = 'tag-pit';
       const estLaps = ev.aiEstimates?.[ev.compound]?.estLaps;
+      const lapsRem = ev.aiEstimates?.lapsRemaining;
+      const displayLaps = (estLaps != null && lapsRem != null)
+        ? Math.min(estLaps, lapsRem)
+        : estLaps;
       const parts   = [
         `${ev.compound[0].toUpperCase()} TYRES +${ev.fuelAdded}KG`,
         `${ev.stationaryTime.toFixed(1)}SEC STOP / ${ev.duration.toFixed(1)}SEC LOST`,
       ];
-      if (estLaps != null) parts.push(`EST ${estLaps} LAPS`);
+      if (displayLaps != null) parts.push(`EST ${displayLaps} LAPS`);
       const prefix = (ev.botched && ev.netTimeLost > 1) ? 'BOTCHED STOP! ' : '';
       detail = `${prefix}${entry.car.toUpperCase()} · ${parts.join(' · ')}`;
 

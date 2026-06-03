@@ -112,18 +112,21 @@ function getEngineRetirementLabels(year) {
 
 function getChassisDegradedLabels(year) {
   // Failures a driver can limp on with, at reduced pace
-  const labels = ['Suspension damage'];
-  if (year >= 1950) labels.push('Hydraulic failure');
-  if (year >= 1960) labels.push('Aerodynamic damage');
-  if (year >= 1980) labels.push('Carbon failure');
+  const labels = ['Suspension', 'Body', 'Wheel bearing', 'Exhaust',
+                  'Gearbox', 'Brakes', 'Driveshaft', 'Clutch', 'Throttle', 'Handling'];
+  if (year >= 1960) labels.push('Aerodynamic');
+  if (year >= 1977) labels.push('Skirt');
+  if (year >= 1980) labels.push('Floor', 'Composite');
+  if (year >= 1990) labels.push('Electronics');
   return labels;
 }
 
 function getChassisRetirementLabels(year) {
   // Catastrophic chassis failures that always end the race, plus limping failures
-  // (overheating suspension etc. can escalate to a retirement too)
+  // (any degraded issue can escalate to a retirement too)
   return ['Transmission failure', 'Differential failure', 'Brake failure',
-          'Steering failure', 'Broken wheel', ...getChassisDegradedLabels(year)];
+          'Steering failure', 'Broken wheel', 'Hydraulic failure',
+          ...getChassisDegradedLabels(year)];
 }
 
 // ─── tick ──────────────────────────────────────────────────────────────────────

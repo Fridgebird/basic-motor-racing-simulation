@@ -112,7 +112,7 @@ function getEngineRetirementLabels(year) {
 
 function getChassisDegradedLabels(year) {
   // Failures a driver can limp on with, at reduced pace
-  const labels = ['Suspension failure'];
+  const labels = ['Suspension damage'];
   if (year >= 1950) labels.push('Hydraulic failure');
   if (year >= 1960) labels.push('Aerodynamic damage');
   if (year >= 1980) labels.push('Carbon failure');

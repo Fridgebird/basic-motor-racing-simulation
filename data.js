@@ -353,6 +353,7 @@ export const CIRCUITS = {
 
   hawkesbury: {
     id:                 'hawkesbury',
+    abbrev:             'AUS',
     name:               'Hawkesbury River Circuit',
     country:            'Australia',
     location:           'Windsor, New South Wales',
@@ -377,6 +378,7 @@ export const CIRCUITS = {
 
   marlborough: {
     id:                 'marlborough',
+    abbrev:             'NZL',
     name:               'Marlborough Sounds Circuit',
     country:            'New Zealand',
     location:           'Picton',
@@ -401,6 +403,7 @@ export const CIRCUITS = {
 
   pampa: {
     id:                 'pampa',
+    abbrev:             'ARG',
     name:               'Circuito de la Pampa',
     country:            'Argentina',
     location:           'Córdoba',
@@ -425,6 +428,7 @@ export const CIRCUITS = {
 
   guadalajara: {
     id:                 'guadalajara',
+    abbrev:             'MEX',
     name:               'Autodromo de Guadalajara',
     country:            'Mexico',
     location:           'Guadalajara',
@@ -449,6 +453,7 @@ export const CIRCUITS = {
 
   kyushu: {
     id:                 'kyushu',
+    abbrev:             'JPN',
     name:               'Kyushu Motorsport Park',
     country:            'Japan',
     location:           'Kumamoto',
@@ -473,6 +478,7 @@ export const CIRCUITS = {
 
   nairobi: {
     id:                 'nairobi',
+    abbrev:             'KEN',
     name:               'East African Grand Prix Circuit',
     country:            'Kenya',
     location:           'Nairobi',
@@ -497,6 +503,7 @@ export const CIRCUITS = {
 
   laeken: {
     id:                 'laeken',
+    abbrev:             'BEL',
     name:               'Circuit de Bruxelles-Laeken',
     country:            'Belgium',
     location:           'Brussels',
@@ -521,6 +528,7 @@ export const CIRCUITS = {
 
   cotedazur: {
     id:                 'cotedazur',
+    abbrev:             'FRA',
     name:               "Circuit de la Côte d'Azur",
     country:            'France',
     location:           'Nice',
@@ -545,6 +553,7 @@ export const CIRCUITS = {
 
   palermo: {
     id:                 'palermo',
+    abbrev:             'ITA',
     name:               'Autodromo di Palermo',
     country:            'Italy',
     location:           'Palermo, Sicily',
@@ -569,6 +578,7 @@ export const CIRCUITS = {
 
   schwarzwald: {
     id:                 'schwarzwald',
+    abbrev:             'GER',
     name:               'Schwarzwald-Ring',
     country:            'Germany',
     location:           'Freiburg im Breisgau',
@@ -593,6 +603,7 @@ export const CIRCUITS = {
 
   karlovyvary: {
     id:                 'karlovyvary',
+    abbrev:             'CZE',
     name:               'Karlovy Vary Kurkurs',
     country:            'Czechoslovakia',
     location:           'Karlovy Vary',
@@ -617,6 +628,7 @@ export const CIRCUITS = {
 
   brookthorpe: {
     id:                 'brookthorpe',
+    abbrev:             'GBR',
     name:               'Brookthorpe Park Circuit',
     country:            'England',
     location:           'Gloucestershire',
@@ -641,6 +653,7 @@ export const CIRCUITS = {
 
   hamnkurs: {
     id:                 'hamnkurs',
+    abbrev:             'SWE',
     name:               'Göteborg Hamnkurs',
     country:            'Sweden',
     location:           'Gothenburg',
@@ -665,6 +678,7 @@ export const CIRCUITS = {
 
   rovaniemi: {
     id:                 'rovaniemi',
+    abbrev:             'FIN',
     name:               'Rovaniemi Arctic Circuit',
     country:            'Finland',
     location:           'Rovaniemi',
@@ -689,6 +703,7 @@ export const CIRCUITS = {
 
   harbourfront: {
     id:                 'harbourfront',
+    abbrev:             'HKG',
     name:               'Central Harbourfront Circuit',
     country:            'Hong Kong',
     location:           'Central & Wan Chai',
@@ -713,6 +728,7 @@ export const CIRCUITS = {
 
   lacMeech: {
     id:                 'lacMeech',
+    abbrev:             'CAN',
     name:               'Circuit du Lac Meech',
     country:            'Canada',
     location:           'Gatineau, Quebec',
@@ -737,6 +753,7 @@ export const CIRCUITS = {
 
   douglas: {
     id:                 'douglas',
+    abbrev:             'USA',
     name:               'Douglas Circuit',
     country:            'United States',
     location:           'Roseburg, Oregon',
@@ -761,6 +778,7 @@ export const CIRCUITS = {
 
   lahore: {
     id:                 'lahore',
+    abbrev:             'PAK',
     name:               'Lahore Street Circuit',
     country:            'Pakistan',
     location:           'Lahore',
@@ -785,6 +803,7 @@ export const CIRCUITS = {
 
   recife: {
     id:                 'recife',
+    abbrev:             'BRA',
     name:               'Circuito do Recife Costeiro',
     country:            'Brazil',
     location:           'Recife',
@@ -809,6 +828,7 @@ export const CIRCUITS = {
 
   bushveld: {
     id:                 'bushveld',
+    abbrev:             'RSA',
     name:               'Bushveld Grand Prix Circuit',
     country:            'South Africa',
     location:           'Pretoria',

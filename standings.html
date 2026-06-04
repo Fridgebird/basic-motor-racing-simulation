@@ -54,6 +54,18 @@
     .col-team { color:var(--lo); font-size:10px; }
     .team-dot { display:inline-block; width:3px; height:14px; vertical-align:middle; margin-right:6px; border-radius:1px; flex-shrink:0; }
     .no-data  { padding:20px; font-size:9px; letter-spacing:2px; color:var(--dim); text-align:center; }
+
+    /* ── Season results grid ── */
+    .rg-section { margin-top:28px; }
+    .rg-title { font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; border-bottom:1px solid var(--border); padding-bottom:4px; }
+    .rg-scroll { overflow-x:auto; border:1px solid var(--border); border-top:none; }
+    .rg-table { border-collapse:collapse; white-space:nowrap; }
+    .rg-table th { font-size:8px; letter-spacing:0.5px; color:var(--lo); padding:4px 2px; text-align:center; border-bottom:1px solid var(--border); font-weight:normal; min-width:22px; width:22px; }
+    .rg-driver-th { text-align:left !important; padding:4px 8px !important; min-width:48px !important; width:48px !important; position:sticky; left:0; background:var(--bg); z-index:2; border-right:1px solid var(--border); }
+    .rg-table td { text-align:center; padding:3px 2px; border-bottom:1px solid var(--dim); color:var(--lo); min-width:22px; width:22px; font-size:10px; }
+    .rg-driver-td { text-align:left !important; padding:3px 8px !important; position:sticky; left:0; background:var(--bg); z-index:1; border-right:1px solid var(--border); color:var(--mid); font-size:10px; }
+    .rg-win { background:rgba(180,140,0,0.18); color:#d4a800 !important; }
+    .rg-ret { color:var(--dim) !important; }
   </style>
 </head>
 <body>
@@ -106,10 +118,11 @@
         </table>
       </div>
     </div>
+    <div id="round-summary"></div>
   </div>
 
   <script type="module">
-    import { TEAMS, ENGINES }  from './data.js';
+    import { TEAMS, ENGINES, CIRCUITS, SEASON_SCHEDULE } from './data.js';
     import { getDisplayYear, getSeasonSnapshot, getTeamEngine } from './worldstate.js';
     import {
       getCurrentEvent, getWorldSeed, getStandings, getStandingsThroughRound,
@@ -152,14 +165,16 @@
       document.getElementById('btn-next').disabled = season >= currentSeason;
 
       const asOfEl = document.getElementById('as-of-label');
-      let drivers, constructors;
+      let drivers, constructors, upToRound;
       if (season === currentSeason && lastCompleted) {
         const cutoffRound = lastCompleted.season === currentSeason ? lastCompleted.round : 0;
         ({ drivers, constructors } = getStandingsThroughRound(season, cutoffRound));
         asOfEl.textContent = formatAsOfLabel(lastCompleted);
+        upToRound = cutoffRound;
       } else {
         ({ drivers, constructors } = getStandings(season));
         asOfEl.textContent = '';
+        upToRound = Infinity;
       }
 
       const driversTbody = document.getElementById('drivers-tbody');
@@ -214,6 +229,10 @@
         });
       }
 
+      const summaryEl = document.getElementById('round-summary');
+      summaryEl.innerHTML = '';
+      renderRoundSummary(summaryEl, season, upToRound);
+
       window.history.replaceState(null, '', `standings.html?season=${season}`);
     }
 
@@ -235,6 +254,84 @@
       document.getElementById('page').style.display = '';
       renderStandings(viewedSeason);
     })();
+
+    function renderRoundSummary(container, season, upToRound) {
+      const { drivers, races } = getStandings(season);
+      if (!drivers.length) return;
+
+      const teamColours = Object.fromEntries(TEAMS.map(t => [t.id, t.colour]));
+
+      const rounds = SEASON_SCHEDULE
+        .filter(e => e.eventType === 'race' && races[e.round] && e.round <= upToRound)
+        .sort((a, b) => a.round - b.round);
+      if (!rounds.length) return;
+
+      // driverName → round → { position, retired }
+      const resultMap = {};
+      for (const { round: r } of rounds) {
+        for (const entry of races[r]) {
+          if (!resultMap[entry.driverName]) resultMap[entry.driverName] = {};
+          resultMap[entry.driverName][r] = { position: entry.position, retired: entry.retired };
+        }
+      }
+
+      const section = document.createElement('div');
+      section.className = 'rg-section';
+      const title = document.createElement('div');
+      title.className = 'rg-title';
+      title.textContent = 'SEASON RESULTS';
+      section.appendChild(title);
+
+      const scroll = document.createElement('div');
+      scroll.className = 'rg-scroll';
+      const table = document.createElement('table');
+      table.className = 'rg-table';
+
+      const thead = document.createElement('thead');
+      const hr = document.createElement('tr');
+      const th0 = document.createElement('th');
+      th0.className = 'rg-driver-th';
+      hr.appendChild(th0);
+      for (const { round: r, circuitId } of rounds) {
+        const th = document.createElement('th');
+        th.textContent = CIRCUITS[circuitId].abbrev;
+        th.title = `R${r} · ${CIRCUITS[circuitId].eventName}`;
+        hr.appendChild(th);
+      }
+      thead.appendChild(hr);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      for (const driver of drivers) {
+        const tr = document.createElement('tr');
+        const td0 = document.createElement('td');
+        td0.className = 'rg-driver-td';
+        const colour = teamColours[driver.teamId] || '#888';
+        const surname = driver.name.split(' ').pop().slice(0, 3).toUpperCase();
+        td0.innerHTML = `<span class="team-dot" style="background:${colour};height:10px"></span> ${surname}`;
+        tr.appendChild(td0);
+
+        for (const { round: r } of rounds) {
+          const res = (resultMap[driver.name] || {})[r];
+          const td = document.createElement('td');
+          if (!res) {
+            td.textContent = '–';
+          } else if (res.retired) {
+            td.textContent = 'R';
+            td.classList.add('rg-ret');
+          } else {
+            td.textContent = res.position;
+            if (res.position === 1) td.classList.add('rg-win');
+          }
+          tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+      }
+      table.appendChild(tbody);
+      scroll.appendChild(table);
+      section.appendChild(scroll);
+      container.appendChild(section);
+    }
   </script>
 </body>
 </html>

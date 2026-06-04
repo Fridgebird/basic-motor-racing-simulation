@@ -231,7 +231,7 @@
 
       const summaryEl = document.getElementById('round-summary');
       summaryEl.innerHTML = '';
-      renderRoundSummary(summaryEl, season, upToRound);
+      renderRoundSummary(summaryEl, season, upToRound, drivers);
 
       window.history.replaceState(null, '', `standings.html?season=${season}`);
     }
@@ -255,8 +255,9 @@
       renderStandings(viewedSeason);
     })();
 
-    function renderRoundSummary(container, season, upToRound) {
-      const { drivers, races } = getStandings(season);
+    function renderRoundSummary(container, season, upToRound, orderedDrivers) {
+      const { races } = getStandings(season);
+      const drivers = orderedDrivers || [];
       if (!drivers.length) return;
 
       const teamColours = Object.fromEntries(TEAMS.map(t => [t.id, t.colour]));

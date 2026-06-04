@@ -417,7 +417,8 @@
       } else {
         renderRace(container, teamColours, displayTeam);
         renderChampionship(season, round, teamColours);
-        renderRoundSummary(document.getElementById('result-col'), season, round, round);
+        renderRoundSummary(document.getElementById('result-col'), season, round, round,
+          getStandingsThroughRound(season, round).drivers);
       }
 
       // ── Footer ───────────────────────────────────────────────────────────────
@@ -669,8 +670,9 @@
         return table;
       }
 
-      function renderRoundSummary(container, season, upToRound, currentRound) {
-        const { drivers, races } = getStandings(season);
+      function renderRoundSummary(container, season, upToRound, currentRound, orderedDrivers) {
+        const { races } = getStandings(season);
+        const drivers = orderedDrivers || [];
         if (!drivers.length) return;
 
         const rounds = SEASON_SCHEDULE

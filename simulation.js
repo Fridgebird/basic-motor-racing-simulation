@@ -33,9 +33,9 @@ import { cars, race, raceLog, lapChartData, updatePositions } from './state.js';
 // Adjust these to tune how often events fire without touching the core formulas.
 
 // Driver error checks happen every sector.
-// At CRASH_SCALE=0.004, de Cesaris (consistency 50) has ~0.2% crash chance per sector
-// → ~34% chance of crashing over a full race. Prost (96) → ~3%.
-const CRASH_SCALE = 0.004;
+// At CRASH_SCALE=0.002, de Cesaris (consistency 50) has ~0.1% crash chance per sector
+// → ~18% chance of crashing over a full race. Prost (96) → ~1.5%.
+const CRASH_SCALE = 0.002;
 
 // Slow sector (lock-up or spin) probability scale. Same driver: ~0.7% per sector → ~77% chance
 // of at least one incident during a race. 70% of events are lock-ups (minor), 30% spins (larger).
@@ -43,13 +43,13 @@ const CRASH_SCALE = 0.004;
 const SLOW_SCALE  = 0.018;
 
 // Reliability checks happen once per lap — engine and chassis independently.
-// ENGINE_FAILURE_SCALE: at 0.028, midfield engine (reliability 75) has 0.70% chance/lap
-//   → ~39% any engine event over 70 laps; ~12% engine retirement.
-// CHASSIS_FAILURE_SCALE: at 0.034, midfield chassis (reliability 75) has 0.85% chance/lap
-//   → ~45% any chassis event over 70 laps; ~14% chassis retirement.
-// Combined midfield: ~23-28% mechanical retirement per race; backmarkers 45-50%; leaders 12-15%.
-const ENGINE_FAILURE_SCALE  = 0.028;
-const CHASSIS_FAILURE_SCALE = 0.034;
+// ENGINE_FAILURE_SCALE: at 0.033, midfield engine (reliability 75) has 0.83% chance/lap
+//   → ~44% any engine event over 70 laps; ~13% engine retirement.
+// CHASSIS_FAILURE_SCALE: at 0.040, midfield chassis (reliability 75) has 1.0% chance/lap
+//   → ~50% any chassis event over 70 laps; ~14% chassis retirement.
+// Combined midfield: ~25-30% mechanical retirement per race; backmarkers 50%+; leaders 12-15%.
+const ENGINE_FAILURE_SCALE  = 0.033;
+const CHASSIS_FAILURE_SCALE = 0.040;
 
 // Driver aggression scales tyre wear. At 0.4, maximum aggression (100) adds 40% extra wear.
 const AGGRESSION_WEAR_SCALE = 0.4;

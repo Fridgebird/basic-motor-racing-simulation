@@ -71,6 +71,11 @@ export const race = {
   tick:   0,   // absolute tick counter, 1–210 during the race
   lap:    0,   // current lap, 1–70
   sector: 0,   // current sector, 1–3
+  // Weather state — initialised by initWeather() in simulation.js before initStrategies()
+  weatherScenario:   null,   // generated scenario object (type, windows, etc.)
+  weatherState:      'DRY',  // current Markov state: 'DRY'|'DRIZZLE'|'RAIN'|'HEAVY'
+  trackWetness:      0,      // 0.0–1.0; drives tyre choice, sector time, and crash probability
+  trackWetnessDelta: 0,      // change in trackWetness this lap; negative = drying, positive = wetting
 };
 
 // ─── Car State ────────────────────────────────────────────────────────────────
@@ -126,9 +131,13 @@ export function initRace(seed, qualiResults = null, circuit = null, snapshot = n
   raceLog.seed    = seed;
   raceLog.entries = [];
   lapChartData.length = 0;
-  race.tick   = 0;
-  race.lap    = 0;
-  race.sector = 3;  // so first tick() produces lap=1, sector=1 (not a phantom lap 0)
+  race.tick            = 0;
+  race.lap             = 0;
+  race.sector          = 3;  // so first tick() produces lap=1, sector=1 (not a phantom lap 0)
+  race.weatherScenario = null;
+  race.weatherState      = 'DRY';
+  race.trackWetness      = 0;
+  race.trackWetnessDelta = 0;
 
   const activeCircuit = circuit || CIRCUIT;
   const rng = createRng(seed);

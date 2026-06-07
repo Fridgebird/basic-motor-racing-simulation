@@ -129,6 +129,160 @@ function getChassisRetirementLabels(year) {
           ...getChassisDegradedLabels(year)];
 }
 
+// ─── Weather constants ────────────────────────────────────────────────────────
+const WET_TARGET = { DRY: 0.00, DRIZZLE: 0.28, RAIN: 0.65, HEAVY: 0.95 };
+const WETNESS_APPROACH_RATE = 0.12;  // wetting: exponential approach rate toward target per lap
+const WETNESS_DRY_RATE      = 0.020; // drying: linear drop per lap — ~12 laps per band (wet↔damp↔greasy↔dry)
+const DRY_TYRE_WET_PENALTY        = 0.18;  // max time factor add at soaking on dry tyres → ~18% slower
+const WET_TYRE_DRY_PENALTY        = 0.08;  // max time factor add on bone-dry track with wet tyres
+const WET_TYRE_WET_BASELINE       = 0.08;  // wet tyres are ~8% slower in soaking — crossover vs slicks ~wetness 0.50
+const WET_TYRE_DRY_WEAR_MULT      = 5.0;   // wet tyres wear this many times faster on a bone-dry track
+const WET_CRASH_DRY_TYRES         = 2.5;   // crash/slow mult at soaking on dry tyres
+const WET_CRASH_WET_TYRES         = 1.3;   // crash/slow mult on wet tyres (any wetness)
+
+// ─── Weather model ────────────────────────────────────────────────────────────
+// Markov chain: DRY → DRIZZLE → RAIN → HEAVY
+// Scenario types: FINE (no rain), SHOWER (single window), CHANGEABLE (two windows), WET_START.
+// rainProb on the circuit = probability of any non-FINE scenario.
+
+function generateWeatherScenario(rng, rainProb, totalLaps) {
+  if (rng() >= rainProb) return { type: 'FINE' };
+  const sub = rng();
+  if (sub < 0.55) {
+    const start    = 5 + Math.floor(rng() * (totalLaps * 0.55));
+    const duration = Math.floor(totalLaps * 0.15 + rng() * totalLaps * 0.25);
+    const startLap = Math.min(start, totalLaps - 8);
+    const endLap   = Math.min(startLap + duration, totalLaps + 5);
+    const peakLap  = startLap + Math.floor((endLap - startLap) * 0.35);
+    return { type: 'SHOWER', startLap, peakLap, endLap };
+  }
+  if (sub < 0.80) {
+    const s1 = 3  + Math.floor(rng() * (totalLaps * 0.25));
+    const d1 = Math.floor(totalLaps * 0.12 + rng() * totalLaps * 0.10);
+    const s2 = s1 + d1 + 5 + Math.floor(rng() * (totalLaps * 0.18));
+    const d2 = Math.floor(totalLaps * 0.12 + rng() * totalLaps * 0.10);
+    return {
+      type: 'CHANGEABLE',
+      windows: [
+        { startLap: s1, endLap: Math.min(s1 + d1, totalLaps + 5) },
+        { startLap: s2, endLap: Math.min(s2 + d2, totalLaps + 5) },
+      ],
+    };
+  }
+  return { type: 'WET_START', initialState: rng() < 0.4 ? 'HEAVY' : 'RAIN' };
+}
+
+function inWindow(sc, lap) {
+  if (sc.type === 'SHOWER')     return lap >= sc.startLap && lap <= sc.endLap;
+  if (sc.type === 'CHANGEABLE') return sc.windows.some(w => lap >= w.startLap && lap <= w.endLap);
+  if (sc.type === 'WET_START')  return lap <= 20;
+  return false;
+}
+function buildingUp(sc, lap) {
+  if (sc.type === 'SHOWER')     return lap >= sc.startLap - 8 && lap < sc.startLap;
+  if (sc.type === 'CHANGEABLE') return sc.windows.some(w => lap >= w.startLap - 5 && lap < w.startLap);
+  return false;
+}
+function isClearing(sc, lap) {
+  if (sc.type === 'SHOWER')     return lap > sc.endLap;
+  if (sc.type === 'CHANGEABLE') return lap > sc.windows[sc.windows.length - 1].endLap;
+  if (sc.type === 'WET_START')  return lap > 20;
+  return false;
+}
+
+function getWeatherTransitions(state, sc, lap) {
+  const inW  = inWindow(sc, lap);
+  const bldg = buildingUp(sc, lap);
+  const clrg = isClearing(sc, lap);
+
+  if (state === 'DRY') {
+    if (sc.type === 'FINE') return [1.00, 0.00, 0.00, 0.00];
+    if (inW)   return [0.55, 0.38, 0.07, 0.00];
+    if (bldg)  return [0.82, 0.16, 0.02, 0.00];
+    if (clrg)  return [0.99, 0.01, 0.00, 0.00];
+               return [0.97, 0.03, 0.00, 0.00];
+  }
+  if (state === 'DRIZZLE') {
+    if (inW)   return [0.22, 0.52, 0.24, 0.02];
+    if (bldg)  return [0.45, 0.45, 0.09, 0.01];
+    if (clrg)  return [0.65, 0.30, 0.05, 0.00];
+               return [0.40, 0.48, 0.11, 0.01];
+  }
+  if (state === 'RAIN') {
+    if (inW)   return [0.05, 0.28, 0.55, 0.12];
+    if (clrg)  return [0.10, 0.60, 0.28, 0.02];
+               return [0.08, 0.40, 0.45, 0.07];
+  }
+  // HEAVY
+  if (clrg)    return [0.03, 0.25, 0.60, 0.12];
+               return [0.00, 0.08, 0.60, 0.32];
+}
+
+function rollWeatherState(current, sc, lap, rng) {
+  const [pD, pDr, pR] = getWeatherTransitions(current, sc, lap);
+  const r = rng();
+  if (r < pD)           return 'DRY';
+  if (r < pD + pDr)     return 'DRIZZLE';
+  if (r < pD + pDr + pR) return 'RAIN';
+  return 'HEAVY';
+}
+
+function trackState(wetness) {
+  if (wetness < 0.08) return 'dry';
+  if (wetness < 0.30) return 'greasy';
+  if (wetness < 0.55) return 'damp';
+  if (wetness < 0.80) return 'wet';
+  return 'flooding';
+}
+
+function skyState(state, sc, lap) {
+  if (state === 'HEAVY')   return 'torrential';
+  if (state === 'RAIN')    return 'raining';
+  if (state === 'DRIZZLE') return 'drizzling';
+  if (!sc || sc.type === 'FINE') return 'blue skies';
+  if (buildingUp(sc, lap) || inWindow(sc, lap)) return 'threatening';
+  if (isClearing(sc, lap)) return 'overcast';
+  return 'overcast';
+}
+
+// ─── initWeather ──────────────────────────────────────────────────────────────
+// Call after initRace() and before initStrategies() so that WET_START races
+// set trackWetness before compound selection runs.
+export function initWeather(rng) {
+  const sc = generateWeatherScenario(
+    rng,
+    currentCircuit.rainProb ?? 0.10,
+    currentCircuit.totalLaps,
+  );
+  race.weatherScenario = sc;
+  race.weatherState    = sc.type === 'WET_START' ? sc.initialState : 'DRY';
+  race.trackWetness    = WET_TARGET[race.weatherState];
+}
+
+// Returns a plain-language forecast to show before the race starts.
+export function getWeatherForecastLabel() {
+  const sc = race.weatherScenario;
+  if (!sc || sc.type === 'FINE')        return 'No rain expected';
+  if (sc.type === 'SHOWER')             return 'Possible shower during the race';
+  if (sc.type === 'CHANGEABLE')         return 'Changeable conditions expected';
+  if (sc.type === 'WET_START') {
+    return sc.initialState === 'HEAVY'
+      ? 'Wet start · heavy rain · expected to ease'
+      : 'Wet start · expected to clear during the race';
+  }
+  return '';
+}
+
+// Returns the combined live track + sky status label, e.g. "wet track · raining".
+export function getWeatherStatusLabel() {
+  if (!race.weatherScenario) return '';
+  return `${trackState(race.trackWetness)} track · ${skyState(race.weatherState, race.weatherScenario, race.lap)}`;
+}
+
+// Exported helpers so race.html can build coloured HTML from snapshot data.
+export function getTrackStateLabel(wetness) { return trackState(wetness); }
+export function getSkyStateLabel(state, sc, lap) { return skyState(state, sc, lap); }
+
 // ─── tick ──────────────────────────────────────────────────────────────────────
 // Advance every car through one sector. Must be called with the rng returned
 // by initRace() so the full sequence is contiguous and replayable.
@@ -140,19 +294,29 @@ function getChassisRetirementLabels(year) {
 export function initStrategies(rng) {
   for (const car of cars) {
     if (car.strategy) continue;  // already initialised (shouldn't happen at race start)
-    const startCompound  = chooseStartingCompound(car, rng);
-    const estLaps        = estimateStintLaps(car, startCompound);
+
+    // Always consume rng for the dry compound roll to keep the sequence stable.
+    const dryCompound = chooseStartingCompound(car, rng);
+    // If the track is already wet (WET_START scenario), all cars start on wets.
+    const startCompound = race.trackWetness >= 0.40 ? 'wet' : dryCompound;
+
     const burnPerLap     = currentCircuit.baseFuelBurnPerLap * car.engine.fuelBurnRate;
-    const fuelMarginLaps = car.team.strategy.fuelMarginLaps;
-    // Cap at race distance — no point loading fuel for more laps than the race has.
-    // Without this, hard starters (whose stint estimate may exceed total laps) fill to tank capacity.
-    const stintCapped    = Math.min(estLaps, currentCircuit.totalLaps);
-    const fuelLapsTarget = stintCapped + fuelMarginLaps;
+    let fuelLapsTarget, estLaps;
+    if (startCompound === 'wet') {
+      // Fuel for exactly the race distance — can't estimate wet stint length.
+      estLaps        = null;
+      fuelLapsTarget = currentCircuit.totalLaps + 1;
+    } else {
+      estLaps = estimateStintLaps(car, startCompound);
+      // Cap at race distance — prevents hard starters filling to tank capacity.
+      const stintCapped = Math.min(estLaps, currentCircuit.totalLaps);
+      fuelLapsTarget    = stintCapped + car.team.strategy.fuelMarginLaps;
+    }
+
     car.fuel        = Math.min(car.fuelCapacity, Math.ceil(fuelLapsTarget * burnPerLap));
     car.compound    = startCompound;
-    car.tyreHistory = [startCompound[0].toUpperCase()];
+    car.tyreHistory = [startCompound === 'wet' ? 'W' : startCompound[0].toUpperCase()];
     car.strategy    = { initialized: true };
-    // strategy_init event will be pushed to the race log on the first sector tick
     car._strategyInitPending = { compound: startCompound, estLaps, fuelLoaded: +car.fuel.toFixed(1) };
   }
 }
@@ -238,13 +402,35 @@ export function tick(rng) {
     factors.fuel = +fuelFactor.toFixed(4);
 
     // ── 5. Tyre factor ──────────────────────────────────────────────────────
-    // grip = normalised effective grip considering manufacturer, compound and wear
-    // Formula: tyreFactor = 1.0 + (1 - grip) × penaltyCoeff
-    const compound        = COMPOUNDS[car.compound];
-    const effectiveMaxGrip = Math.min(100, car.tyres.maxGrip + compound.gripModifier);
-    const grip             = (effectiveMaxGrip / 100) * (1 - car.tyreWear); // 0–1
-    const tyreFactor       = 1.0 + (1 - grip) * tyreConfig.penaltyCoeff;
+    // Wet compound: uses tyres.wetGrip; grip scales with trackWetness (best on soaking, poor on dry).
+    // Dry compounds: standard formula. Both multiplied by weatherFactor for track-condition penalty.
+    let grip, tyreFactor;
+    if (car.compound === 'wet') {
+      const wetGripBase = car.tyres.wetGrip ?? 85;
+      // 55% of wet grip available on bone-dry track; scales to 100% on soaking track
+      const wetGrip = (wetGripBase / 100) * (1 - car.tyreWear) * (0.55 + race.trackWetness * 0.45);
+      grip       = Math.max(0.1, wetGrip);
+      tyreFactor = 1.0 + (1 - grip) * tyreConfig.penaltyCoeff;
+    } else {
+      const compound        = COMPOUNDS[car.compound];
+      const effectiveMaxGrip = Math.min(100, car.tyres.maxGrip + compound.gripModifier);
+      grip       = (effectiveMaxGrip / 100) * (1 - car.tyreWear); // 0–1
+      tyreFactor = 1.0 + (1 - grip) * tyreConfig.penaltyCoeff;
+    }
     factors.tyre = +tyreFactor.toFixed(4);
+
+    // ── 5b. Weather factor ──────────────────────────────────────────────────
+    // Dry tyres slow significantly on a wet track; wet tyres have a small baseline
+    // penalty even in soaking conditions, and a larger one if the track is dry.
+    let weatherFactor;
+    if (car.compound === 'wet') {
+      weatherFactor = 1.0
+        + (1 - race.trackWetness) * WET_TYRE_DRY_PENALTY
+        + race.trackWetness       * WET_TYRE_WET_BASELINE;
+    } else {
+      weatherFactor = 1.0 + race.trackWetness * DRY_TYRE_WET_PENALTY;
+    }
+    factors.weather = +weatherFactor.toFixed(4);
 
     // ── 6. Reliability factor ───────────────────────────────────────────────
     // Persists from earlier failures (can stack). 1.0 = healthy.
@@ -260,8 +446,12 @@ export function tick(rng) {
     const errorRoll = rng();
     rolls.errorRoll = +errorRoll.toFixed(4);
 
-    const crashThreshold = (1 - effectiveConsistency / 100) * CRASH_SCALE;
-    const slowThreshold  = (1 - effectiveConsistency / 100) * SLOW_SCALE;
+    // Wet conditions raise crash/slow probability; dry tyres in the rain are far more dangerous.
+    const wetCrashMult = car.compound === 'wet'
+      ? 1.0 + race.trackWetness * (WET_CRASH_WET_TYRES - 1)
+      : 1.0 + race.trackWetness * (WET_CRASH_DRY_TYRES - 1);
+    const crashThreshold = (1 - effectiveConsistency / 100) * CRASH_SCALE * wetCrashMult;
+    const slowThreshold  = (1 - effectiveConsistency / 100) * SLOW_SCALE  * wetCrashMult;
 
     let driverFactor;
     let crashOccurred = false;
@@ -315,6 +505,7 @@ export function tick(rng) {
       * setupFactor
       * fuelFactor
       * tyreFactor
+      * weatherFactor
       * car.reliabilityFactor
       * car.puncturePenalty
       * driverFactor;
@@ -323,20 +514,33 @@ export function tick(rng) {
     car.currentSectorTimes.push(+sectorTime.toFixed(3));
 
     // ── Tyre wear accumulation ───────────────────────────────────────────────
-    // Formula: wear += baseWearRate × compoundMult × sectorWearWeight × aggressionMult × fuelWearMult × trackAbrasiveness × circuitLengthMult × dirtyAirMult
-    // dirtyAirMult: following in turbulent air increases tyre stress.
     const aggressionMult    = 1.0 + (car.driver.aggression / 100) * AGGRESSION_WEAR_SCALE;
     const fuelWearMult      = 1.0 + (car.fuel / car.fuelCapacity) * FUEL_WEAR_COEFF;
     const circuitLengthMult = currentCircuit.lengthKm / REFERENCE_CIRCUIT_KM;
     const dirtyAirWearMult  = 1.0 + proximity * DIRTY_AIR_WEAR_MULT;
-    const wearDelta = car.tyres.wearRate
-      * compound.wearMultiplier
-      * sectorDef.wearWeight
-      * aggressionMult
-      * fuelWearMult
-      * currentCircuit.trackAbrasiveness
-      * circuitLengthMult
-      * dirtyAirWearMult;
+
+    let wearDelta;
+    if (car.compound === 'wet') {
+      // Wet tyres: wear dominated by track dryness — burns out fast when track is dry.
+      const dryness = 1 - race.trackWetness;
+      wearDelta = car.tyres.wetWearRate
+        * sectorDef.wearWeight
+        * aggressionMult
+        * circuitLengthMult
+        * (1 + dryness * dryness * WET_TYRE_DRY_WEAR_MULT);
+    } else {
+      // Dry compounds: standard formula.
+      // Formula: wear += baseWearRate × compoundMult × sectorWearWeight × aggressionMult × fuelWearMult × trackAbrasiveness × circuitLengthMult × dirtyAirMult
+      const compound = COMPOUNDS[car.compound];
+      wearDelta = car.tyres.wearRate
+        * compound.wearMultiplier
+        * sectorDef.wearWeight
+        * aggressionMult
+        * fuelWearMult
+        * currentCircuit.trackAbrasiveness
+        * circuitLengthMult
+        * dirtyAirWearMult;
+    }
     car.tyreWear = Math.min(1, car.tyreWear + wearDelta);
 
     // ── Fuel burn ────────────────────────────────────────────────────────────
@@ -438,6 +642,24 @@ export function tick(rng) {
             }
           }
         }
+      }
+
+      // ── Weather update (once per lap, before pit AI so shouldPit sees updated wetness) ──
+      // Only update for the first car processed — all cars share one weather state.
+      if (car === cars[0] && race.weatherScenario) {
+        const prevWetness = race.trackWetness;
+        const target = WET_TARGET[race.weatherState];
+        let newWetness;
+        if (target > race.trackWetness) {
+          // Wetting: exponential approach so rain soaks in quickly
+          newWetness = race.trackWetness + (target - race.trackWetness) * WETNESS_APPROACH_RATE;
+        } else {
+          // Drying: linear rate — fixed drop per lap so each band takes ~12 laps
+          newWetness = Math.max(target, race.trackWetness - WETNESS_DRY_RATE);
+        }
+        race.trackWetness      = +(Math.max(0, Math.min(1, newWetness))).toFixed(3);
+        race.trackWetnessDelta = +(race.trackWetness - prevWetness).toFixed(4);
+        race.weatherState = rollWeatherState(race.weatherState, race.weatherScenario, race.lap, rng);
       }
 
       // Ran out of fuel — retirement (shouldn't happen with good AI, but guard against it)
@@ -612,11 +834,18 @@ export function tick(rng) {
 // fuel state. Positive = behind car is faster right now.
 function paceDelta(behind, ahead) {
   function tyrePlusFuel(car) {
-    const compound        = COMPOUNDS[car.compound];
-    const effectiveMaxGrip = Math.min(100, car.tyres.maxGrip + compound.gripModifier);
-    const grip             = (effectiveMaxGrip / 100) * (1 - car.tyreWear);
-    return (1.0 + (1 - grip) * tyreConfig.penaltyCoeff)   // tyreFactor
-         + (1.0 + (car.fuel / car.fuelCapacity) * 0.03); // fuelFactor
+    let tyreFactor;
+    if (car.compound === 'wet') {
+      const wetGripBase = car.tyres.wetGrip ?? 85;
+      const grip = (wetGripBase / 100) * (1 - car.tyreWear) * (0.55 + race.trackWetness * 0.45);
+      tyreFactor = 1.0 + (1 - Math.max(0.1, grip)) * tyreConfig.penaltyCoeff;
+    } else {
+      const compound         = COMPOUNDS[car.compound];
+      const effectiveMaxGrip = Math.min(100, car.tyres.maxGrip + compound.gripModifier);
+      const grip             = (effectiveMaxGrip / 100) * (1 - car.tyreWear);
+      tyreFactor             = 1.0 + (1 - grip) * tyreConfig.penaltyCoeff;
+    }
+    return tyreFactor + (1.0 + (car.fuel / car.fuelCapacity) * 0.03);
   }
   return tyrePlusFuel(ahead) - tyrePlusFuel(behind); // positive = behind is faster
 }
@@ -914,48 +1143,81 @@ function shouldPit(car, rng) {
   const wearJitter = (rng() - 0.5) * 0.06;  // ±0.03 spread on wear trigger
 
   if (race.lap >= currentCircuit.totalLaps - 3) return false;
-
-  // If a slow puncture fired this lap, force the car to run at least one lap on the flat
-  // so the time penalty is visible before fresh rubber resets everything.
   if (car.puncturedOnLap === race.lap) return false;
 
-  const burnPerLap = currentCircuit.baseFuelBurnPerLap * car.engine.fuelBurnRate;
+  const burnPerLap           = currentCircuit.baseFuelBurnPerLap * car.engine.fuelBurnRate;
   const { fuelTrigger, wearTrigger } = car.team.strategy;
+  const effectiveWearTrigger = Math.max(0.60, Math.min(0.95, wearTrigger + wearJitter));
+  const lapsRemaining        = currentCircuit.totalLaps - race.lap;
+  const agg                  = car.driver.aggression / 100;
 
-  // Emergency fuel stop — override everything
+  // Emergency fuel — always pit regardless of compound
   if (car.fuel < burnPerLap * 2) return true;
 
-  // Normal triggers: fuel at/below threshold OR wear at/above threshold (with jitter)
-  const effectiveWearTrigger = Math.max(0.60, Math.min(0.95, wearTrigger + wearJitter));
+  // ── Wet compound ─────────────────────────────────────────────────────────
+  if (car.compound === 'wet') {
+    // Switch back to drys when track is sufficiently dry; aggressive drivers gamble sooner.
+    // Only fires when the track is drying (delta ≤ 0) — prevents switching to slicks while it's still raining.
+    const dryThreshold = 0.20 + agg * 0.40;   // 0.20 (conservative) → 0.60 (aggressive)
+    if (race.trackWetness <= dryThreshold && race.trackWetnessDelta <= 0 && car.stintLap >= 4) return true;
+    // Also pit on high wear — wets burning up on a drying track
+    if (car.tyreWear >= effectiveWearTrigger) return true;
+    return false;  // no fuel or crossover triggers apply when on wets
+  }
 
-  const lapsRemaining = currentCircuit.totalLaps - race.lap;
+  // ── Switch to wets if track is wet enough ─────────────────────────────────
+  // Aggressive drivers gamble early on rain continuing (switch before pace crossover);
+  // conservative drivers wait until wets are clearly faster.
+  // Only fires when the track is wetting (delta ≥ 0) — prevents switching to wets on a drying track.
+  const wetThreshold = 0.55 - agg * 0.20;     // 0.35 (aggressive) → 0.55 (conservative)
+  if (race.trackWetness >= wetThreshold && race.trackWetnessDelta >= 0 && car.stintLap >= 4) return true;
 
-  // Fuel trigger: only fire if the car genuinely cannot reach the flag on current fuel.
-  // Without this check, cars with e.g. 6.7 kg and only 4 laps left (needing 5.2 kg)
-  // would pit unnecessarily just because fuel dipped below the team threshold.
+  // ── Normal dry triggers ───────────────────────────────────────────────────
   const fuelShort = car.fuel <= fuelTrigger && car.fuel < lapsRemaining * burnPerLap;
-
-  // Crossover trigger: pit when running on a fresh compound is worth it overall.
-  // Minimum 5-lap stint guard prevents re-triggering immediately after a stop.
   const crossover = car.stintLap >= 5 && crossoverPitBenefits(car);
-
   return fuelShort || car.tyreWear >= effectiveWearTrigger || crossover;
 }
 
 // Executes the pit stop: chooses compound reactively, refuels for estimated stint,
 // adds stop time to cumulativeTime. Returns the pit event object for the race log.
 function executePitStop(car, rng) {
-  // ── Reactive compound choice ─────────────────────────────────────────────────
-  // Apply softest-viable rule then aggressiveness; log all estimates for inspection.
-  const { compound: newCompound, estimates, minViable } = chooseNextCompound(car, rng);
   const lapsRemaining = currentCircuit.totalLaps - race.lap;
-  const isLastStint   = estimates[newCompound].canReach;  // chosen compound reaches flag
+  const burnPerLap    = currentCircuit.baseFuelBurnPerLap * car.engine.fuelBurnRate;
+  const agg           = car.driver.aggression / 100;
+
+  // ── Compound choice ──────────────────────────────────────────────────────────
+  // switchingToWet:  dry tyres → wets because track is wet enough
+  // freshWets:       worn wets → fresh wets because track is still wet (not switching to dry)
+  // else:            wet tyres → dry (track dried) or normal dry-to-dry reactive choice
+  const isOnWets      = car.compound === 'wet';
+  const wetThreshold  = 0.55 - agg * 0.20;  // mirror of shouldPit's wet-switch threshold
+  const dryThreshold  = 0.20 + agg * 0.40;  // mirror of shouldPit's dry-switch threshold
+  const switchingToWet = !isOnWets && race.trackWetness >= wetThreshold;
+  const freshWets      = isOnWets  && race.trackWetness >  dryThreshold; // worn wets, still raining
+
+  let newCompound, estimates, minViable, isLastStint;
+
+  if (switchingToWet || freshWets) {
+    rng();  // consume one call to match chooseNextCompound's sequence
+    newCompound  = 'wet';
+    estimates    = null;
+    minViable    = null;
+    isLastStint  = true;  // fuel for rest of race
+  } else {
+    // Choosing a dry compound (from wets→dry or normal dry→dry).
+    // chooseNextCompound considers only soft/medium/hard.
+    const result = chooseNextCompound(car, rng);
+    newCompound  = result.compound;
+    estimates    = result.estimates;
+    minViable    = result.minViable;
+    isLastStint  = estimates[newCompound].canReach;
+  }
 
   // ── Fuel load ────────────────────────────────────────────────────────────────
-  // Last stint: load exactly enough to reach the flag (+ 1 lap margin for safety).
-  // Mid-race: load for estimated stint length + team safety margin.
-  const burnPerLap     = currentCircuit.baseFuelBurnPerLap * car.engine.fuelBurnRate;
-  const fuelLapsTarget = isLastStint
+  // When switching to wets: fuel for remaining race distance only (never overfuel).
+  // Last dry stint: load exactly enough to reach the flag + 1 lap margin.
+  // Mid-race dry: load for estimated stint + team safety margin.
+  const fuelLapsTarget = (switchingToWet || freshWets || isLastStint)
     ? lapsRemaining + 1
     : estimates[newCompound].estLaps + car.team.strategy.fuelMarginLaps;
   const fuelTarget = Math.min(car.fuelCapacity, Math.ceil(fuelLapsTarget * burnPerLap));
@@ -1004,15 +1266,16 @@ function executePitStop(car, rng) {
     fuellingTime:   +fuellingTime.toFixed(1),
     fuelAdded,
     ...(botched && { botched: true, botchExtra, netTimeLost }),
-    // AI reasoning logged in full so strategy decisions are inspectable
-    aiEstimates: {
+    // AI reasoning logged in full so strategy decisions are inspectable.
+    // Null for wet-tyre stops — no dry stint estimate applies.
+    aiEstimates: estimates ? {
       lapsRemaining,
-      minViable,      // softest compound that can reach the flag (or null)
+      minViable,
       soft:   estimates.soft,
       medium: estimates.medium,
       hard:   estimates.hard,
       chosen: newCompound,
-    },
+    } : null,
   };
 }
 

@@ -130,7 +130,7 @@
     }                          from './championship.js';
     import { initRace, cars }  from './state.js';
     import {
-      runRace, initStrategies, setCurrentCircuit, runQualifyingSession,
+      runRace, initStrategies, initWeather, setCurrentCircuit, runQualifyingSession,
     }                          from './simulation.js';
 
     const worldSeed     = getWorldSeed();
@@ -138,7 +138,7 @@
     const currentSeason = currentEvent.season;
 
     const simFns = {
-      initRace, cars, runRace, initStrategies,
+      initRace, cars, runRace, initStrategies, initWeather,
       setCurrentCircuit, runQualifyingSession, getSeasonSnapshot,
     };
 

@@ -94,7 +94,8 @@ export class Renderer {
   get _displayCars() { return this._viewIdx >= 0 ? this._snapshots[this._viewIdx].cars : cars; }
   get _displayRace() { return this._viewIdx >= 0 ? this._snapshots[this._viewIdx].race : race; }
   get inReplay()     { return this._viewIdx >= 0; }
-  get canStepBack()  { return this._viewIdx >= 0 ? this._viewIdx > 0 : this._snapshots.length >= 2; }
+  get canStepBack()     { return this._viewIdx >= 0 ? this._viewIdx > 0 : this._snapshots.length >= 2; }
+  get currentSnapshot() { return this._viewIdx >= 0 ? this._snapshots[this._viewIdx] : null; }
 
   // Show/hide the Live pill — called from the game loop on start/pause/finish/reset.
   set isLive(v) {
@@ -105,7 +106,14 @@ export class Renderer {
   // Called by the game loop after each tick() to save state for stepping.
   pushSnapshot() {
     this._snapshots.push({
-      race: { lap: race.lap, sector: race.sector, tick: race.tick },
+      race: {
+        lap:             race.lap,
+        sector:          race.sector,
+        tick:            race.tick,
+        trackWetness:    race.trackWetness,
+        weatherState:    race.weatherState,
+        weatherScenario: race.weatherScenario,
+      },
       cars: cars.map(c => ({
         // static refs — driver/team/tyres/engine never change during a race
         driver:          c.driver,
@@ -668,8 +676,9 @@ export class Renderer {
       const displayLaps = (estLaps != null && lapsRem != null)
         ? Math.min(estLaps, lapsRem)
         : estLaps;
+      const compLabel = ev.compound === 'wet' ? 'WET' : ev.compound[0].toUpperCase();
       const parts   = [
-        `${ev.compound[0].toUpperCase()} TYRES +${ev.fuelAdded}KG`,
+        `${compLabel} TYRES +${ev.fuelAdded}KG`,
         `${ev.stationaryTime.toFixed(1)}SEC STOP / ${ev.duration.toFixed(1)}SEC LOST`,
       ];
       if (displayLaps != null) parts.push(`EST ${displayLaps} LAPS`);
@@ -961,7 +970,7 @@ export class Renderer {
     }
 
     // ── Draw one line per driver ──────────────────────────────────────────
-    const PIT_COLOURS = { soft: '#ff4444', medium: '#ffff00', hard: '#eeeeee' };
+    const PIT_COLOURS = { soft: '#ff4444', medium: '#ffff00', hard: '#eeeeee', wet: '#4499ff' };
 
     for (const car of displayCars) {
       const name   = car.driver.name;

@@ -37,9 +37,11 @@ export const ENGINES = {
 // These are S1 baseline stats; worldstate.js regenerates them each tyre era (every 2 seasons).
 
 export const TYRES = {
-  blackstripe: { id: 'blackstripe', name: 'Blackstripe', letter: 'B', maxGrip: 88, wearRate: 0.0112 },
-  vulcan:      { id: 'vulcan',      name: 'Vulcan',      letter: 'V', maxGrip: 86, wearRate: 0.0128 },
-  saltwell:    { id: 'saltwell',    name: 'Saltwell',     letter: 'S', maxGrip: 84, wearRate: 0.0118 },
+  // wetGrip:    peak grip on a soaking track with wet tyres (0–100)
+  // wetWearRate: wear per sector on a fully wet track; scales up sharply as track dries
+  blackstripe: { id: 'blackstripe', name: 'Blackstripe', letter: 'B', maxGrip: 88, wearRate: 0.0112, wetGrip: 90, wetWearRate: 0.0014 },
+  vulcan:      { id: 'vulcan',      name: 'Vulcan',      letter: 'V', maxGrip: 86, wearRate: 0.0128, wetGrip: 87, wetWearRate: 0.0018 },
+  saltwell:    { id: 'saltwell',    name: 'Saltwell',     letter: 'S', maxGrip: 84, wearRate: 0.0118, wetGrip: 85, wetWearRate: 0.0022 },
 };
 
 // Backward-compat alias
@@ -61,6 +63,12 @@ export const COMPOUNDS = {
   hard: {
     wearMultiplier: 0.50,  // ~84 laps — can reach the flag with no stop on most circuits
     gripModifier:   -4,    // ~0.5s/lap slower fresh — below breakeven where hard wins overall
+  },
+  // Wet compound — grip and wear handled separately in simulation.js using tyres.wetGrip / wetWearRate.
+  // wearMultiplier and gripModifier are not used for wet; present only so COMPOUNDS.wet exists.
+  wet: {
+    wearMultiplier: 1.0,
+    gripModifier:   0,
   },
 };
 
@@ -354,6 +362,7 @@ export const CIRCUITS = {
   hawkesbury: {
     id:                 'hawkesbury',
     abbrev:             'AUS',
+    rainProb:           0.08,
     name:               'Hawkesbury River Circuit',
     country:            'Australia',
     location:           'Windsor, New South Wales',
@@ -379,6 +388,7 @@ export const CIRCUITS = {
   marlborough: {
     id:                 'marlborough',
     abbrev:             'NZL',
+    rainProb:           0.18,
     name:               'Marlborough Sounds Circuit',
     country:            'New Zealand',
     location:           'Picton',
@@ -404,6 +414,7 @@ export const CIRCUITS = {
   pampa: {
     id:                 'pampa',
     abbrev:             'ARG',
+    rainProb:           0.05,
     name:               'Circuito de la Pampa',
     country:            'Argentina',
     location:           'Córdoba',
@@ -429,6 +440,7 @@ export const CIRCUITS = {
   guadalajara: {
     id:                 'guadalajara',
     abbrev:             'MEX',
+    rainProb:           0.12,
     name:               'Autodromo de Guadalajara',
     country:            'Mexico',
     location:           'Guadalajara',
@@ -454,6 +466,7 @@ export const CIRCUITS = {
   kyushu: {
     id:                 'kyushu',
     abbrev:             'JPN',
+    rainProb:           0.22,
     name:               'Kyushu Motorsport Park',
     country:            'Japan',
     location:           'Kumamoto',
@@ -479,6 +492,7 @@ export const CIRCUITS = {
   nairobi: {
     id:                 'nairobi',
     abbrev:             'KEN',
+    rainProb:           0.10,
     name:               'East African Grand Prix Circuit',
     country:            'Kenya',
     location:           'Nairobi',
@@ -504,6 +518,7 @@ export const CIRCUITS = {
   laeken: {
     id:                 'laeken',
     abbrev:             'BEL',
+    rainProb:           0.28,
     name:               'Circuit de Bruxelles-Laeken',
     country:            'Belgium',
     location:           'Brussels',
@@ -529,6 +544,7 @@ export const CIRCUITS = {
   cotedazur: {
     id:                 'cotedazur',
     abbrev:             'FRA',
+    rainProb:           0.06,
     name:               "Circuit de la Côte d'Azur",
     country:            'France',
     location:           'Nice',
@@ -554,6 +570,7 @@ export const CIRCUITS = {
   palermo: {
     id:                 'palermo',
     abbrev:             'ITA',
+    rainProb:           0.06,
     name:               'Autodromo di Palermo',
     country:            'Italy',
     location:           'Palermo, Sicily',
@@ -579,6 +596,7 @@ export const CIRCUITS = {
   schwarzwald: {
     id:                 'schwarzwald',
     abbrev:             'GER',
+    rainProb:           0.25,
     name:               'Schwarzwald-Ring',
     country:            'Germany',
     location:           'Freiburg im Breisgau',
@@ -604,6 +622,7 @@ export const CIRCUITS = {
   karlovyvary: {
     id:                 'karlovyvary',
     abbrev:             'CZE',
+    rainProb:           0.18,
     name:               'Karlovy Vary Kurkurs',
     country:            'Czechoslovakia',
     location:           'Karlovy Vary',
@@ -629,6 +648,7 @@ export const CIRCUITS = {
   brookthorpe: {
     id:                 'brookthorpe',
     abbrev:             'GBR',
+    rainProb:           0.33,
     name:               'Brookthorpe Park Circuit',
     country:            'England',
     location:           'Gloucestershire',
@@ -654,6 +674,7 @@ export const CIRCUITS = {
   hamnkurs: {
     id:                 'hamnkurs',
     abbrev:             'SWE',
+    rainProb:           0.20,
     name:               'Göteborg Hamnkurs',
     country:            'Sweden',
     location:           'Gothenburg',
@@ -679,6 +700,7 @@ export const CIRCUITS = {
   rovaniemi: {
     id:                 'rovaniemi',
     abbrev:             'FIN',
+    rainProb:           0.18,
     name:               'Rovaniemi Arctic Circuit',
     country:            'Finland',
     location:           'Rovaniemi',
@@ -704,6 +726,7 @@ export const CIRCUITS = {
   harbourfront: {
     id:                 'harbourfront',
     abbrev:             'HKG',
+    rainProb:           0.22,
     name:               'Central Harbourfront Circuit',
     country:            'Hong Kong',
     location:           'Central & Wan Chai',
@@ -729,6 +752,7 @@ export const CIRCUITS = {
   lacMeech: {
     id:                 'lacMeech',
     abbrev:             'CAN',
+    rainProb:           0.15,
     name:               'Circuit du Lac Meech',
     country:            'Canada',
     location:           'Gatineau, Quebec',
@@ -754,6 +778,7 @@ export const CIRCUITS = {
   douglas: {
     id:                 'douglas',
     abbrev:             'USA',
+    rainProb:           0.25,
     name:               'Douglas Circuit',
     country:            'United States',
     location:           'Roseburg, Oregon',
@@ -779,6 +804,7 @@ export const CIRCUITS = {
   lahore: {
     id:                 'lahore',
     abbrev:             'PAK',
+    rainProb:           0.03,
     name:               'Lahore Street Circuit',
     country:            'Pakistan',
     location:           'Lahore',
@@ -804,6 +830,7 @@ export const CIRCUITS = {
   recife: {
     id:                 'recife',
     abbrev:             'BRA',
+    rainProb:           0.20,
     name:               'Circuito do Recife Costeiro',
     country:            'Brazil',
     location:           'Recife',
@@ -829,6 +856,7 @@ export const CIRCUITS = {
   bushveld: {
     id:                 'bushveld',
     abbrev:             'RSA',
+    rainProb:           0.08,
     name:               'Bushveld Grand Prix Circuit',
     country:            'South Africa',
     location:           'Pretoria',

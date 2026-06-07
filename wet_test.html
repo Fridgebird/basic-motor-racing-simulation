@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Wet Tyre Model — SMR Test</title>
+<style>
+  :root {
+    --bg: #0a0e14; --mid: #111820; --border: #1e2d3d;
+    --lo: #4a6a88; --text: #c8d8e8; --accent: #00e5ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: monospace; font-size: 13px; padding: 24px; }
+  h1 { color: var(--accent); font-size: 14px; letter-spacing: 2px; margin-bottom: 4px; }
+  h2 { color: var(--lo); font-size: 11px; letter-spacing: 1px; margin: 20px 0 8px; }
+  p { color: var(--lo); font-size: 11px; margin: 4px 0 12px; line-height: 1.5; }
+  .params { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; }
+  .param { display: flex; flex-direction: column; gap: 4px; }
+  label { color: var(--lo); font-size: 10px; letter-spacing: 1px; }
+  input[type=range] { width: 140px; accent-color: var(--accent); }
+  .val { color: var(--accent); font-size: 11px; }
+  .charts { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
+  svg { background: var(--mid); border: 1px solid var(--border); }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+  th { background: var(--mid); color: var(--lo); font-size: 10px; letter-spacing: 1px; padding: 5px 10px; text-align: right; border: 1px solid var(--border); }
+  td { padding: 4px 10px; text-align: right; border: 1px solid var(--border); font-size: 12px; }
+  td:first-child { color: var(--lo); }
+  .best { color: #00e5ff; font-weight: bold; }
+  .note { background: var(--mid); border: 1px solid var(--border); padding: 10px 14px; margin-bottom: 16px; font-size: 11px; line-height: 1.6; color: var(--lo); }
+  .note strong { color: var(--text); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; font-size: 11px; }
+  .leg { display: flex; align-items: center; gap: 5px; }
+  .leg-line { width: 24px; height: 3px; }
+</style>
+</head>
+<body>
+
+<h1>WET TYRE MODEL — PACE FACTOR vs TRACK WETNESS</h1>
+<p>Shows compound pace relative to a perfect dry/dry lap (factor 1.0 = no penalty). Fresh tyres, average grip manufacturer (Vulcan). Adjust sliders to explore.</p>
+
+<div class="params">
+  <div class="param">
+    <label>TYRE WEAR (0=fresh, 1=worn)</label>
+    <input type="range" id="wear" min="0" max="1" step="0.05" value="0">
+    <span class="val" id="wear-val">0.00</span>
+  </div>
+  <div class="param">
+    <label>BASE LAP TIME (seconds)</label>
+    <input type="range" id="baseLap" min="80" max="240" step="5" value="160">
+    <span class="val" id="baseLap-val">160 s</span>
+  </div>
+  <div class="param">
+    <label>FUEL LOAD (kg, 0=empty)</label>
+    <input type="range" id="fuel" min="0" max="130" step="5" value="0">
+    <span class="val" id="fuel-val">0 kg (quali)</span>
+  </div>
+  <div class="param">
+    <label>FUEL CAPACITY (kg)</label>
+    <input type="range" id="fuelCap" min="80" max="140" step="5" value="110">
+    <span class="val" id="fuelCap-val">110 kg</span>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="leg"><div class="leg-line" style="background:#ff4444"></div> SOFT</div>
+  <div class="leg"><div class="leg-line" style="background:#ffdd00"></div> MEDIUM</div>
+  <div class="leg"><div class="leg-line" style="background:#dddddd"></div> HARD</div>
+  <div class="leg"><div class="leg-line" style="background:#66ccff"></div> WET · BLACKSTRIPE</div>
+  <div class="leg"><div class="leg-line" style="background:#3399dd"></div> WET · VULCAN</div>
+  <div class="leg"><div class="leg-line" style="background:#1166aa"></div> WET · SALTWELL</div>
+  <div class="leg"><div class="leg-line" style="background:#444; border-top:1px dashed #888"></div> AI switch threshold (cons/aggr)</div>
+</div>
+
+<div class="charts">
+  <div>
+    <div style="color:var(--lo);font-size:10px;letter-spacing:1px;margin-bottom:4px;">PACE FACTOR (higher = slower)</div>
+    <svg id="chart-pace" width="560" height="320"></svg>
+  </div>
+  <div>
+    <div style="color:var(--lo);font-size:10px;letter-spacing:1px;margin-bottom:4px;">SECONDS PER LAP vs DRY QUALI</div>
+    <svg id="chart-secs" width="360" height="320"></svg>
+  </div>
+</div>
+
+<div class="note" id="crossover-note"></div>
+
+<h2>PACE FACTOR TABLE — VULCAN TYRES, FRESH</h2>
+<table id="pace-table"></table>
+
+<h2>HOW THE MODEL WORKS</h2>
+<div class="note">
+<strong>Dry compounds (S/M/H) in rain:</strong><br>
+weatherFactor = 1 + wetness × 0.18 &nbsp;&nbsp;(18% penalty at soaking)<br>
+tyreFactor = 1 + (1 − grip) × 0.06 &nbsp;&nbsp;(grip = effectiveMaxGrip × (1 − wear))<br>
+<br>
+<strong>Wet compound in rain:</strong><br>
+weatherFactor = 1 + (1−wetness) × 0.08 + wetness × 0.08 &nbsp;&nbsp;(8% penalty on both dry and soaking ends)<br>
+wetGrip = manufacturer_wetGrip × (0.55 + wetness × 0.45) &nbsp;&nbsp;(worst on dry, best in soaking)<br>
+tyreFactor = 1 + (1 − wetGrip) × 0.06<br>
+<br>
+<strong>AI switching thresholds (shouldPit):</strong><br>
+Dry → Wet: trackWetness ≥ 0.55 − aggression × 0.20 &nbsp;&nbsp;(aggressive 0.35, conservative 0.55)<br>
+Wet → Dry: trackWetness ≤ 0.15 + aggression × 0.30 &nbsp;&nbsp;(conservative 0.15, aggressive 0.45)<br>
+<br>
+<strong>Crash risk multiplier on wet track (applied to crash/slow thresholds):</strong><br>
+Dry tyres: 1 + wetness × 1.5 &nbsp;&nbsp;(up to 2.5× at soaking)<br>
+Wet tyres: 1 + wetness × 0.3 &nbsp;&nbsp;(up to 1.3× at soaking)
+</div>
+
+<script>
+// ── Constants (mirror simulation.js) ──────────────────────────────────────────
+const DRY_WET_PENALTY    = 0.18;
+const WET_DRY_PENALTY    = 0.08;
+const WET_WET_BASELINE   = 0.08;
+const PENALTY_COEFF      = 0.06;
+
+const COMPOUNDS = {
+  soft:   { gripModifier: +8,  color: '#ff4444' },
+  medium: { gripModifier:  0,  color: '#ffdd00' },
+  hard:   { gripModifier: -4,  color: '#dddddd' },
+};
+
+const TYRES = {
+  blackstripe: { maxGrip: 88, wetGrip: 90, colors: { wet: '#66ccff' } },
+  vulcan:      { maxGrip: 86, wetGrip: 87, colors: { wet: '#3399dd' } },
+  saltwell:    { maxGrip: 84, wetGrip: 85, colors: { wet: '#1166aa' } },
+};
+
+// ── Pace factor calculators ───────────────────────────────────────────────────
+function dryFactor(compound, tyre, wear, wetness) {
+  const effectiveGrip = Math.min(100, tyre.maxGrip + COMPOUNDS[compound].gripModifier) / 100;
+  const grip         = effectiveGrip * (1 - wear);
+  const tyreFactor   = 1 + (1 - grip) * PENALTY_COEFF;
+  const weatherFactor = 1 + wetness * DRY_WET_PENALTY;
+  return tyreFactor * weatherFactor;
+}
+
+function wetFactor(tyre, wear, wetness) {
+  const rawWetGrip   = tyre.wetGrip / 100;
+  const grip         = rawWetGrip * (1 - wear) * (0.55 + wetness * 0.45);
+  const tyreFactor   = 1 + (1 - Math.max(0.1, grip)) * PENALTY_COEFF;
+  const weatherFactor = 1 + (1 - wetness) * WET_DRY_PENALTY + wetness * WET_WET_BASELINE;
+  return tyreFactor * weatherFactor;
+}
+
+function fuelFactor(fuel, fuelCap) {
+  return 1 + (fuel / fuelCap) * 0.03;
+}
+
+// ── Rendering ─────────────────────────────────────────────────────────────────
+const WETNESS_STEPS = 101; // 0.00 to 1.00 in 0.01 steps
+
+function getSliderValues() {
+  return {
+    wear:    parseFloat(document.getElementById('wear').value),
+    baseLap: parseFloat(document.getElementById('baseLap').value),
+    fuel:    parseFloat(document.getElementById('fuel').value),
+    fuelCap: parseFloat(document.getElementById('fuelCap').value),
+  };
+}
+
+function buildSeries() {
+  const { wear, fuel, fuelCap } = getSliderValues();
+  const ff = fuelFactor(fuel, fuelCap);
+  const vulcan = TYRES.vulcan;
+
+  const series = [];
+
+  // Dry compounds (using Vulcan chassis grip as representative)
+  for (const [name, comp] of Object.entries(COMPOUNDS)) {
+    const pts = [];
+    for (let i = 0; i < WETNESS_STEPS; i++) {
+      const w = i / (WETNESS_STEPS - 1);
+      pts.push(dryFactor(name, vulcan, wear, w) * ff);
+    }
+    series.push({ label: name.toUpperCase(), color: comp.color, pts, compound: name });
+  }
+
+  // Wet compounds for all three manufacturers
+  for (const [tyreName, tyre] of Object.entries(TYRES)) {
+    const pts = [];
+    for (let i = 0; i < WETNESS_STEPS; i++) {
+      const w = i / (WETNESS_STEPS - 1);
+      pts.push(wetFactor(tyre, wear, w) * ff);
+    }
+    series.push({ label: `WET·${tyreName[0].toUpperCase()}${tyreName.slice(1,3).toUpperCase()}`, color: tyre.colors.wet, pts, compound: 'wet', tyreName });
+  }
+
+  return series;
+}
+
+function drawChart(svgId, series, { width, height, baseLap, showSecs }) {
+  const svg = document.getElementById(svgId);
+  svg.setAttribute('width', width);
+  svg.setAttribute('height', height);
+
+  const PAD = { l: 48, r: 16, t: 14, b: 36 };
+  const W = width  - PAD.l - PAD.r;
+  const H = height - PAD.t - PAD.b;
+
+  // Y range
+  const allPts = series.flatMap(s => s.pts);
+  let yMin = showSecs ? 0  : Math.min(...allPts) * 0.995;
+  let yMax = showSecs ? Math.max(...allPts.map(p => (p-1)*baseLap)) * 1.05 : Math.max(...allPts) * 1.005;
+  if (showSecs) yMin = 0;
+
+  const xScale = i => PAD.l + (i / (WETNESS_STEPS - 1)) * W;
+  const yScale = v => PAD.t + H - ((v - yMin) / (yMax - yMin)) * H;
+
+  let out = '';
+
+  // Grid lines
+  const yTicks = 6;
+  for (let i = 0; i <= yTicks; i++) {
+    const v = yMin + (yMax - yMin) * i / yTicks;
+    const y = yScale(v);
+    const label = showSecs ? v.toFixed(0) + 's' : v.toFixed(3);
+    out += `<line x1="${PAD.l}" x2="${PAD.l+W}" y1="${y}" y2="${y}" stroke="#1e2d3d" stroke-width="1"/>`;
+    out += `<text x="${PAD.l - 4}" y="${y + 4}" text-anchor="end" font-size="9" fill="#4a6a88">${label}</text>`;
+  }
+
+  // X axis ticks
+  for (let w = 0; w <= 10; w++) {
+    const x = xScale(w * (WETNESS_STEPS-1) / 10);
+    const labels = ['DRY','','','DRIZZLE\n0.28','','RAIN\n0.65','','','','HEAVY\n0.95','SOAKING'];
+    const simpleLabels = ['0.0','0.1','0.2','0.3','0.4','0.5','0.6','0.7','0.8','0.9','1.0'];
+    out += `<line x1="${x}" x2="${x}" y1="${PAD.t}" y2="${PAD.t+H}" stroke="#1e2d3d" stroke-width="1"/>`;
+    out += `<text x="${x}" y="${PAD.t+H+14}" text-anchor="middle" font-size="9" fill="#4a6a88">${simpleLabels[w]}</text>`;
+  }
+
+  // AI switch threshold vertical dashes — aggressive 0.35, conservative 0.55
+  for (const [threshW, lbl] of [[0.35, 'AGGR'], [0.55, 'CONS']]) {
+    const x = xScale(threshW * (WETNESS_STEPS-1));
+    out += `<line x1="${x}" x2="${x}" y1="${PAD.t}" y2="${PAD.t+H}" stroke="#556677" stroke-width="1" stroke-dasharray="4,3"/>`;
+    out += `<text x="${x+2}" y="${PAD.t+10}" font-size="8" fill="#556677">${lbl}</text>`;
+  }
+
+  // Wet-target reference lines (vertical dotted)
+  for (const [w, lbl] of [[0.28, 'DRIZZLE'], [0.65, 'RAIN'], [0.95, 'HEAVY']]) {
+    const x = xScale(w * (WETNESS_STEPS-1));
+    out += `<line x1="${x}" x2="${x}" y1="${PAD.t}" y2="${PAD.t+H}" stroke="#2a3d50" stroke-width="1" stroke-dasharray="2,4"/>`;
+  }
+
+  // Series lines
+  for (const s of series) {
+    const pts = s.pts.map((v, i) => {
+      const yv = showSecs ? (v - 1) * baseLap : v;
+      return `${xScale(i).toFixed(1)},${yScale(yv).toFixed(1)}`;
+    }).join(' ');
+    const dashArr = s.compound === 'wet' ? '' : '';
+    out += `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2" opacity="0.9"/>`;
+  }
+
+  // Axis labels
+  out += `<text x="${PAD.l + W/2}" y="${height - 2}" text-anchor="middle" font-size="9" fill="#4a6a88">TRACK WETNESS →</text>`;
+
+  svg.innerHTML = out;
+}
+
+function buildTable(series) {
+  const { baseLap, fuel, fuelCap } = getSliderValues();
+  const wetness_points = [0.0, 0.1, 0.2, 0.28, 0.3, 0.4, 0.5, 0.65, 0.7, 0.8, 0.9, 0.95, 1.0];
+
+  let html = '<thead><tr><th>WET</th>';
+  for (const s of series) html += `<th style="color:${s.color}">${s.label}</th>`;
+  html += '</tr></thead><tbody>';
+
+  for (const w of wetness_points) {
+    const values = series.map(s => {
+      const idx = Math.round(w * (WETNESS_STEPS - 1));
+      return s.pts[idx];
+    });
+    const minVal = Math.min(...values);
+    const ffBase = fuelFactor(fuel, fuelCap);
+    html += `<tr><td>${w.toFixed(2)}</td>`;
+    for (let i = 0; i < values.length; i++) {
+      const v = values[i];
+      const isBest = Math.abs(v - minVal) < 0.0001;
+      const delta = ((v - 1) * baseLap).toFixed(1);
+      const cls = isBest ? ' class="best"' : '';
+      html += `<td${cls}>${v.toFixed(4)}<br><span style="font-size:10px;color:#4a6a88">+${delta}s</span></td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody>';
+  document.getElementById('pace-table').innerHTML = html;
+}
+
+function findCrossover(dryPts, wetPts) {
+  // Find wetness where wet becomes faster than dry (wet factor < dry factor)
+  for (let i = 1; i < WETNESS_STEPS; i++) {
+    if (wetPts[i] < dryPts[i]) return i / (WETNESS_STEPS - 1);
+  }
+  return null;
+}
+
+function buildNote(series) {
+  const medium = series.find(s => s.compound === 'medium');
+  const wetV   = series.find(s => s.tyreName === 'vulcan');
+  const wetB   = series.find(s => s.tyreName === 'blackstripe');
+  const wetS   = series.find(s => s.tyreName === 'saltwell');
+
+  const cx_V = findCrossover(medium.pts, wetV.pts);
+  const cx_B = findCrossover(medium.pts, wetB.pts);
+  const cx_S = findCrossover(medium.pts, wetS.pts);
+
+  let lines = ['<strong>Pace crossover: wetness where WET tyres become faster than MEDIUM (fresh, Vulcan grip)</strong><br>'];
+  lines.push(`Blackstripe wets: ${cx_B != null ? cx_B.toFixed(2) : 'never'}    |    Vulcan wets: ${cx_V != null ? cx_V.toFixed(2) : 'never'}    |    Saltwell wets: ${cx_S != null ? cx_S.toFixed(2) : 'never'}`);
+  lines.push('<br>');
+  lines.push(`AI switches to wets at wetness ≥ 0.20 (conservative) or 0.40 (aggressive).`);
+  lines.push(`Wet-tyre-target states: DRIZZLE peaks at 0.28, RAIN at 0.65, HEAVY at 0.95.`);
+
+  document.getElementById('crossover-note').innerHTML = lines.join('<br>');
+}
+
+function render() {
+  const { wear, baseLap, fuel, fuelCap } = getSliderValues();
+  document.getElementById('wear-val').textContent    = wear.toFixed(2);
+  document.getElementById('baseLap-val').textContent = baseLap + ' s';
+  document.getElementById('fuel-val').textContent    = fuel + ' kg' + (fuel === 0 ? ' (quali)' : fuel >= 100 ? ' (full)' : '');
+  document.getElementById('fuelCap-val').textContent = fuelCap + ' kg';
+
+  const series = buildSeries();
+
+  drawChart('chart-pace', series, { width: 560, height: 320, baseLap, showSecs: false });
+  drawChart('chart-secs', series, { width: 360, height: 320, baseLap, showSecs: true });
+
+  buildTable(series);
+  buildNote(series);
+}
+
+document.querySelectorAll('input[type=range]').forEach(el => el.addEventListener('input', render));
+render();
+</script>
+</body>
+</html>

@@ -319,10 +319,10 @@ export function hasRaceResult(season, round) {
  * and ensures correct module binding for the cars[] live export from state.js).
  *
  * @param {number} season
- * @param {{ initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession, getSeasonSnapshot }} simFns
+ * @param {{ initRace, cars, runRace, initStrategies, initWeather, setCurrentCircuit, runQualifyingSession, getSeasonSnapshot }} simFns
  */
 export async function ensurePastResultsCached(season, simFns) {
-  const { initRace, cars, runRace, initStrategies, setCurrentCircuit, runQualifyingSession, getSeasonSnapshot } = simFns;
+  const { initRace, cars, runRace, initStrategies, initWeather, setCurrentCircuit, runQualifyingSession, getSeasonSnapshot } = simFns;
   const todayOffset = getTodayDayOffset();
   const numRounds   = Math.max(...SEASON_SCHEDULE.map(e => e.round));
   const seasonStart = (season - 1) * numRounds;
@@ -354,6 +354,7 @@ export async function ensurePastResultsCached(season, simFns) {
       const qualiResults = loadQualiResults(season, r);
       setCurrentCircuit(circuit, 1929 + season);
       const rng = initRace(raceSeed, qualiResults, circuit, snapshot);
+      initWeather(rng);
       initStrategies(rng);
       runRace(rng);
       const finishers = cars.filter(c => c.status !== 'retired')

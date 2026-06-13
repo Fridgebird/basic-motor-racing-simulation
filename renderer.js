@@ -14,6 +14,57 @@ import { CIRCUIT as DEFAULT_CIRCUIT } from './data.js';
 // Active circuit — updated by setCurrentCircuit() before each race/qualifying.
 let currentCircuit = DEFAULT_CIRCUIT;
 
+// ─── Health icon map ──────────────────────────────────────────────────────────
+// Maps degradedLabel strings to a category emoji for the portrait-mode health column.
+// Categories are broad enough that each icon is meaningfully distinct.
+const HEALTH_ICONS = {
+  // Engine thermal
+  'Overheating':               '🔥',
+  'Blown gasket':              '🔥',
+  // Engine fuel / air
+  'Fuel starvation':           '⛽',
+  'Fuel injection failure':    '⛽',
+  'Fuel':                      '⛽',
+  // Engine electrical / ignition
+  'Magneto failure':           '⚡',
+  'Engine management failure': '⚡',
+  // Engine mechanical (incl. catastrophic)
+  'Valve failure':             '🔧',
+  'Engine seizure':            '🔧',
+  'Crankshaft failure':        '🔧',
+  'Supercharger failure':      '🔧',
+  'Turbo failure':             '🔧',
+  'Intercooler failure':       '🔧',
+  // Drivetrain
+  'Gearbox':                   '⚙',
+  'Driveshaft':                '⚙',
+  'Clutch':                    '⚙',
+  'Throttle':                  '⚙',
+  'Transmission failure':      '⚙',
+  'Differential failure':      '⚙',
+  // Braking
+  'Brakes':                    '🛑',
+  'Brake failure':             '🛑',
+  // Fluids
+  'Oil leak':                  '💧',
+  'Hydraulic failure':         '💧',
+  // Suspension / handling / steering / aero / structure
+  'Suspension':                '〰',
+  'Handling':                  '〰',
+  'Body':                      '〰',
+  'Floor':                     '〰',
+  'Composite':                 '〰',
+  'Skirt':                     '〰',
+  'Aerodynamic':               '〰',
+  'Steering failure':          '〰',
+  'Electronics':               '〰',
+  // Wheel / tyre
+  'Wheel bearing':             '🛞',
+  'Broken wheel':              '🛞',
+  'Puncture':                  '🛞',
+  'Tyre failure':              '🛞',
+};
+
 /** Call before rendering a race or qualifying session on a specific circuit. */
 export function setCurrentCircuit(circuit) {
   currentCircuit = circuit;
@@ -519,7 +570,10 @@ export class Renderer {
       }
       const healthTd = document.createElement('td');
       healthTd.className = 'col-health';
-      const healthIcon = (retired || car.degradedLabel) ? '<span class="val-icon health-icon">&#x2757;&#xFE0E;</span>' : '';
+      const iconGlyph = car.retiredReason === 'crash'
+        ? '💥'
+        : (HEALTH_ICONS[car.degradedLabel] ?? '&#x2757;&#xFE0E;');
+      const healthIcon = (retired || car.degradedLabel) ? `<span class="val-icon health-icon">${iconGlyph}</span>` : '';
       healthTd.innerHTML = `<span class="val-full">${healthStr}</span>${healthIcon}`;
       if (retired)               healthTd.classList.add('health-out');
       else if (car.degradedLabel) healthTd.classList.add('health-dmg');

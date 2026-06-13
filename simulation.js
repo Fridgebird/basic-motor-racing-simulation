@@ -96,8 +96,7 @@ const FAILED_OVERTAKE_PENALTY = 0.40;  // seconds
 // canDegrade labels can be either degraded or retirement depending on the outcome roll.
 
 function getEngineDegradedLabels(year) {
-  const labels = ['Overheating', 'Fuel starvation', 'Oil leak', 'Valve failure',
-                  'Blown gasket', 'Magneto failure'];
+  const labels = ['Overheating', 'Fuel starvation', 'Valve failure', 'Magneto failure'];
   if (year >= 1945) labels.push('Supercharger failure');
   if (year >= 1960) labels.push('Fuel injection failure');
   if (year >= 1975) labels.push('Turbo failure', 'Intercooler failure');
@@ -107,7 +106,8 @@ function getEngineDegradedLabels(year) {
 
 function getEngineRetirementLabels(year) {
   // Catastrophic failures always retire; milder failures can also cause retirement
-  return ['Engine seizure', 'Crankshaft failure', ...getEngineDegradedLabels(year)];
+  return ['Engine seizure', 'Crankshaft failure', 'Oil leak', 'Blown gasket',
+          ...getEngineDegradedLabels(year)];
 }
 
 function getChassisDegradedLabels(year) {
@@ -125,7 +125,7 @@ function getChassisRetirementLabels(year) {
   // Catastrophic chassis failures that always end the race, plus limping failures
   // (any degraded issue can escalate to a retirement too)
   return ['Transmission failure', 'Differential failure', 'Brake failure',
-          'Steering failure', 'Broken wheel', 'Hydraulic failure',
+          'Steering failure', 'Broken wheel', 'Hydraulic failure', 'Puncture',
           ...getChassisDegradedLabels(year)];
 }
 

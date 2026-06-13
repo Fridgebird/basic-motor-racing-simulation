@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather Model Test</title>
+  <style>
+    :root {
+      --bg:#0d1117; --bg-deep:#080c12; --bg-mid:#0a0f18;
+      --border:#1e2f44; --hi:#ffffff; --mid:#8ab4d4;
+      --lo:#4a6a88; --dim:#2a4055; --accent:#cc2233;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--mid); font-family:'Courier New',monospace; font-size:12px; padding:24px; }
+
+    h1 { font-size:13px; color:var(--hi); letter-spacing:3px; margin-bottom:20px; text-transform:uppercase; }
+    h2 { font-size:10px; color:var(--lo); letter-spacing:2px; text-transform:uppercase; margin:24px 0 10px; }
+
+    .controls { display:flex; gap:20px; align-items:flex-end; flex-wrap:wrap; margin-bottom:20px; }
+    .ctrl-group label { display:block; color:var(--lo); font-size:9px; letter-spacing:2px; margin-bottom:4px; text-transform:uppercase; }
+    select { background:var(--bg-mid); border:1px solid var(--border); color:var(--mid); font-family:inherit; font-size:11px; padding:5px 8px; }
+    button { background:var(--bg-deep); border:1px solid var(--border); color:var(--lo); font-family:inherit; font-size:9px; letter-spacing:2px; padding:6px 16px; cursor:pointer; text-transform:uppercase; }
+    button:hover { color:var(--hi); border-color:var(--mid); }
+    .seed-val { font-size:10px; color:var(--lo); letter-spacing:1px; }
+
+    .scenario-banner { margin-bottom:16px; padding:10px 14px; border:1px solid var(--border); background:var(--bg-mid); }
+    .scenario-type   { font-size:12px; color:var(--hi); letter-spacing:3px; margin-bottom:3px; }
+    .scenario-detail { font-size:10px; color:var(--lo); letter-spacing:1px; }
+    .scenario-note   { font-size:9px; color:var(--lo); margin-top:4px; letter-spacing:1px; }
+
+    svg { background:var(--bg-mid); border:1px solid var(--border); display:block; margin-bottom:20px; }
+
+    .legend { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px; font-size:10px; color:var(--lo); }
+    .leg { display:flex; align-items:center; gap:5px; }
+    .leg-swatch { width:14px; height:10px; border-radius:2px; }
+
+    .weather-table { border-collapse:collapse; width:100%; max-width:700px; }
+    .weather-table th { font-size:9px; letter-spacing:2px; color:var(--lo); padding:4px 10px; text-align:left; border-bottom:1px solid var(--border); font-weight:normal; }
+    .weather-table td { padding:3px 10px; border-bottom:1px solid var(--dim); vertical-align:middle; }
+    .weather-table tr:hover td { background:rgba(255,255,255,0.02); }
+
+    .col-lap   { width:40px; color:var(--lo); font-size:10px; }
+    .col-state { width:80px; font-size:10px; letter-spacing:1px; }
+    .col-track { width:90px; font-size:10px; letter-spacing:1px; }
+    .col-sky   { width:110px; font-size:10px; letter-spacing:1px; }
+    .col-wet   { width:120px; }
+
+    .state-dry      { color:#4a6a88; }
+    .state-drizzle  { color:#7799bb; }
+    .state-rain     { color:#3377ee; }
+    .state-heavy    { color:#aa44ff; }
+
+    .track-dry      { color:#666666; }
+    .track-greasy   { color:#c8a020; }
+    .track-damp     { color:#6699bb; }
+    .track-wet      { color:#22aaee; }
+    .track-flooding { color:#aa22ee; }
+
+    .sky-blue        { color:#4a6a88; }
+    .sky-overcast    { color:#6688aa; }
+    .sky-threatening { color:#99aacc; }
+    .sky-drizzling   { color:#7799bb; }
+    .sky-raining     { color:#3377ee; }
+    .sky-torrential  { color:#aa44ff; }
+
+    .row-greasy   { background:rgba(200,160,30,0.04); }
+    .row-damp     { background:rgba(85,153,204,0.05); }
+    .row-wet      { background:rgba(34,170,238,0.07); }
+    .row-flooding { background:rgba(170,34,238,0.10); }
+
+    .wet-bar  { width:70px; height:8px; background:var(--border); border-radius:2px; display:inline-block; vertical-align:middle; overflow:hidden; }
+    .wet-fill { display:block; height:100%; border-radius:2px; }
+    .wet-pct  { font-size:9px; color:var(--lo); margin-left:5px; display:inline-block; width:28px; }
+
+    .note { background:var(--bg-mid); border:1px solid var(--border); padding:10px 14px; margin-bottom:16px; font-size:10px; line-height:1.7; color:var(--lo); }
+    .note strong { color:var(--mid); }
+  </style>
+</head>
+<body>
+
+<h1>Weather Model Test</h1>
+
+<div class="controls">
+  <div class="ctrl-group">
+    <label>Circuit</label>
+    <select id="circuit-select"></select>
+  </div>
+  <div class="ctrl-group">
+    <label>&nbsp;</label>
+    <button id="btn-randomise">↺ Randomise</button>
+  </div>
+  <div class="ctrl-group" style="padding-bottom:7px">
+    <span class="seed-val">SEED <span id="seed-display">—</span></span>
+  </div>
+</div>
+
+<div class="scenario-banner" id="scenario-banner">
+  <div class="scenario-type">—</div>
+  <div class="scenario-detail">—</div>
+  <div class="scenario-note">Window parameters shown here for testing only — hidden in the actual game</div>
+</div>
+
+<h2>Track wetness over race</h2>
+
+<div class="legend">
+  <div class="leg"><div class="leg-swatch" style="background:#333333"></div> dry (&lt;0.08)</div>
+  <div class="leg"><div class="leg-swatch" style="background:#6a5010"></div> greasy (0.08–0.30)</div>
+  <div class="leg"><div class="leg-swatch" style="background:#1a3a55"></div> damp (0.30–0.55)</div>
+  <div class="leg"><div class="leg-swatch" style="background:#0a3a6a"></div> wet (0.55–0.80)</div>
+  <div class="leg"><div class="leg-swatch" style="background:#3a1060"></div> flooding (&gt;0.80)</div>
+  <div class="leg"><div style="width:24px;height:3px;background:#22aaee"></div> track wetness</div>
+</div>
+
+<svg id="chart" width="760" height="260"></svg>
+
+<h2>Lap-by-lap detail</h2>
+
+<table class="weather-table">
+  <thead>
+    <tr>
+      <th>LAP</th>
+      <th>WEATHER STATE</th>
+      <th>TRACK</th>
+      <th>SKY</th>
+      <th>WETNESS</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+
+<h2>Model constants</h2>
+<div class="note">
+  <strong>Wetness targets:</strong> DRY → 0.00 &nbsp;|&nbsp; DRIZZLE → 0.28 &nbsp;|&nbsp; RAIN → 0.65 &nbsp;|&nbsp; HEAVY → 0.95<br>
+  <strong>Wetting rate:</strong> exponential — delta = (target − wetness) × 0.12 per lap &nbsp;&nbsp;<em>(fast initial response, slows as it approaches target)</em><br>
+  <strong>Drying rate:</strong> linear — fixed −0.020 per lap &nbsp;&nbsp;<em>(≈12 laps per band; wet→damp, damp→greasy, greasy→dry each take ~12 laps)</em><br>
+  <strong>Track bands:</strong> dry &lt;0.08 &nbsp;|&nbsp; greasy 0.08–0.30 &nbsp;|&nbsp; damp 0.30–0.55 &nbsp;|&nbsp; wet 0.55–0.80 &nbsp;|&nbsp; flooding &gt;0.80<br>
+  <strong>Pace crossover</strong> (wets faster than slicks): ~0.50 wetness (top of "damp")
+</div>
+
+<script>
+// ── Mulberry32 PRNG ──────────────────────────────────────────────────────────
+function createRng(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 0x100000000;
+  };
+}
+
+// ── Circuits ─────────────────────────────────────────────────────────────────
+const CIRCUITS = [
+  { id:'hawkesbury',   label:'Hawkesbury (AUS)',    rainProb:0.08, laps:70 },
+  { id:'marlborough',  label:'Marlborough (NZL)',   rainProb:0.18, laps:60 },
+  { id:'pampa',        label:'Pampa (ARG)',          rainProb:0.05, laps:60 },
+  { id:'guadalajara',  label:'Guadalajara (MEX)',   rainProb:0.12, laps:58 },
+  { id:'kyushu',       label:'Kyushu (JPN)',         rainProb:0.22, laps:62 },
+  { id:'nairobi',      label:'Nairobi (KEN)',        rainProb:0.10, laps:60 },
+  { id:'laeken',       label:'Laeken (BEL)',         rainProb:0.28, laps:56 },
+  { id:'cotedazur',    label:"Côte d'Azur (FRA)",   rainProb:0.06, laps:62 },
+  { id:'palermo',      label:'Palermo (ITA)',        rainProb:0.06, laps:58 },
+  { id:'schwarzwald',  label:'Schwarzwald (GER)',   rainProb:0.25, laps:55 },
+  { id:'karlovyvary',  label:'Karlovy Vary (CZE)',  rainProb:0.18, laps:56 },
+  { id:'brookthorpe',  label:'Brookthorpe (GBR)',   rainProb:0.33, laps:58 },
+  { id:'hamnkurs',     label:'Hamnkurs (SWE)',       rainProb:0.20, laps:58 },
+  { id:'rovaniemi',    label:'Rovaniemi (FIN)',      rainProb:0.18, laps:55 },
+  { id:'harbourfront', label:'Harbourfront (HKG)',  rainProb:0.22, laps:60 },
+  { id:'lacMeech',     label:'Lac Meech (CAN)',     rainProb:0.15, laps:58 },
+  { id:'douglas',      label:'Douglas (USA)',        rainProb:0.25, laps:62 },
+  { id:'lahore',       label:'Lahore (PAK)',         rainProb:0.03, laps:58 },
+  { id:'recife',       label:'Recife (BRA)',         rainProb:0.20, laps:62 },
+  { id:'bushveld',     label:'Bushveld (RSA)',       rainProb:0.08, laps:58 },
+];
+
+// ── Scenario generation ───────────────────────────────────────────────────────
+function generateScenario(rng, rainProb, totalLaps) {
+  const roll = rng();
+  if (roll >= rainProb) return { type: 'FINE' };
+
+  const sub = rng();
+  if (sub < 0.55) {
+    const start    = 5 + Math.floor(rng() * (totalLaps * 0.55));
+    const duration = Math.floor(totalLaps * 0.15 + rng() * totalLaps * 0.25);
+    const startLap = Math.min(start, totalLaps - 8);
+    const endLap   = Math.min(startLap + duration, totalLaps + 5);
+    const peakLap  = startLap + Math.floor((endLap - startLap) * 0.35);
+    return { type: 'SHOWER', startLap, peakLap, endLap };
+  }
+  if (sub < 0.80) {
+    const s1 = 3 + Math.floor(rng() * (totalLaps * 0.25));
+    const d1 = Math.floor(totalLaps * 0.12 + rng() * totalLaps * 0.10);
+    const s2 = s1 + d1 + 5 + Math.floor(rng() * (totalLaps * 0.18));
+    const d2 = Math.floor(totalLaps * 0.12 + rng() * totalLaps * 0.10);
+    return {
+      type: 'CHANGEABLE',
+      windows: [
+        { startLap: s1, endLap: Math.min(s1 + d1, totalLaps + 5) },
+        { startLap: s2, endLap: Math.min(s2 + d2, totalLaps + 5) },
+      ],
+    };
+  }
+  return { type: 'WET_START', initialState: rng() < 0.4 ? 'HEAVY' : 'RAIN' };
+}
+
+// ── Scenario phase helpers ────────────────────────────────────────────────────
+function inWindow(sc, lap) {
+  if (sc.type === 'SHOWER')     return lap >= sc.startLap && lap <= sc.endLap;
+  if (sc.type === 'CHANGEABLE') return sc.windows.some(w => lap >= w.startLap && lap <= w.endLap);
+  if (sc.type === 'WET_START')  return lap <= 20;
+  return false;
+}
+function buildingUp(sc, lap) {
+  if (sc.type === 'SHOWER')     return lap >= sc.startLap - 8 && lap < sc.startLap;
+  if (sc.type === 'CHANGEABLE') return sc.windows.some(w => lap >= w.startLap - 5 && lap < w.startLap);
+  return false;
+}
+function isClearing(sc, lap) {
+  if (sc.type === 'SHOWER')     return lap > sc.endLap;
+  if (sc.type === 'CHANGEABLE') return lap > sc.windows[sc.windows.length - 1].endLap;
+  if (sc.type === 'WET_START')  return lap > 20;
+  return false;
+}
+
+// ── Markov transitions ────────────────────────────────────────────────────────
+function getTransitions(state, sc, lap) {
+  const inW  = inWindow(sc, lap);
+  const bldg = buildingUp(sc, lap);
+  const clrg = isClearing(sc, lap);
+
+  if (state === 'DRY') {
+    if (sc.type === 'FINE') return [1.00, 0.00, 0.00, 0.00];
+    if (inW)   return [0.55, 0.38, 0.07, 0.00];
+    if (bldg)  return [0.82, 0.16, 0.02, 0.00];
+    if (clrg)  return [0.99, 0.01, 0.00, 0.00];
+               return [0.97, 0.03, 0.00, 0.00];
+  }
+  if (state === 'DRIZZLE') {
+    if (inW)   return [0.22, 0.52, 0.24, 0.02];
+    if (bldg)  return [0.45, 0.45, 0.09, 0.01];
+    if (clrg)  return [0.65, 0.30, 0.05, 0.00];
+               return [0.40, 0.48, 0.11, 0.01];
+  }
+  if (state === 'RAIN') {
+    if (inW)   return [0.05, 0.28, 0.55, 0.12];
+    if (clrg)  return [0.10, 0.60, 0.28, 0.02];
+               return [0.08, 0.40, 0.45, 0.07];
+  }
+  // HEAVY
+  if (clrg)    return [0.03, 0.25, 0.60, 0.12];
+               return [0.00, 0.08, 0.60, 0.32];
+}
+
+function rollState(current, sc, lap, rng) {
+  const [pD, pDr, pR] = getTransitions(current, sc, lap);
+  const r = rng();
+  if (r < pD)            return 'DRY';
+  if (r < pD + pDr)      return 'DRIZZLE';
+  if (r < pD + pDr + pR) return 'RAIN';
+  return 'HEAVY';
+}
+
+// ── Wetness model (mirrors simulation.js exactly) ─────────────────────────────
+const WET_TARGET        = { DRY:0.00, DRIZZLE:0.28, RAIN:0.65, HEAVY:0.95 };
+const WETNESS_APPROACH_RATE = 0.12;   // wetting: exponential per lap
+const WETNESS_DRY_RATE      = 0.020;  // drying: linear per lap (~12 laps per band)
+
+function stepWetness(wetness, state) {
+  const target = WET_TARGET[state];
+  let next;
+  if (target > wetness) {
+    next = wetness + (target - wetness) * WETNESS_APPROACH_RATE;
+  } else {
+    next = Math.max(target, wetness - WETNESS_DRY_RATE);
+  }
+  return +(Math.max(0, Math.min(1, next))).toFixed(3);
+}
+
+// ── Label functions ───────────────────────────────────────────────────────────
+function trackState(wetness) {
+  if (wetness < 0.08) return 'dry';
+  if (wetness < 0.30) return 'greasy';
+  if (wetness < 0.55) return 'damp';
+  if (wetness < 0.80) return 'wet';
+  return 'flooding';
+}
+
+function skyState(state, sc, lap) {
+  if (state === 'HEAVY')   return 'torrential';
+  if (state === 'RAIN')    return 'raining';
+  if (state === 'DRIZZLE') return 'drizzling';
+  if (sc.type === 'FINE')  return 'blue skies';
+  if (buildingUp(sc, lap) || inWindow(sc, lap)) return 'threatening';
+  return 'overcast';
+}
+
+// ── Simulation ────────────────────────────────────────────────────────────────
+function simulate(circuit, seed) {
+  const rng      = createRng(seed);
+  const scenario = generateScenario(rng, circuit.rainProb, circuit.laps);
+
+  let state   = scenario.type === 'WET_START' ? scenario.initialState : 'DRY';
+  let wetness = WET_TARGET[state];
+
+  const rows = [];
+  for (let lap = 1; lap <= circuit.laps; lap++) {
+    wetness = stepWetness(wetness, state);
+    rows.push({
+      lap,
+      state,
+      wetness,
+      track: trackState(wetness),
+      sky:   skyState(state, scenario, lap),
+    });
+    state = rollState(state, scenario, lap, rng);
+  }
+  return { scenario, rows };
+}
+
+// ── Chart ─────────────────────────────────────────────────────────────────────
+const BAND_FILLS = [
+  { min:0.00, max:0.08, fill:'rgba(40,40,40,0.5)' },
+  { min:0.08, max:0.30, fill:'rgba(90,60,10,0.35)' },
+  { min:0.30, max:0.55, fill:'rgba(20,60,90,0.35)' },
+  { min:0.55, max:0.80, fill:'rgba(10,50,100,0.40)' },
+  { min:0.80, max:1.00, fill:'rgba(60,10,100,0.40)' },
+];
+const BAND_LABELS = [
+  { mid:0.04, label:'dry' },
+  { mid:0.19, label:'greasy' },
+  { mid:0.425, label:'damp' },
+  { mid:0.675, label:'wet' },
+  { mid:0.90, label:'flooding' },
+];
+const STATE_COLORS = { DRY:'#334455', DRIZZLE:'#335577', RAIN:'#1144aa', HEAVY:'#661199' };
+
+function drawChart(rows, totalLaps) {
+  const svg  = document.getElementById('chart');
+  const W    = parseInt(svg.getAttribute('width'));
+  const H    = parseInt(svg.getAttribute('height'));
+  const PAD  = { l:36, r:12, t:28, b:24 };
+  const cW   = W - PAD.l - PAD.r;
+  const cH   = H - PAD.t - PAD.b - 14;  // 14px for weather state bar at top
+  const barH = 10;
+  const barY = PAD.t;
+  const plotY = barY + barH + 4;
+
+  const xOf = lap => PAD.l + ((lap - 0.5) / totalLaps) * cW;
+  const yOf = w   => plotY + cH - (w * cH);
+
+  let out = '';
+
+  // Band backgrounds
+  for (const b of BAND_FILLS) {
+    const y1 = yOf(b.max);
+    const y2 = yOf(b.min);
+    out += `<rect x="${PAD.l}" y="${y1}" width="${cW}" height="${y2-y1}" fill="${b.fill}"/>`;
+  }
+
+  // Band threshold lines
+  for (const t of [0.08, 0.30, 0.55, 0.80]) {
+    const y = yOf(t);
+    out += `<line x1="${PAD.l}" x2="${PAD.l+cW}" y1="${y}" y2="${y}" stroke="#2a3a50" stroke-width="1" stroke-dasharray="3,3"/>`;
+  }
+
+  // Band labels
+  for (const b of BAND_LABELS) {
+    const y = yOf(b.mid);
+    out += `<text x="${PAD.l+4}" y="${y+3}" font-size="8" fill="#4a5a6a" font-family="monospace">${b.label}</text>`;
+  }
+
+  // Y axis ticks
+  for (let w = 0; w <= 10; w++) {
+    const v = w / 10;
+    const y = yOf(v);
+    out += `<text x="${PAD.l-4}" y="${y+3}" text-anchor="end" font-size="8" fill="#3a5a70" font-family="monospace">${v.toFixed(1)}</text>`;
+  }
+
+  // X axis ticks (every 10 laps)
+  for (let lap = 0; lap <= totalLaps; lap += 10) {
+    const x = PAD.l + (lap / totalLaps) * cW;
+    out += `<line x1="${x}" x2="${x}" y1="${plotY}" y2="${plotY+cH}" stroke="#1e2f44" stroke-width="1"/>`;
+    if (lap > 0) out += `<text x="${x}" y="${plotY+cH+13}" text-anchor="middle" font-size="8" fill="#3a5a70" font-family="monospace">${lap}</text>`;
+  }
+
+  // Weather state bar at top
+  for (const row of rows) {
+    const x = PAD.l + ((row.lap - 1) / totalLaps) * cW;
+    const bw = cW / totalLaps + 0.5;
+    out += `<rect x="${x}" y="${barY}" width="${bw}" height="${barH}" fill="${STATE_COLORS[row.state]}"/>`;
+  }
+  // State bar border + labels
+  out += `<rect x="${PAD.l}" y="${barY}" width="${cW}" height="${barH}" fill="none" stroke="#2a3a50" stroke-width="1"/>`;
+  out += `<text x="${PAD.l-4}" y="${barY+8}" text-anchor="end" font-size="8" fill="#3a5a70" font-family="monospace">state</text>`;
+
+  // Wetness line
+  const pts = rows.map(r => `${xOf(r.lap).toFixed(1)},${yOf(r.wetness).toFixed(1)}`).join(' ');
+  out += `<polyline points="${pts}" fill="none" stroke="#22aaee" stroke-width="2" opacity="0.95"/>`;
+
+  // Dots at wetness on each lap (small)
+  for (const row of rows) {
+    out += `<circle cx="${xOf(row.lap).toFixed(1)}" cy="${yOf(row.wetness).toFixed(1)}" r="1.5" fill="#22aaee"/>`;
+  }
+
+  // Axis label
+  out += `<text x="${PAD.l + cW/2}" y="${H-2}" text-anchor="middle" font-size="8" fill="#3a5a70" font-family="monospace">LAP →</text>`;
+
+  // State legend (top right)
+  let lx = PAD.l + cW - 2;
+  const stateLeg = [['DRY','#334455'],['DRZ','#335577'],['RAIN','#1144aa'],['HVY','#661199']];
+  for (let i = stateLeg.length - 1; i >= 0; i--) {
+    const [lbl, col] = stateLeg[i];
+    out += `<rect x="${lx-18}" y="${barY+1}" width="8" height="8" fill="${col}"/>`;
+    out += `<text x="${lx-9}" y="${barY+8}" font-size="7" fill="#4a6a88" font-family="monospace">${lbl}</text>`;
+    lx -= 36;
+  }
+
+  svg.innerHTML = out;
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+const TRACK_CLASS = { dry:'track-dry', greasy:'track-greasy', damp:'track-damp', wet:'track-wet', flooding:'track-flooding' };
+const SKY_CLASS   = { 'blue skies':'sky-blue', overcast:'sky-overcast', threatening:'sky-threatening', drizzling:'sky-drizzling', raining:'sky-raining', torrential:'sky-torrential' };
+const ROW_CLASS   = { dry:'', greasy:'row-greasy', damp:'row-damp', wet:'row-wet', flooding:'row-flooding' };
+const STATE_CLASS = { DRY:'state-dry', DRIZZLE:'state-drizzle', RAIN:'state-rain', HEAVY:'state-heavy' };
+
+function wetBarColor(pct) {
+  if (pct < 8)  return '#334455';
+  if (pct < 30) return '#6a5010';
+  if (pct < 55) return '#1a5a8a';
+  if (pct < 80) return '#1155cc';
+  return '#8833ff';
+}
+
+function render() {
+  const circuit = CIRCUITS.find(c => c.id === document.getElementById('circuit-select').value);
+  document.getElementById('seed-display').textContent = currentSeed;
+
+  const { scenario, rows } = simulate(circuit, currentSeed);
+
+  // Banner
+  let detail = '';
+  if (scenario.type === 'FINE') {
+    detail = 'No rain expected · dry all race';
+  } else if (scenario.type === 'SHOWER') {
+    detail = `Threat builds from lap ${scenario.startLap - 8} · active window laps ${scenario.startLap}–${scenario.endLap} · peak around lap ${scenario.peakLap}`;
+  } else if (scenario.type === 'CHANGEABLE') {
+    detail = scenario.windows.map((w, i) => `Window ${i+1}: laps ${w.startLap}–${w.endLap}`).join(' · ');
+  } else {
+    detail = `Starts in ${scenario.initialState.toLowerCase()} · clears through the race`;
+  }
+  document.getElementById('scenario-banner').innerHTML = `
+    <div class="scenario-type">${scenario.type}</div>
+    <div class="scenario-detail">${detail}</div>
+    <div class="scenario-note">Window parameters shown here for testing only — not visible in the actual game</div>
+  `;
+
+  // Chart
+  drawChart(rows, circuit.laps);
+
+  // Table
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  for (const row of rows) {
+    const tr = document.createElement('tr');
+    if (ROW_CLASS[row.track]) tr.className = ROW_CLASS[row.track];
+    const pct = Math.round(row.wetness * 100);
+    tr.innerHTML = `
+      <td class="col-lap">${row.lap}</td>
+      <td class="col-state"><span class="${STATE_CLASS[row.state]}">${row.state}</span></td>
+      <td class="col-track"><span class="${TRACK_CLASS[row.track]}">${row.track}</span></td>
+      <td class="col-sky"><span class="${SKY_CLASS[row.sky]}">${row.sky}</span></td>
+      <td class="col-wet">
+        <span class="wet-bar"><span class="wet-fill" style="width:${pct}%;background:${wetBarColor(pct)}"></span></span>
+        <span class="wet-pct">${pct}%</span>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+const sel = document.getElementById('circuit-select');
+CIRCUITS.forEach(c => {
+  const opt = document.createElement('option');
+  opt.value = c.id;
+  opt.textContent = `${c.label}  (${Math.round(c.rainProb * 100)}% rain chance)`;
+  sel.appendChild(opt);
+});
+
+let currentSeed = Math.floor(Math.random() * 1e8);
+sel.addEventListener('change', render);
+document.getElementById('btn-randomise').addEventListener('click', () => {
+  currentSeed = Math.floor(Math.random() * 1e8);
+  render();
+});
+render();
+</script>
+</body>
+</html>

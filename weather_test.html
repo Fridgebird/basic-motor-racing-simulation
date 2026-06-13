@@ -130,9 +130,9 @@
 
 <h2>Model constants</h2>
 <div class="note">
-  <strong>Wetness targets:</strong> DRY → 0.00 &nbsp;|&nbsp; DRIZZLE → 0.28 &nbsp;|&nbsp; RAIN → 0.65 &nbsp;|&nbsp; HEAVY → 0.95<br>
-  <strong>Wetting rate:</strong> exponential — delta = (target − wetness) × 0.12 per lap &nbsp;&nbsp;<em>(fast initial response, slows as it approaches target)</em><br>
-  <strong>Drying rate:</strong> linear — fixed −0.020 per lap &nbsp;&nbsp;<em>(≈12 laps per band; wet→damp, damp→greasy, greasy→dry each take ~12 laps)</em><br>
+  <strong>Wetness targets:</strong> DRY → 0.00 &nbsp;|&nbsp; DRIZZLE → 0.40 (mid-damp) &nbsp;|&nbsp; RAIN → 0.78 (upper-wet) &nbsp;|&nbsp; HEAVY → 0.95 (flooding)<br>
+  <strong>Wetting rate:</strong> exponential — DRIZZLE &amp; RAIN: ×0.12/lap; HEAVY: ×0.24/lap (double) &nbsp;&nbsp;<em>(HEAVY reaches flooding from dry in ~7 laps)</em><br>
+  <strong>Drying rate:</strong> linear — fixed −0.020 per lap &nbsp;&nbsp;<em>(≈12 laps per band; wet→damp, damp→greasy, greasy→dry)</em><br>
   <strong>Track bands:</strong> dry &lt;0.08 &nbsp;|&nbsp; greasy 0.08–0.30 &nbsp;|&nbsp; damp 0.30–0.55 &nbsp;|&nbsp; wet 0.55–0.80 &nbsp;|&nbsp; flooding &gt;0.80<br>
   <strong>Pace crossover</strong> (wets faster than slicks): ~0.50 wetness (top of "damp")
 </div>
@@ -261,15 +261,17 @@ function rollState(current, sc, lap, rng) {
 }
 
 // ── Wetness model (mirrors simulation.js exactly) ─────────────────────────────
-const WET_TARGET        = { DRY:0.00, DRIZZLE:0.28, RAIN:0.65, HEAVY:0.95 };
-const WETNESS_APPROACH_RATE = 0.12;   // wetting: exponential per lap
+const WET_TARGET            = { DRY:0.00, DRIZZLE:0.40, RAIN:0.78, HEAVY:0.95 };
+const WETNESS_APPROACH_RATE = 0.12;   // wetting rate for DRIZZLE and RAIN (exponential per lap)
+const WETNESS_HEAVY_RATE    = 0.24;   // HEAVY wets at twice the rate — flooding in ~7 laps from dry
 const WETNESS_DRY_RATE      = 0.020;  // drying: linear per lap (~12 laps per band)
 
 function stepWetness(wetness, state) {
   const target = WET_TARGET[state];
   let next;
   if (target > wetness) {
-    next = wetness + (target - wetness) * WETNESS_APPROACH_RATE;
+    const rate = state === 'HEAVY' ? WETNESS_HEAVY_RATE : WETNESS_APPROACH_RATE;
+    next = wetness + (target - wetness) * rate;
   } else {
     next = Math.max(target, wetness - WETNESS_DRY_RATE);
   }

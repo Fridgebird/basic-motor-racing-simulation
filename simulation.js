@@ -130,8 +130,11 @@ function getChassisRetirementLabels(year) {
 }
 
 // ─── Weather constants ────────────────────────────────────────────────────────
-const WET_TARGET = { DRY: 0.00, DRIZZLE: 0.28, RAIN: 0.65, HEAVY: 0.95 };
-const WETNESS_APPROACH_RATE = 0.12;  // wetting: exponential approach rate toward target per lap
+// Wetness targets: where each sky state stabilises if it persists all race.
+// DRIZZLE → mid-damp; RAIN → upper-wet (just under flooding); HEAVY → full flooding.
+const WET_TARGET = { DRY: 0.00, DRIZZLE: 0.40, RAIN: 0.78, HEAVY: 0.95 };
+const WETNESS_APPROACH_RATE = 0.12;  // wetting rate for DRIZZLE and RAIN states (per lap, exponential)
+const WETNESS_HEAVY_RATE    = 0.24;  // HEAVY wets at twice the rate — reaches flooding in ~7 laps from dry
 const WETNESS_DRY_RATE      = 0.020; // drying: linear drop per lap — ~12 laps per band (wet↔damp↔greasy↔dry)
 const DRY_TYRE_WET_PENALTY        = 0.18;  // max time factor add at soaking on dry tyres → ~18% slower
 const WET_TYRE_DRY_PENALTY        = 0.08;  // max time factor add on bone-dry track with wet tyres
@@ -651,8 +654,9 @@ export function tick(rng) {
         const target = WET_TARGET[race.weatherState];
         let newWetness;
         if (target > race.trackWetness) {
-          // Wetting: exponential approach so rain soaks in quickly
-          newWetness = race.trackWetness + (target - race.trackWetness) * WETNESS_APPROACH_RATE;
+          // Wetting: exponential approach; HEAVY uses a doubled rate for dramatic flooding
+          const rate = race.weatherState === 'HEAVY' ? WETNESS_HEAVY_RATE : WETNESS_APPROACH_RATE;
+          newWetness = race.trackWetness + (target - race.trackWetness) * rate;
         } else {
           // Drying: linear rate — fixed drop per lap so each band takes ~12 laps
           newWetness = Math.max(target, race.trackWetness - WETNESS_DRY_RATE);

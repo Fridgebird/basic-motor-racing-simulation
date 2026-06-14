@@ -356,9 +356,11 @@
     }
 
     @media (max-width: 600px) and (orientation: portrait) {
-      .brand-full  { display: none; }
-      .brand-short { display: inline; }
-      #speed-label { display: none; }
+      .brand-full      { display: none; }
+      .brand-short     { display: inline; }
+      #speed-label     { display: none; }
+      #tab-bar         { display: none; }
+      #hamburger-wrap  { display: flex; }
       /* Short driver name, no team tag */
       .t-driver-full { display: none; }
       .t-driver-short { display: inline; }
@@ -720,6 +722,47 @@
     #speed-label { color: var(--mid); font-size: 12px; }
     .brand-short { display: none; }
 
+    /* ── Hamburger tab menu ───────────────────────────────────────────────────── */
+    #hamburger-wrap {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+    }
+    #hamburger-tab-label {
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: var(--mid);
+      text-transform: uppercase;
+    }
+    #hamburger-btn {
+      padding: 4px 10px;
+      font-size: 15px;
+      letter-spacing: 0;
+      line-height: 1;
+    }
+    #hamburger-menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      z-index: 300;
+      min-width: 140px;
+    }
+    .hmenu-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 9px 14px;
+      font-size: 11px;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      letter-spacing: 1px;
+    }
+    .hmenu-item:last-child { border-bottom: none; }
+    .hmenu-item.hm-active  { color: var(--hi); border-left: 2px solid var(--accent); padding-left: 12px; }
+
     select {
       background: var(--bg-deep);
       color: var(--mid);
@@ -824,6 +867,18 @@
       <option value="4286">FAST</option>
       <option value="0">INSTANT</option>
     </select>
+
+    <div id="hamburger-wrap">
+      <span id="hamburger-tab-label">RACE</span>
+      <button id="hamburger-btn">&#9776;</button>
+      <div id="hamburger-menu" style="display:none">
+        <button class="hmenu-item" data-panel="grid">GRID</button>
+        <button class="hmenu-item hm-active" data-panel="race">RACE</button>
+        <button class="hmenu-item" data-panel="chart">LAP CHART</button>
+        <button class="hmenu-item" data-panel="comm">COMMENTARY</button>
+        <button class="hmenu-item" data-panel="stand">STANDINGS</button>
+      </div>
+    </div>
   </div>
 
   <!-- ── Tab bar ─────────────────────────────────────────────────────────────── -->
@@ -1121,37 +1176,46 @@
     // ── Tab switching ──────────────────────────────────────────────────────────
     let standingsLoaded = false;
 
+    const PANEL_LABELS = { grid: 'GRID', race: 'RACE', chart: 'LAP CHART', comm: 'COMMENTARY', stand: 'STANDINGS' };
+
+    function switchTab(target) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.panel === target));
+      document.querySelectorAll('.hmenu-item').forEach(b => b.classList.toggle('hm-active', b.dataset.panel === target));
+      document.getElementById('hamburger-tab-label').textContent = PANEL_LABELS[target] || target.toUpperCase();
+
+      document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel-comm').classList.remove('active');
+
+      if (target === 'comm') {
+        document.getElementById('panel-comm').classList.add('active');
+      } else {
+        document.getElementById(`panel-${target}`).classList.add('active');
+      }
+      if (target === 'chart') setTimeout(() => renderer.render(), 0);
+      if (target === 'stand' && !standingsLoaded) { buildStandings(); standingsLoaded = true; }
+    }
+
     document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const target = btn.dataset.panel;
+      btn.addEventListener('click', () => switchTab(btn.dataset.panel));
+    });
 
-        // Update button active state
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+    // ── Hamburger menu ─────────────────────────────────────────────────────────
+    const hamburgerBtn  = document.getElementById('hamburger-btn');
+    const hamburgerMenu = document.getElementById('hamburger-menu');
 
-        // Hide all standard view panels
-        document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
-        // Hide commentary (managed separately)
-        document.getElementById('panel-comm').classList.remove('active');
+    hamburgerBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      hamburgerMenu.style.display = hamburgerMenu.style.display === 'none' ? 'block' : 'none';
+    });
 
-        if (target === 'comm') {
-          document.getElementById('panel-comm').classList.add('active');
-        } else {
-          document.getElementById(`panel-${target}`).classList.add('active');
-        }
-
-        // Lap chart: force re-render so canvas gets correct dimensions after display:block
-        if (target === 'chart') {
-          setTimeout(() => renderer.render(), 0);
-        }
-
-        // Standings: lazy-load on first visit
-        if (target === 'stand' && !standingsLoaded) {
-          buildStandings();
-          standingsLoaded = true;
-        }
+    document.querySelectorAll('.hmenu-item').forEach(item => {
+      item.addEventListener('click', () => {
+        switchTab(item.dataset.panel);
+        hamburgerMenu.style.display = 'none';
       });
     });
+
+    document.addEventListener('click', () => { hamburgerMenu.style.display = 'none'; });
 
     // ── Live commentary bar ────────────────────────────────────────────────────
     {

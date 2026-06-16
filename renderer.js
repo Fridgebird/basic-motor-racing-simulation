@@ -102,7 +102,7 @@ export class Renderer {
 
     // Zoom levels — seconds of race gap visible in one strip-height
     this._zoomLevels = [240, 120, 60, 30, 15, 5];
-    this._zoomIdx    = 4;   // default 15s view
+    this._zoomIdx    = 2;   // default 60s view
 
     const zoomIn  = document.getElementById('strip-zoom-in');
     const zoomOut = document.getElementById('strip-zoom-out');

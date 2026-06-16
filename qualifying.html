@@ -326,6 +326,21 @@
       border-radius: 2px;
     }
 
+    /* ── Qualifying commentary ───────────────────────────────────────────────── */
+    #quali-commentary {
+      margin-bottom: 10px;
+      font-size: 10px;
+      line-height: 1.7;
+      min-height: 0;
+      letter-spacing: 0.04em;
+    }
+    .qc-clean  { color: var(--lo); }
+    .qc-lockup { color: #e8c400; }
+    .qc-spin   { color: #ff8800; }
+    .qc-crash  { color: #ff4444; }
+    .qc-result { color: var(--mid); }
+    .qc-pole   { color: #cc44ff; }
+
     /* ── Responsive: stack panels on narrow screens ─────────────────────────── */
     @media (max-width: 640px) {
       #main { flex-direction: column; }
@@ -420,6 +435,7 @@
           <span class="pos-value" id="pos-value">–</span>
         </div>
       </div>
+      <div id="quali-commentary"></div>
       <div id="draw-progress"></div>
 
     </div>
@@ -613,6 +629,34 @@
       }
     });
 
+    // ── Qualifying commentary helpers ──────────────────────────────────────────
+    const QUALI_SECTOR_TEXT = {
+      clean:  [
+        'S1 — smooth through the opening sector',
+        'S2 — holds pace through the middle section',
+        'S3 — tidy run to the flag',
+      ],
+      lockup: [
+        'S1 — lock-up under braking, time lost',
+        'S2 — lock-up through the braking zone',
+        'S3 — lock-up at the final complex',
+      ],
+      spin:   [
+        'S1 — spin! Lap in serious trouble',
+        'S2 — spin through the chicane!',
+        'S3 — spin at the final corner!',
+      ],
+    };
+
+    function addQualiCommentary(text, style) {
+      const feed = document.getElementById('quali-commentary');
+      if (!feed) return;
+      const el = document.createElement('div');
+      el.className = `qc-${style}`;
+      el.textContent = text;
+      feed.appendChild(el);
+    }
+
     // ── Animated qualifying session ────────────────────────────────────────────
     // Uses simulateQualiLap's onSector callback for sector-by-sector animation.
     async function runQualifyingSessionAnimated(rng, circuit) {
@@ -634,15 +678,22 @@
 
         showOnTrack(car, drawIndex, drawOrder.length);
         resetSectorCells();
+        document.getElementById('quali-commentary').innerHTML = '';
+        const lapEvents = [];
 
         // simulateQualiLap calls onSector after each sector — we show it then wait
         const result = await simulateQualiLap(car, rng, circuit, trackEvolution,
-          async (sectorIndex, sectorTime, isSlow, retired) => {
+          async (sectorIndex, sectorTime, eventType, retired) => {
             await delay(sectorPause());
             if (retired) {
               markSectorCrash(sectorIndex);
+              addQualiCommentary(`S${sectorIndex + 1} — crash! Session over.`, 'crash');
+              lapEvents.push('crash');
             } else {
-              showSectorTime(sectorIndex, sectorTime, isSlow);
+              showSectorTime(sectorIndex, sectorTime, eventType !== null);
+              const key = eventType ?? 'clean';
+              addQualiCommentary(QUALI_SECTOR_TEXT[key][sectorIndex], key);
+              if (eventType) lapEvents.push(eventType);
             }
           }
         );
@@ -651,6 +702,13 @@
         const provisionalBest = rawResults.filter(r => !r.retired)
           .reduce((best, r) => (best === null || r.lapTime < best ? r.lapTime : best), null);
         showLapResult(result, provisionalBest, rawResults);
+
+        if (!result.retired) {
+          const pos = rawResults.filter(r => !r.retired && r.lapTime < result.lapTime).length + 1;
+          const isNewPole = provisionalBest === null || result.lapTime <= provisionalBest;
+          const note = lapEvents.length > 0 ? ' despite incident' : '';
+          addQualiCommentary(`${formatTime(result.lapTime)}${note} · P${pos} provisional`, isNewPole ? 'pole' : 'result');
+        }
 
         rawResults.push({
           driverId:         car.driver.id,
@@ -814,6 +872,7 @@
     }
 
     function clearOnTrackPanel() {
+      document.getElementById('quali-commentary').innerHTML         = '';
       document.getElementById('current-driver-name').textContent    = 'SESSION COMPLETE';
       document.getElementById('current-team-name').textContent      = '';
       document.getElementById('driver-colour-bar').style.background = 'var(--dim)';

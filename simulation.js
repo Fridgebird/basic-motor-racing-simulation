@@ -1347,42 +1347,48 @@ export async function simulateQualiLap(car, rng, circuit, trackEvolution, onSect
     const tyreFactor        = 1.0 + (1 - grip) * tyreConfig.penaltyCoeff;
 
     // ── Driver error check ────────────────────────────────────────────────────
-    const consistencyRoll = rng() * (1 - car.driver.consistency / 100) + car.driver.consistency / 100;
-    const crashThreshold  = (1 - car.driver.consistency / 100) * CRASH_SCALE * 10; // slightly raised for 1 lap
-    const slowThreshold   = (1 - car.driver.consistency / 100) * SLOW_SCALE  * 10;
+    // Plain 0–1 roll so crash/slow thresholds are reachable for all driver stats.
+    // The bounded consistencyRoll is only used for skill calculation on clean sectors.
+    const errorRoll      = rng();
+    const consistency    = car.driver.consistency;
+    const crashThreshold = (1 - consistency / 100) * CRASH_SCALE * 10; // slightly raised for 1 lap
+    const slowThreshold  = (1 - consistency / 100) * SLOW_SCALE  * 10;
 
-    if (consistencyRoll < crashThreshold) {
+    let driverFactor;
+    let eventType = null;  // null = clean, 'lockup' or 'spin' on incident
+
+    if (errorRoll < crashThreshold) {
       // ── Crash — no time set ───────────────────────────────────────────────
       raceLog.entries.push({
         tick: -1, lap: 0, sector: sectorDef.id,
         car: car.driver.name,
         factors: {},
-        rolls: { consistencyRoll },
+        rolls: { errorRoll },
         events: [{ type: 'driver_error', severity: 'crash', session: 'qualifying' }],
       });
-      if (onSector) await onSector(sectorIndex, null, false, true);
+      if (onSector) await onSector(sectorIndex, null, null, true);
       return { lapTime: null, sectorTimes, retired: true, sectorsCompleted };
-    }
 
-    let driverFactor;
-    let isSlow = false;
-    if (consistencyRoll < slowThreshold) {
+    } else if (errorRoll < slowThreshold) {
       // ── Lock-up (70%) or spin (30%) — sector penalty but lap continues ─────
       const isLockup      = rng() < 0.70;
       const penaltyFactor = isLockup
         ? 1.05 + rng() * 0.08
         : 1.15 + rng() * 0.15;
       driverFactor = penaltyFactor;
-      isSlow       = true;
+      eventType    = isLockup ? 'lockup' : 'spin';
       raceLog.entries.push({
         tick: -1, lap: 0, sector: sectorDef.id,
         car: car.driver.name,
         factors: {},
-        rolls: { consistencyRoll },
-        events: [{ type: 'driver_error', severity: isLockup ? 'lockup' : 'spin', penalty: penaltyFactor, session: 'qualifying' }],
+        rolls: { errorRoll },
+        events: [{ type: 'driver_error', severity: eventType, penalty: penaltyFactor, session: 'qualifying' }],
       });
+
     } else {
-      const effectiveSkill = car.driver.skill * consistencyRoll;
+      // ── Clean sector — remap roll to [consistency/100, 1.0] for skill calc ──
+      const consistencyRoll = consistency / 100 + errorRoll * (1 - consistency / 100);
+      const effectiveSkill  = car.driver.skill * consistencyRoll;
       driverFactor = 1.0 + (1 - effectiveSkill / 100) * 0.05;
     }
 
@@ -1398,7 +1404,7 @@ export async function simulateQualiLap(car, rng, circuit, trackEvolution, onSect
     lapTime += sectorTime;
     sectorsCompleted++;
 
-    if (onSector) await onSector(sectorIndex, +sectorTime.toFixed(3), isSlow, false);
+    if (onSector) await onSector(sectorIndex, +sectorTime.toFixed(3), eventType, false);
   }
 
   return { lapTime: +lapTime.toFixed(3), sectorTimes, retired: false, sectorsCompleted: 3 };

@@ -102,7 +102,7 @@ export class Renderer {
 
     // Zoom levels — seconds of race gap visible in one strip-height
     this._zoomLevels = [240, 120, 60, 30, 15, 5];
-    this._zoomIdx    = 3;   // default 30s view
+    this._zoomIdx    = 4;   // default 15s view
 
     const zoomIn  = document.getElementById('strip-zoom-in');
     const zoomOut = document.getElementById('strip-zoom-out');
@@ -110,8 +110,9 @@ export class Renderer {
     if (zoomIn)  zoomIn .addEventListener('click', () => this._changeZoom(+1));
     if (zoomOut) zoomOut.addEventListener('click', () => this._changeZoom(-1));
 
-    // Previous positions — drives gained/lost row colouring each render
+    // Previous positions and statuses — drive gained/lost/retire row colouring
     this.prevPositions = new Map();
+    this.prevStatuses  = new Map();
 
     // Commentary: only process raceLog entries newer than this tick number
     this._lastCommentaryTick = -1;
@@ -226,6 +227,7 @@ export class Renderer {
   exitReplay() {
     this._viewIdx = -1;
     this.prevPositions.clear();   // avoid spurious flash on first live render
+    this.prevStatuses.clear();
     this.render();
   }
 
@@ -259,6 +261,7 @@ export class Renderer {
     if (!this.inReplay || this._animateForwardStep) {
       for (const car of this._displayCars) {
         this.prevPositions.set(car.driver.name, car.position);
+        this.prevStatuses.set(car.driver.name, car.status);
       }
     }
   }
@@ -274,7 +277,7 @@ export class Renderer {
     this._commentaryFilter = 'all';
     const filterBtn = document.getElementById('commentary-filter-btn');
     if (filterBtn) filterBtn.textContent = 'ALL';
-    this._zoomIdx = 3;   // reset to default 30s
+    this._zoomIdx = 4;   // reset to default 15s
     if (this._stripCanvas) {
       this._stripCanvas.getContext('2d')
         .clearRect(0, 0, this._stripCanvas.width, this._stripCanvas.height);
@@ -534,7 +537,7 @@ export class Renderer {
       const wearPct = Math.round(car.tyreWear * 100);
       const wearTd  = document.createElement('td');
       wearTd.className = 'col-wear';
-      const wearOpacity = (1 - car.tyreWear).toFixed(2);
+      const wearOpacity = ((1 - car.tyreWear) ** 2).toFixed(2);
       wearTd.innerHTML = `<span class="val-full">${wearPct}%</span><span class="val-icon tyre-circle"><span class="tyre-fill" style="opacity:${wearOpacity}"></span></span>`;
       if (!retired) {
         if      (wearPct >= 71) wearTd.classList.add('warn-red');
@@ -578,6 +581,11 @@ export class Renderer {
       if (retired)               healthTd.classList.add('health-out');
       else if (car.degradedLabel) healthTd.classList.add('health-dmg');
       tr.appendChild(healthTd);
+
+      // Retirement flash — 3× red blink when a car's status first becomes retired
+      if (retired && !this.inReplay && this.prevStatuses.get(car.driver.name) !== 'retired') {
+        for (const td of tr.cells) td.classList.add('anim-retire');
+      }
 
       this._tbody.appendChild(tr);
     }

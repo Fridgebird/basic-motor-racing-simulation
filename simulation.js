@@ -1390,6 +1390,11 @@ export async function simulateQualiLap(car, rng, circuit, trackEvolution, onSect
       const consistencyRoll = consistency / 100 + errorRoll * (1 - consistency / 100);
       const effectiveSkill  = car.driver.skill * consistencyRoll;
       driverFactor = 1.0 + (1 - effectiveSkill / 100) * 0.05;
+      // Quality tier for commentary: normalise roll within this driver's clean range
+      const quality = (consistencyRoll - consistency / 100) / Math.max(0.01, 1 - consistency / 100);
+      if      (quality > 0.80) eventType = 'perfect';
+      else if (quality < 0.15) eventType = 'sloppy';
+      // else leave eventType null → no commentary for average sectors
     }
 
     const sectorTime = sectorDef.baseSectorTime

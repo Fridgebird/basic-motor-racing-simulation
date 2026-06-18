@@ -1071,6 +1071,7 @@ export class Renderer {
           const firstLetter = hist[0] ?? 'M';
           startCompound = firstLetter === 'S' ? 'soft'
                         : firstLetter === 'H' ? 'hard'
+                        : firstLetter === 'W' ? 'wet'
                         : 'medium';
         } else {
           ctx.lineTo(x, y);

@@ -289,6 +289,20 @@
       line-height: 1.75;
       max-width: 600px;
     }
+
+    /* ── Sector table ──────────────────────────────────────────────────────────── */
+    .sector-table { width:100%; border-collapse:collapse; font-size:11px; }
+    .sector-table th {
+      text-align:left; color:var(--lo); font-size:9px; letter-spacing:0.10em;
+      padding:3px 8px; border-bottom:1px solid var(--border); font-weight:normal;
+    }
+    .sector-table td { padding:5px 8px; border-bottom:1px solid var(--dim); }
+    .sector-table td:first-child { color:var(--lo); width:36px; }
+    .sector-table td.sec-label { color:var(--hi); }
+    .sector-table td.sec-char  { color:var(--lo); font-size:10px; }
+    .char-power    { color:#e87040; }
+    .char-aero     { color:#40a0e8; }
+    .char-balanced { color:var(--mid); }
   </style>
 </head>
 <body>
@@ -356,6 +370,19 @@
     </div>
 
     <div class="circuit-profile" id="circuit-profile"></div>
+
+    <div id="sector-info" style="margin-bottom:20px">
+      <div class="section-title">Sector Characteristics</div>
+      <table class="sector-table">
+        <thead><tr><th>#</th><th>SECTOR</th><th>CHARACTER</th></tr></thead>
+        <tbody id="sector-tbody"></tbody>
+      </table>
+    </div>
+
+    <div id="strategy-info" style="margin-bottom:20px">
+      <div class="section-title">Strategy Notes</div>
+      <div class="stat-grid" id="strategy-grid"></div>
+    </div>
   </div>
 
   <script type="module">
@@ -474,6 +501,35 @@
       document.getElementById('circuit-profile').textContent = circuit.profile;
     }
 
+    // ── Sector characteristics ─────────────────────────────────────────────────
+    const sectorTbody = document.getElementById('sector-tbody');
+    circuit.sectors.forEach(sec => {
+      const char = sectorCharacter(sec);
+      const tr   = document.createElement('tr');
+      tr.innerHTML = `
+        <td>Sector ${sec.id}</td>
+        <td class="sec-label">${sec.label}</td>
+        <td class="sec-char ${char.cls}">${char.text}</td>
+      `;
+      sectorTbody.appendChild(tr);
+    });
+
+    // ── Strategy notes ─────────────────────────────────────────────────────────
+    const strategyRows = [
+      ['Fuel load', fuelLoad(circuit.baseFuelBurnPerLap)],
+      ['Pit lane',  `~${circuit.pitLaneTime} sec time loss`],
+    ];
+    const strategyGrid = document.getElementById('strategy-grid');
+    strategyRows.forEach(([label, value]) => {
+      const lEl = document.createElement('div');
+      lEl.className   = 'stat-label';
+      lEl.textContent = label;
+      const vEl = document.createElement('div');
+      vEl.className   = 'stat-value';
+      vEl.textContent = value;
+      strategyGrid.append(lEl, vEl);
+    });
+
     // ── Dev bar ────────────────────────────────────────────────────────────────
     if (isDevMode()) {
       const devBar       = document.getElementById('dev-bar');
@@ -521,6 +577,19 @@
       if (val <= 1.10) return 'Average';
       if (val <= 1.30) return 'Good';
       return 'Excellent';
+    }
+
+    function fuelLoad(burnPerLap) {
+      if (burnPerLap < 1.2)   return 'Low';
+      if (burnPerLap <= 1.55) return 'Moderate';
+      return 'High';
+    }
+
+    function sectorCharacter(sec) {
+      const { powerWeight, aeroWeight } = sec;
+      if (powerWeight > aeroWeight * 1.5) return { text: 'Power-limited',   cls: 'char-power' };
+      if (aeroWeight  > powerWeight * 1.5) return { text: 'Chassis-limited', cls: 'char-aero' };
+      return { text: 'Balanced', cls: 'char-balanced' };
     }
   </script>
 

@@ -308,7 +308,7 @@ export class Renderer {
       const total = this._snapshots.length;
       const idx   = this._viewIdx + 1;
       status    = `◀ REPLAY (${idx}/${total}) ▶`;
-      lapSector = lap > 0 ? `LAP ${lap} / ${currentCircuit.totalLaps}   S${sector}` : '';
+      lapSector = lap > 0 ? `LAP ${lap} / ${currentCircuit.totalLaps}   Sector ${sector}` : '';
     } else if (displayCars.length === 0 || lap === 0) {
       status    = 'PRE-RACE';
       lapSector = currentCircuit ? `${currentCircuit.totalLaps} LAPS` : '';
@@ -317,7 +317,7 @@ export class Renderer {
       lapSector = `🏁 LAP ${currentCircuit.totalLaps} / ${currentCircuit.totalLaps}`;
     } else {
       status    = `${running} RUNNING`;
-      lapSector = `LAP ${lap} / ${currentCircuit.totalLaps}   S${sector}`;
+      lapSector = `LAP ${lap} / ${currentCircuit.totalLaps}   Sector ${sector}`;
     }
 
     this._statusEl.textContent = status;
@@ -725,7 +725,7 @@ export class Renderer {
     if (ev.type === 'overtake' && ev.result === 'failed') return null;
 
     const lapStr = entry.sector > 0
-      ? `L${entry.lap} S${entry.sector}`
+      ? `L${entry.lap} Sector ${entry.sector}`
       : `L${entry.lap}`;
 
     let tag, tagClass, detail;

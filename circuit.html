@@ -312,7 +312,7 @@
       const char = sectorCharacter(sec);
       const tr   = document.createElement('tr');
       tr.innerHTML = `
-        <td>S${sec.id}</td>
+        <td>Sector ${sec.id}</td>
         <td class="sec-label">${sec.label}</td>
         <td class="sec-char ${char.cls}">${char.text}</td>
       `;
@@ -322,7 +322,7 @@
     // ── Strategy stats
     setStats('strategy-stats', [
       ['Fuel load',  fuelLoad(circuit.baseFuelBurnPerLap)],
-      ['Pit lane',   `~${circuit.pitLaneTime}s traversal`],
+      ['Pit lane',   `~${circuit.pitLaneTime} sec time loss`],
     ]);
 
     // ── Footer nav
@@ -384,8 +384,8 @@
 
     function sectorCharacter(sec) {
       const { powerWeight, aeroWeight } = sec;
-      if (powerWeight > aeroWeight * 1.5) return { text: 'Power-biased',  cls: 'char-power' };
-      if (aeroWeight  > powerWeight * 1.5) return { text: 'Corner-biased', cls: 'char-aero' };
+      if (powerWeight > aeroWeight * 1.5) return { text: 'Power-limited',   cls: 'char-power' };
+      if (aeroWeight  > powerWeight * 1.5) return { text: 'Chassis-limited', cls: 'char-aero' };
       return { text: 'Balanced', cls: 'char-balanced' };
     }
     })();

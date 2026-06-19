@@ -64,8 +64,20 @@
     .season-btn:hover:not(:disabled) { color:var(--hi); border-color:var(--mid); }
     .season-btn:disabled { opacity:0.25; cursor:default; }
 
-    #season-tech { display:flex; gap:20px; flex-wrap:wrap; margin-bottom:14px; font-size:9px; letter-spacing:1px; color:var(--lo); }
-    #season-tech span { color:var(--hi); }
+    #season-tech { display:flex; flex-direction:column; gap:7px; margin-bottom:14px; }
+    .tech-row { display:flex; align-items:center; gap:10px; font-size:9px; letter-spacing:1px; flex-wrap:wrap; }
+    .tech-key { color:var(--lo); width:56px; flex-shrink:0; }
+    .tech-val { color:var(--hi); min-width:80px; }
+    .tech-pips { display:flex; gap:10px; }
+    .pip-group { display:flex; align-items:center; gap:2px; }
+    .pip-group .pip { width:7px; height:7px; border-radius:1px; border:1px solid currentColor; }
+    .pip-group .pip.on { background:currentColor; }
+    .pip-label { font-size:8px; letter-spacing:0.5px; margin-left:3px; opacity:0.65; }
+    .pip-power { color:#e87040; }
+    .pip-burn  { color:#ffcc44; }
+    .pip-grip  { color:#40a0e8; }
+    .pip-wear  { color:#cc4488; }
+    .pip-tank  { color:#44cc88; }
 
     .section-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; margin-bottom:10px; }
     #driver-list { display:flex; gap:12px; flex-wrap:wrap; }
@@ -290,14 +302,39 @@
       const engineName = (ENGINES[engineId]?.name ?? engineId).toUpperCase();
       const tyreName   = (TYRES[tyreId]?.name   ?? tyreId).toUpperCase();
 
+      const snapshot  = getSeasonSnapshot(season, worldSeed);
+      const eng       = snapshot.engines[engineId] ?? ENGINES[engineId];
+      const tyr       = snapshot.tyres[tyreId]     ?? TYRES[tyreId];
+      const teamSnap  = snapshot.teams.find(t => t.id === team.id);
+
       updateCarImage(team, season);
       updateTeamLogo(team);
       document.getElementById('season-label').textContent = `${year}`;
 
       document.getElementById('season-tech').innerHTML = `
-        <div>CHASSIS <span>${chassis}</span></div>
-        <div>ENGINE <span>${engineName}</span></div>
-        <div>TYRES <span>${tyreName}</span></div>
+        <div class="tech-row">
+          <span class="tech-key">CHASSIS</span>
+          <span class="tech-val">${chassis}</span>
+          <div class="tech-pips">
+            ${pips(bucket(teamSnap?.fuelCapacity ?? 110, [103, 121]), 'pip-tank', 'TANK')}
+          </div>
+        </div>
+        <div class="tech-row">
+          <span class="tech-key">ENGINE</span>
+          <span class="tech-val">${engineName}</span>
+          <div class="tech-pips">
+            ${pips(bucket(eng.power,        [68, 82]),      'pip-power', 'POWER')}
+            ${pips(bucket(eng.fuelBurnRate, [1.03, 1.12]),  'pip-burn',  'FUEL')}
+          </div>
+        </div>
+        <div class="tech-row">
+          <span class="tech-key">TYRES</span>
+          <span class="tech-val">${tyreName}</span>
+          <div class="tech-pips">
+            ${pips(bucket(tyr.maxGrip,  [78, 86]),          'pip-grip', 'GRIP')}
+            ${pips(bucket(tyr.wearRate, [0.0108, 0.0127]),  'pip-wear', 'WEAR')}
+          </div>
+        </div>
       `;
 
       const seasonRoster = getActiveRoster(season, worldSeed).filter(e => e.teamId === team.id);
@@ -426,6 +463,17 @@
 
       document.title = `${team.name} — Simple Motor Racing`;
       window.history.replaceState(null, '', `team.html?id=${team.id}&season=${viewedSeason}`);
+    }
+
+    function bucket(val, [lo, hi]) {
+      return val <= lo ? 1 : val <= hi ? 2 : 3;
+    }
+
+    function pips(level, cls, label) {
+      const dots = [1,2,3].map(i =>
+        `<span class="pip ${i <= level ? 'on' : 'off'}"></span>`
+      ).join('');
+      return `<span class="pip-group ${cls}">${dots}<span class="pip-label">${label}</span></span>`;
     }
 
     document.getElementById('btn-prev').addEventListener('click', () => { teamIdx--; renderTeam(teamIdx); });

@@ -73,11 +73,7 @@
     .pip-group .pip { width:7px; height:7px; border-radius:1px; border:1px solid currentColor; }
     .pip-group .pip.on { background:currentColor; }
     .pip-label { font-size:8px; letter-spacing:0.5px; margin-left:3px; opacity:0.65; }
-    .pip-power { color:#e87040; }
-    .pip-burn  { color:#ffcc44; }
-    .pip-grip  { color:#40a0e8; }
-    .pip-wear  { color:#cc4488; }
-    .pip-tank  { color:#44cc88; }
+    .pip-power, .pip-burn, .pip-grip, .pip-wear, .pip-tank { color:var(--accent); }
 
     .section-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; margin-bottom:10px; }
     #driver-list { display:flex; gap:12px; flex-wrap:wrap; }
@@ -316,7 +312,7 @@
           <span class="tech-key">CHASSIS</span>
           <span class="tech-val">${chassis}</span>
           <div class="tech-pips">
-            ${pips(bucket(teamSnap?.fuelCapacity ?? 110, [103, 121]), 'pip-tank', 'TANK')}
+            ${pips(bucket(teamSnap?.fuelCapacity ?? 110, [103, 121]), 'pip-tank', 'FUEL TANK CAPACITY')}
           </div>
         </div>
         <div class="tech-row">
@@ -324,7 +320,7 @@
           <span class="tech-val">${engineName}</span>
           <div class="tech-pips">
             ${pips(bucket(eng.power,        [68, 82]),      'pip-power', 'POWER')}
-            ${pips(bucket(eng.fuelBurnRate, [1.03, 1.12]),  'pip-burn',  'FUEL')}
+            ${pips(bucket(eng.fuelBurnRate, [1.03, 1.12]),  'pip-burn',  'FUEL CONSUMPTION')}
           </div>
         </div>
         <div class="tech-row">

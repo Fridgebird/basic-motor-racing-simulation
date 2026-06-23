@@ -787,10 +787,27 @@ export class Renderer {
       tag      = 'PASS';
       tagClass = 'tag-pass';
       const posStr = ev.position != null ? ` for ${ordinal(ev.position)}` : '';
-      const verb   = wheelToWheelVerb(entry.sector);
+      const verb   = ev.method === 'divebomb'
+        ? divebombVerb()
+        : wheelToWheelVerb(entry.sector);
       const passedCar    = this._displayCars?.find(c => c.driver.name === ev.passed);
       const passedColour = passedCar?.team?.colour ?? '#4a6a88';
       detail   = `${entry.car.toUpperCase()} ${verb} <span class="c-team-mark" style="color:${passedColour}">■</span>${ev.passed.toUpperCase()}${posStr}`;
+
+    } else if (ev.type === 'collision') {
+      const s       = ev.parties[1];
+      const sCar    = this._displayCars?.find(c => c.driver.name === s);
+      const sColour = sCar?.team?.colour ?? '#4a6a88';
+      const severe  = ev.qOutcome === 'retirement' || ev.sOutcome === 'retirement';
+      tag      = severe ? 'CRASH' : 'COLL';
+      tagClass = severe ? 'tag-crash' : 'tag-dmg';
+      const qResult = ev.qOutcome === 'retirement' ? 'OUT'
+                    : ev.qOutcome === 'damage'     ? 'DAMAGE' : 'ESCAPES';
+      const sResult = ev.sOutcome === 'retirement' ? 'OUT'
+                    : ev.sOutcome === 'damage'     ? 'DAMAGE' : 'ESCAPES';
+      detail = `COLLISION — ${entry.car.toUpperCase()} ${qResult} · `
+             + `<span class="c-team-mark" style="color:${sColour}">■</span>`
+             + `${s.toUpperCase()} ${sResult}`;
 
     } else {
       return null;
@@ -1148,6 +1165,12 @@ function wheelToWheelVerb(sector) {
   const mixed    = ['muscles past', 'forces the issue on', 'makes the move on'];
   const pool     = isPower ? power : isCorner ? corner : mixed;
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// Verb for a divebomb (aggressive late-braking move into a corner)
+function divebombVerb() {
+  const verbs = ['dives inside', 'brakes late on', 'divebombs', 'goes around the outside of'];
+  return verbs[Math.floor(Math.random() * verbs.length)];
 }
 
 // Verb for a pace-based silent pass

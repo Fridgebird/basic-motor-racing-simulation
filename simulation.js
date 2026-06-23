@@ -25,6 +25,11 @@ export function setCurrentCircuit(circuit, displayYear = 1930) {
   const sumFuelWeights = circuit.sectors.reduce((s, sec) => s + sec.fuelWeight, 0);
   currentCircuit = { ...circuit, sumFuelWeights };
   currentDisplayYear = displayYear;
+  // Era-aware overtaking constants: pre-aero cars create less dirty air and
+  // have more room to manoeuvre, so failures cost less time.
+  if (displayYear < 1945)      { eraAeroLoss = 0.15; eraRawFailPenalty = 0.20; }
+  else if (displayYear < 1965) { eraAeroLoss = 0.25; eraRawFailPenalty = 0.30; }
+  else                         { eraAeroLoss = 0.40; eraRawFailPenalty = 0.40; }
 }
 import { cars, race, raceLog, lapChartData, updatePositions } from './state.js';
 
@@ -77,15 +82,20 @@ const WORN_TYRE_CONSISTENCY_PENALTY = 25;
 // DIRTY_AIR_WEAR_MULT: extra tyre wear fraction at gap = 0; scales linearly.
 //   At 0.20, a car at maximum proximity takes 20% more tyre wear per sector.
 const DIRTY_AIR_RANGE     = 1.00;  // seconds
-const DIRTY_AIR_AERO_LOSS = 0.40;
 const DIRTY_AIR_WEAR_MULT = 0.20;
+// eraAeroLoss: scales with era — pre-aero cars create less dirty air.
+// eraRawFailPenalty: raw pace pass failure penalty, smaller in early eras (more room).
+// Both set in setCurrentCircuit() based on displayYear.
+let eraAeroLoss       = 0.40;
+let eraRawFailPenalty = 0.40;
 
-// Overtake attempt fires when gap < OVERTAKE_RANGE and the following car has a
-// pace advantage (fresher tyres / lighter fuel). Outcome is probabilistic.
-// FAILED_OVERTAKE_PENALTY: seconds added to following car on a failed attempt —
-//   represents backing out of the move and losing momentum.
+// Overtake attempt fires when gap < OVERTAKE_RANGE.
+// Two types: raw pace pass (power sectors) and divebomb (braking zones).
+// DIVEBOMB_FAIL_PENALTY: fixed across eras — contact risk is era-independent.
+// DIVEBOMB_COLLISION_BASE: base probability of contact on a failed divebomb.
 const OVERTAKE_RANGE          = 0.30;  // seconds
-const FAILED_OVERTAKE_PENALTY = 0.40;  // seconds
+const DIVEBOMB_FAIL_PENALTY   = 0.40;  // seconds
+const DIVEBOMB_COLLISION_BASE = 0.08;  // scales with tyre wear + aggression
 
 // ─── Era-aware failure label pools ────────────────────────────────────────────
 // Each system has two pools: labels that can appear as degraded failures (car limps
@@ -387,7 +397,7 @@ export function tick(rng) {
     // Effect is strongest in corner-heavy sectors (high aeroWeight) and minimal
     // on the power straight (low aeroWeight) — falls out of the formula naturally.
     const proximity    = Math.max(0, 1 - (gapAhead.get(car) ?? Infinity) / DIRTY_AIR_RANGE);
-    const effectiveAero = car.team.aero * (1 - proximity * DIRTY_AIR_AERO_LOSS);
+    const effectiveAero = car.team.aero * (1 - proximity * eraAeroLoss);
     const chassisFactor = 1.0 + (1 - effectiveAero / 100) * sectorDef.aeroWeight;
     factors.chassis  = +chassisFactor.toFixed(4);
     factors.dirtyAir = +proximity.toFixed(3); // 0 = clean air, 1 = maximum dirty air
@@ -709,8 +719,11 @@ export function tick(rng) {
   }
 
   // ── Resolve overtake attempts ──────────────────────────────────────────────
-  // Sort active cars by updated cumulative time to find genuine proximity.
-  // Only the car immediately ahead is considered — one attempted pass per sector.
+  // Two types per sector character:
+  //   Divebomb   — braking-zone sectors (aeroWeight >= powerWeight); triggered by
+  //                proximity + aggression; collision risk on failure.
+  //   Raw pace   — power/balanced sectors; triggered by intrinsic car pace advantage;
+  //                no collision risk, smaller failure penalty.
   const activeSorted = cars
     .filter(c => c.status !== 'retired')
     .sort((a, b) => a.cumulativeTime - b.cumulativeTime);
@@ -722,33 +735,98 @@ export function tick(rng) {
 
     if (gap <= 0 || gap >= OVERTAKE_RANGE) continue;
 
-    const delta = paceDelta(behind, ahead);
-    if (delta <= 0) continue; // behind car has no pace advantage — no attempt
+    const brakingZone = sectorDef.aeroWeight >= sectorDef.powerWeight;
 
-    const prob = overtakeProbability(behind, ahead, sectorDef);
-    const roll = rng();
+    if (brakingZone) {
+      // ── Divebomb ─────────────────────────────────────────────────────────
+      const prob = divebombProbability(behind, ahead, sectorDef);
+      const roll = rng();
 
-    if (roll < prob) {
-      // ── Successful overtake ───────────────────────────────────────────────
-      // Place the overtaking car just ahead in cumulative time.
-      behind.cumulativeTime = ahead.cumulativeTime - 0.05;
-      raceLog.entries.push({
-        tick: race.tick, lap: race.lap, sector: race.sector,
-        car:    behind.driver.name,
-        events: [{ type: 'overtake', passed: ahead.driver.name, result: 'success',
-                   position: ahead.position,
-                   gap: +gap.toFixed(3), prob: +prob.toFixed(3), roll: +roll.toFixed(4) }],
-      });
+      if (roll < prob) {
+        behind.cumulativeTime = ahead.cumulativeTime - 0.05;
+        raceLog.entries.push({
+          tick: race.tick, lap: race.lap, sector: race.sector,
+          car: behind.driver.name,
+          events: [{ type: 'overtake', method: 'divebomb', passed: ahead.driver.name,
+                     result: 'success', position: ahead.position,
+                     gap: +gap.toFixed(3), prob: +prob.toFixed(3), roll: +roll.toFixed(4) }],
+        });
+      } else {
+        // Failed divebomb — always pay time penalty, then check for collision.
+        behind.cumulativeTime += DIVEBOMB_FAIL_PENALTY;
+        const logEvents = [{ type: 'overtake', method: 'divebomb', passed: ahead.driver.name,
+                             result: 'failed', gap: +gap.toFixed(3),
+                             prob: +prob.toFixed(3), roll: +roll.toFixed(4) }];
+
+        const collProb = Math.min(0.30, DIVEBOMB_COLLISION_BASE
+          + behind.tyreWear * 0.15
+          + (behind.driver.aggression - 50) / 100 * 0.04);
+        const collRoll = rng();
+
+        if (collRoll < collProb) {
+          // Resolve Q (behind) and S (ahead) independently.
+          // Each gets two RNG calls (type + severity) regardless of outcome
+          // to keep call count deterministic.
+          const { q, s } = resolveCollisionDamage();
+
+          if (q.outcome === 'retirement') {
+            behind.status        = 'retired';
+            behind.retiredReason = 'collision';
+            behind.retiredLap    = race.lap;
+          } else if (q.outcome === 'damage') {
+            behind.reliabilityFactor *= q.factor;
+          }
+
+          if (s.outcome === 'retirement') {
+            ahead.status        = 'retired';
+            ahead.retiredReason = 'collision';
+            ahead.retiredLap    = race.lap;
+          } else if (s.outcome === 'damage') {
+            ahead.reliabilityFactor *= s.factor;
+          }
+
+          logEvents.push({
+            type: 'collision',
+            parties: [behind.driver.name, ahead.driver.name],
+            qOutcome: q.outcome, sOutcome: s.outcome,
+            qFactor: q.factor,  sFactor: s.factor,
+          });
+        }
+
+        raceLog.entries.push({
+          tick: race.tick, lap: race.lap, sector: race.sector,
+          car: behind.driver.name,
+          events: logEvents,
+        });
+      }
+
     } else {
-      // ── Failed attempt ────────────────────────────────────────────────────
-      // Penalty for backing out of the move — gap opens back up.
-      behind.cumulativeTime += FAILED_OVERTAKE_PENALTY;
-      raceLog.entries.push({
-        tick: race.tick, lap: race.lap, sector: race.sector,
-        car:    behind.driver.name,
-        events: [{ type: 'overtake', passed: ahead.driver.name, result: 'failed',
-                   gap: +gap.toFixed(3), prob: +prob.toFixed(3), roll: +roll.toFixed(4) }],
-      });
+      // ── Raw pace pass ─────────────────────────────────────────────────────
+      const rpDelta = rawPaceDelta(behind, ahead, sectorDef);
+      if (rpDelta <= 0) continue; // Q not intrinsically faster — no attempt
+
+      const prob = rawPassProbability(behind, ahead, sectorDef);
+      const roll = rng();
+
+      if (roll < prob) {
+        behind.cumulativeTime = ahead.cumulativeTime - 0.05;
+        raceLog.entries.push({
+          tick: race.tick, lap: race.lap, sector: race.sector,
+          car: behind.driver.name,
+          events: [{ type: 'overtake', method: 'pace', passed: ahead.driver.name,
+                     result: 'success', position: ahead.position,
+                     gap: +gap.toFixed(3), prob: +prob.toFixed(3), roll: +roll.toFixed(4) }],
+        });
+      } else {
+        behind.cumulativeTime += eraRawFailPenalty;
+        raceLog.entries.push({
+          tick: race.tick, lap: race.lap, sector: race.sector,
+          car: behind.driver.name,
+          events: [{ type: 'overtake', method: 'pace', passed: ahead.driver.name,
+                     result: 'failed', gap: +gap.toFixed(3),
+                     prob: +prob.toFixed(3), roll: +roll.toFixed(4) }],
+        });
+      }
     }
   }
 
@@ -854,20 +932,54 @@ function paceDelta(behind, ahead) {
   return tyrePlusFuel(ahead) - tyrePlusFuel(behind); // positive = behind is faster
 }
 
-// Returns the probability (0–1) of a successful overtake attempt.
-// Scaled by pace advantage, driver aggression, and sector type.
-function overtakeProbability(behind, ahead, sectorDef) {
-  const delta = paceDelta(behind, ahead);
-  let prob = 0.25 + delta * 3;
-  prob += (behind.driver.aggression - 50) / 100 * 0.20; // aggression ±0.10
+// Raw pace delta: compares intrinsic car speed (engine + chassis + driver skill),
+// deliberately excluding tyre wear and fuel load so it captures structural pace
+// advantage rather than in-lap state. Positive = behind (Q) is faster.
+function rawPaceDelta(behind, ahead, sectorDef) {
+  function intrinsicFactor(car) {
+    return (1.0 + (1 - car.engine.power  / 100) * sectorDef.powerWeight)
+         + (1.0 + (1 - car.team.aero     / 100) * sectorDef.aeroWeight)
+         + (1.0 + (1 - car.driver.skill  / 100) * 0.05);
+  }
+  return intrinsicFactor(ahead) - intrinsicFactor(behind);
+}
 
-  // Sector modifier: power straight = much easier to pass; tight corners = very hard
-  if (sectorDef.id === 2) prob *= 1.50;
-  if (sectorDef.id === 1) prob *= 0.55;
-
+// Raw pace pass probability: power sectors open a gap, technical sectors keep
+// cars bunched. Era scaling via circuit.overtakingDifficulty.
+function rawPassProbability(behind, ahead, sectorDef) {
+  const delta = rawPaceDelta(behind, ahead, sectorDef);
+  let prob = 0.20 + delta * 5;
+  prob += (behind.driver.aggression - 50) / 100 * 0.12;
+  const isPower = sectorDef.powerWeight > sectorDef.aeroWeight;
+  prob *= isPower ? 1.8 : 0.7;
   prob *= (currentCircuit?.overtakingDifficulty ?? 1.0);
-
   return Math.min(0.80, Math.max(0, prob));
+}
+
+// Divebomb probability: aggression-driven; boosted by tyre/fuel advantage
+// (better braking with fresh rubber); corner-biased sectors are optimal.
+function divebombProbability(behind, ahead, sectorDef) {
+  const aggFraction = behind.driver.aggression / 100;
+  let prob = 0.20 + aggFraction * 0.35;
+  prob += paceDelta(behind, ahead) * 2.0; // tyre/fuel braking boost
+  const ratio = sectorDef.aeroWeight / Math.max(sectorDef.powerWeight, 0.01);
+  prob *= Math.min(2.0, 0.6 + ratio * 0.7); // corner-biased sectors most favourable
+  prob *= (currentCircuit?.overtakingDifficulty ?? 1.0);
+  return Math.min(0.80, Math.max(0, prob));
+}
+
+// Resolve collision damage for both cars independently.
+// Always makes exactly 4 RNG calls (typeRoll + sevRoll per car) so call count
+// is deterministic regardless of outcome — preserving replay integrity.
+function resolveCollisionDamage() {
+  function carOutcome() {
+    const typeRoll = rng();
+    const sevRoll  = rng(); // always consumed
+    if (typeRoll < 0.35) return { outcome: 'none',       factor: null };
+    if (typeRoll < 0.75) return { outcome: 'damage',     factor: +(1.06 + sevRoll * 0.08).toFixed(3) };
+    return                      { outcome: 'retirement', factor: null };
+  }
+  return { q: carOutcome(), s: carOutcome() };
 }
 
 // ─── Pit Stop AI ──────────────────────────────────────────────────────────────

@@ -767,7 +767,7 @@ export function tick(rng) {
           // Resolve Q (behind) and S (ahead) independently.
           // Each gets two RNG calls (type + severity) regardless of outcome
           // to keep call count deterministic.
-          const { q, s } = resolveCollisionDamage();
+          const { q, s } = resolveCollisionDamage(rng);
 
           if (q.outcome === 'retirement') {
             behind.status        = 'retired';
@@ -971,7 +971,7 @@ function divebombProbability(behind, ahead, sectorDef) {
 // Resolve collision damage for both cars independently.
 // Always makes exactly 4 RNG calls (typeRoll + sevRoll per car) so call count
 // is deterministic regardless of outcome — preserving replay integrity.
-function resolveCollisionDamage() {
+function resolveCollisionDamage(rng) {
   function carOutcome() {
     const typeRoll = rng();
     const sevRoll  = rng(); // always consumed

@@ -368,6 +368,7 @@
                              ? +(car.cumulativeTime - leader.cumulativeTime).toFixed(3)
                              : null,
             stops:         car.stopsMade,
+            gridPosition:  car.gridPosition,
             lapsCompleted: car.status === 'retired' ? (car.retiredLap ?? 0) : circuit.totalLaps,
             dnfReason:     car.retiredReason ?? null,
             dnfLabel:      car.status === 'retired' ? (car.degradedLabel ?? null) : null,
@@ -490,7 +491,7 @@
           return;
         }
 
-        const table = buildTable(['POS', 'DRIVER', 'TEAM', 'GAP', 'PIT', 'STATUS', 'PTS']);
+        const table = buildTable(['POS', 'DRIVER', 'TEAM', 'GAP', 'GRID', 'STATUS', 'PTS']);
         const tbody = table.querySelector('tbody');
 
         entries.forEach((e, i) => {
@@ -505,7 +506,7 @@
             gapStr = e.lapsCompleted != null ? `DNF L${e.lapsCompleted}` : 'DNF';
           }
 
-          const stops = e.stops != null ? e.stops : '–';
+          const grid  = e.gridPosition != null ? e.gridPosition : '–';
           const pts   = !e.retired ? (POINTS_TABLE[i] ?? '') : '';
           let statusHtml = '';
           if (e.retired) {
@@ -522,7 +523,7 @@
             <td class="col-name"><span class="team-dot" style="background:${colour}"></span>${driverLink(e.driverId, e.driverName)}</td>
             <td class="col-team">${displayTeam(e.teamId)}</td>
             <td class="col-gap${e.position === 1 && !e.retired ? ' leader' : ''}">${gapStr}</td>
-            <td class="col-stops">${stops}</td>
+            <td class="col-stops">${grid}</td>
             <td class="col-status">${statusHtml}</td>
             <td class="col-pts">${pts}</td>
           `;

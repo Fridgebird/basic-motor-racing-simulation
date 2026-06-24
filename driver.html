@@ -165,7 +165,13 @@
     };
 
     const roster          = getActiveRoster(currentSeason, worldSeed);
-    const activeDriverIds = roster.map(e => e.driverId);
+    const activeDriverIds = roster.map(e => e.driverId)
+      .sort((a, b) => {
+        const da = DRIVER_POOL.find(d => d.id === a);
+        const db = DRIVER_POOL.find(d => d.id === b);
+        return (da?.lastName ?? '').localeCompare(db?.lastName ?? '')
+            || (da?.firstName ?? '').localeCompare(db?.firstName ?? '');
+      });
 
     // If the requested driver is not in the current active roster (retired/dropped),
     // put just them in a single-element view list so their profile still renders.

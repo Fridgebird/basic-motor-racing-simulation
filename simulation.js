@@ -23,7 +23,12 @@ export function setCurrentCircuit(circuit, displayYear = 1930) {
   // exactly baseFuelBurnPerLap × fuelBurnRate per lap, regardless of how
   // the individual sector fuelWeight values are distributed.
   const sumFuelWeights = circuit.sectors.reduce((s, sec) => s + sec.fuelWeight, 0);
-  currentCircuit = { ...circuit, sumFuelWeights };
+  // Precompute which sector index (0-based) is the primary braking zone —
+  // the single sector with the highest aeroWeight. Divebombs only trigger here.
+  const brakingZoneSectorIdx = circuit.sectors.reduce(
+    (best, sec, i) => sec.aeroWeight > circuit.sectors[best].aeroWeight ? i : best, 0
+  );
+  currentCircuit = { ...circuit, sumFuelWeights, brakingZoneSectorIdx };
   currentDisplayYear = displayYear;
   // Era-aware overtaking constants: pre-aero cars create less dirty air and
   // have more room to manoeuvre, so failures cost less time.
@@ -735,7 +740,7 @@ export function tick(rng) {
 
     if (gap <= 0 || gap >= OVERTAKE_RANGE) continue;
 
-    const brakingZone = sectorDef.aeroWeight >= sectorDef.powerWeight;
+    const brakingZone = (race.sector - 1) === currentCircuit.brakingZoneSectorIdx;
 
     if (brakingZone) {
       // ── Divebomb ─────────────────────────────────────────────────────────
@@ -775,6 +780,7 @@ export function tick(rng) {
             behind.retiredLap    = race.lap;
           } else if (q.outcome === 'damage') {
             behind.reliabilityFactor *= q.factor;
+            behind.degradedLabel = 'Collision dmg';
           }
 
           if (s.outcome === 'retirement') {
@@ -783,6 +789,7 @@ export function tick(rng) {
             ahead.retiredLap    = race.lap;
           } else if (s.outcome === 'damage') {
             ahead.reliabilityFactor *= s.factor;
+            ahead.degradedLabel = 'Collision dmg';
           }
 
           logEvents.push({
@@ -960,12 +967,12 @@ function rawPassProbability(behind, ahead, sectorDef) {
 // (better braking with fresh rubber); corner-biased sectors are optimal.
 function divebombProbability(behind, ahead, sectorDef) {
   const aggFraction = behind.driver.aggression / 100;
-  let prob = 0.20 + aggFraction * 0.35;
+  let prob = 0.08 + aggFraction * 0.15;
   prob += paceDelta(behind, ahead) * 2.0; // tyre/fuel braking boost
   const ratio = sectorDef.aeroWeight / Math.max(sectorDef.powerWeight, 0.01);
   prob *= Math.min(2.0, 0.6 + ratio * 0.7); // corner-biased sectors most favourable
   prob *= (currentCircuit?.overtakingDifficulty ?? 1.0);
-  return Math.min(0.80, Math.max(0, prob));
+  return Math.min(0.40, Math.max(0, prob));
 }
 
 // Resolve collision damage for both cars independently.

@@ -376,6 +376,7 @@ export async function ensurePastResultsCached(season, simFns) {
                            ? +(car.cumulativeTime - leader.cumulativeTime).toFixed(3)
                            : null,
           stops:         car.stopsMade,
+          gridPosition:  car.gridPosition,
           lapsCompleted: car.status === 'retired' ? (car.retiredLap ?? 0) : circuit.totalLaps,
           dnfReason:     car.retiredReason ?? null,
           dnfLabel:      car.status === 'retired' ? (car.degradedLabel ?? null) : null,

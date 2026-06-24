@@ -152,11 +152,19 @@
     }
 
     #meta-lap-sector {
-      font-size: 14px;
+      font-size: 11px;
       letter-spacing: 1px;
       color: var(--hi);
       text-transform: uppercase;
     }
+    .lap-block { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; }
+    .lap-word  { font-size: 10px; color: var(--mid); letter-spacing: 1px; }
+    .lap-num   { font-size: 22px; letter-spacing: 0; line-height: 1; color: var(--hi); }
+    .lap-denom { color: var(--lo); vertical-align: middle; }
+    .sector-dots { display: flex; flex-direction: column; justify-content: space-between; height: 15px; margin-left: 2px; }
+    .s-dot     { width: 4px; height: 4px; border-radius: 50%; background: var(--dim); flex-shrink: 0; }
+    .s-dot-on  { background: var(--accent); }
+    td.col-lastlap.lap-fresh { color: var(--hi); }
 
     #fastest-lap-display {
       font-size: 9px;
@@ -865,7 +873,7 @@
     <button id="btn-start">START</button>
     <button id="btn-replay" style="display:none">REPLAY</button>
     <button id="btn-race-result" style="display:none">RACE RESULT →</button>
-    <button id="btn-pause" disabled>PAUSE</button>
+    <button id="btn-pause" style="display:none">PAUSE</button>
     <button id="btn-prev"  disabled title="Step one sector back">◀</button>
     <button id="btn-next"  disabled title="Step one sector forward">▶</button>
 
@@ -1386,7 +1394,7 @@
       btnStart.style.display      = 'none';
       btnReplay.style.display     = 'none';
       btnRaceResult.style.display = 'none';
-      btnPause.disabled           = false;
+      btnPause.style.display      = '';
 
       renderer.isLive = true;
       renderer.render();
@@ -1402,7 +1410,7 @@
       btnStart.style.display      = 'none';
       btnReplay.style.display     = 'none';
       btnRaceResult.style.display = 'none';
-      btnPause.disabled           = true;
+      btnPause.style.display      = '';
       btnPause.textContent        = 'PAUSE';
 
       renderer.isLive = false;
@@ -1413,8 +1421,6 @@
       initStrategies(rng);
       updateWeatherDisplay();
       paused = false;
-
-      btnPause.disabled = false;
 
       renderer.isLive = true;
       renderer.render();
@@ -1479,6 +1485,7 @@
             return a.position - b.position;
           })
           .map(car => ({
+            driverId:      car.driver.id,
             driverName:    car.driver.name,
             teamId:        car.team.id,
             position:      car.position,
@@ -1487,6 +1494,7 @@
                              ? +(car.cumulativeTime - leader.cumulativeTime).toFixed(3)
                              : null,
             stops:         car.stopsMade,
+            gridPosition:  car.gridPosition,
             lapsCompleted: car.status === 'retired' ? (car.retiredLap ?? 0) : circuit.totalLaps,
             dnfReason:     car.retiredReason ?? null,
             dnfLabel:      car.status === 'retired' ? (car.degradedLabel ?? null) : null,

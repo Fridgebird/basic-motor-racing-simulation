@@ -304,26 +304,31 @@ export class Renderer {
     // Info bar lap/sector — shown alongside "Race 1" in the sub-header
     let lapSector = '';
 
+    const dot = (n) => `<span class="s-dot${sector >= n ? ' s-dot-on' : ''}"></span>`;
+    const dots = `<span class="sector-dots">${dot(1)}${dot(2)}${dot(3)}</span>`;
+    const lapHtml = (l, total) =>
+      `<span class="lap-block"><span class="lap-word">LAP</span><span class="lap-num">${l}</span>${dots}</span><span class="lap-denom"> / ${total}</span>`;
+
     if (this.inReplay) {
       const total = this._snapshots.length;
       const idx   = this._viewIdx + 1;
       status    = `◀ REPLAY (${idx}/${total}) ▶`;
-      lapSector = lap > 0 ? `LAP ${lap} / ${currentCircuit.totalLaps}   Sector ${sector}` : '';
+      lapSector = lap > 0 ? lapHtml(lap, currentCircuit.totalLaps, sector) : '';
     } else if (displayCars.length === 0 || lap === 0) {
       status    = 'PRE-RACE';
       lapSector = currentCircuit ? `${currentCircuit.totalLaps} LAPS` : '';
     } else if (lap >= currentCircuit.totalLaps && sector >= 3) {
       status    = `FINISHED · ${running} CLASSIFIED`;
-      lapSector = `🏁 LAP ${currentCircuit.totalLaps} / ${currentCircuit.totalLaps}`;
+      lapSector = `&#x1F3C1; LAP ${currentCircuit.totalLaps} / ${currentCircuit.totalLaps}`;
     } else {
       status    = `${running} RUNNING`;
-      lapSector = `LAP ${lap} / ${currentCircuit.totalLaps}   Sector ${sector}`;
+      lapSector = lapHtml(lap, currentCircuit.totalLaps, sector);
     }
 
     this._statusEl.textContent = status;
 
     if (this._metaLapSector) {
-      this._metaLapSector.textContent  = lapSector;
+      this._metaLapSector.innerHTML    = lapSector;
       this._metaLapSector.style.visibility = lapSector ? 'visible' : 'hidden';
     }
   }
@@ -461,10 +466,12 @@ export class Renderer {
       // LAST LAP — full precision desktop, tenths-only on portrait
       {
         const lapTd = document.createElement('td');
+        const currentSector = this._displayRace.sector || 0;
         lapTd.className = 'col-lastlap';
         if (car.lastLapTime != null) {
           const full = formatLapTime(car.lastLapTime);
           lapTd.innerHTML = `<span class="val-full">${full}</span><span class="val-short">${truncToTenths(full)}</span>`;
+          if (currentSector === 3) lapTd.classList.add('lap-fresh');
         } else {
           lapTd.textContent = '—';
         }
@@ -566,7 +573,9 @@ export class Renderer {
       if (retired) {
         const cause = car.retiredReason === 'crash'
           ? 'CRASH'
-          : (car.degradedLabel || 'MECH').toUpperCase();
+          : car.retiredReason === 'collision'
+            ? 'COLLISION'
+            : (car.degradedLabel || 'MECH').toUpperCase();
         healthStr = car.retiredLap != null ? `${cause} L${car.retiredLap}` : cause;
       } else if (car.degradedLabel) {
         healthStr = car.degradedLabel.toUpperCase();
@@ -575,7 +584,9 @@ export class Renderer {
       healthTd.className = 'col-health';
       const iconGlyph = car.retiredReason === 'crash'
         ? '💥'
-        : (HEALTH_ICONS[car.degradedLabel] ?? '&#x2757;&#xFE0E;');
+        : car.retiredReason === 'collision'
+          ? '&#x2715;&#xFE0E;'
+          : (HEALTH_ICONS[car.degradedLabel] ?? '&#x2757;&#xFE0E;');
       const healthIcon = (retired || car.degradedLabel) ? `<span class="val-icon health-icon">${iconGlyph}</span>` : '';
       healthTd.innerHTML = `<span class="val-full">${healthStr}</span>${healthIcon}`;
       if (retired)               healthTd.classList.add('health-out');

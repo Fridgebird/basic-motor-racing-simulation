@@ -879,7 +879,8 @@
 
     <span id="speed-label">SPEED:</span>
     <select id="speed-select">
-      <option value="8571" selected>NORMAL</option>
+      <option value="-1">STEP</option>
+      <option value="10500" selected>NORMAL</option>
       <option value="4286">FAST</option>
       <option value="0">INSTANT</option>
     </select>
@@ -1178,14 +1179,25 @@
     });
     btnPause.addEventListener('click', togglePause);
 
+    speedSel.addEventListener('change', () => {
+      if (speedSel.value !== '-1' && !paused && !isRaceOver() && rng) {
+        scheduleNextSector();
+      }
+      updateStepButtons();
+    });
+
     btnPrev.addEventListener('click', () => {
       renderer.stepBack();
       updateWeatherDisplay();
       updateStepButtons();
     });
     btnNext.addEventListener('click', () => {
-      renderer.stepForward();
-      updateWeatherDisplay();
+      if (speedSel.value === '-1' && !paused && !isRaceOver()) {
+        advanceSector();
+      } else {
+        renderer.stepForward();
+        updateWeatherDisplay();
+      }
       updateStepButtons();
     });
 
@@ -1323,9 +1335,11 @@
 
     // ── Step button state ──────────────────────────────────────────────────────
     function updateStepButtons() {
-      const steppable = paused || isRaceOver();
-      btnPrev.disabled = !steppable || !renderer.canStepBack;
-      btnNext.disabled = !steppable || !renderer.inReplay;
+      const stepMode  = speedSel.value === '-1';
+      const liveStep  = stepMode && !paused && !isRaceOver();
+      const replayStep = paused || isRaceOver();
+      btnPrev.disabled = !replayStep || !renderer.canStepBack;
+      btnNext.disabled = !liveStep && (!replayStep || !renderer.inReplay);
     }
 
     // ── updateWeatherDisplay ───────────────────────────────────────────────────
@@ -1431,8 +1445,9 @@
     function advanceSector() {
       if (paused || isRaceOver()) return;
 
-      const delay = Math.round(parseInt(speedSel.value, 10) / 3);
-      renderer.animationsEnabled = delay >= 1000;
+      const stepMode = speedSel.value === '-1';
+      const delay    = stepMode ? 0 : Math.round(parseInt(speedSel.value, 10) / 3);
+      renderer.animationsEnabled = stepMode || delay >= 1000;
 
       tick(rng);
       renderer.pushSnapshot();
@@ -1447,6 +1462,10 @@
     }
 
     function scheduleNextSector() {
+      if (speedSel.value === '-1') {
+        updateStepButtons(); // re-enable ▶ for next manual step
+        return;
+      }
       const delay = Math.round(parseInt(speedSel.value, 10) / 3);
       loopId = setTimeout(advanceSector, delay);
     }

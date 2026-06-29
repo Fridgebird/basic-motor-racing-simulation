@@ -510,10 +510,12 @@
           const pts   = !e.retired ? (POINTS_TABLE[i] ?? '') : '';
           let statusHtml = '';
           if (e.retired) {
-            const cls = e.dnfReason === 'crash' ? 'status-crash' : 'status-mech';
+            const cls = (e.dnfReason === 'crash' || e.dnfReason === 'collision') ? 'status-crash' : 'status-mech';
             const lbl = e.dnfReason === 'crash'
               ? 'CRASH'
-              : (e.dnfLabel ? e.dnfLabel.toUpperCase() : 'MECH');
+              : e.dnfReason === 'collision'
+                ? 'COLLISION'
+                : (e.dnfLabel ? e.dnfLabel.toUpperCase() : 'MECH');
             statusHtml = `<span class="${cls}">${lbl}</span>`;
           }
 

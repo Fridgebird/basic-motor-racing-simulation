@@ -932,6 +932,82 @@ export const SEASON_SCHEDULE = [
 ];
 
 
+// ─── Formula eras ─────────────────────────────────────────────────────────────
+// Each 5-season block represents a complete technical formula. Chassis, engine and
+// tyre stats all reset at era boundaries; contracting cycles sit on top independently.
+export const FORMULA_ERAS = [
+  {
+    era: 1, years: '1930–1934', name: '750 kg Formula',
+    chassis: 'Front-engined open-wheel cars with twin-beam ladder frames and rigid axles. Bodywork is narrow and cigar-shaped, minimal aerodynamic consideration.',
+    engine:  'Supercharged straight-eight engines up to 2.5 litres, twin overhead camshafts, up to 300 bhp. Compressor boost is unregulated.',
+    tyres:   'Grooved cotton-fabric cross-ply tyres on wire-spoke wheels. Wet and dry compounds identical; tyre changes are slow and frequent.',
+    summary: 'The premier formula imposes a 750 kg minimum weight limit. Speed comes from engine power alone; chassis and tyre technology lag far behind.',
+  },
+  {
+    era: 2, years: '1935–1939', name: 'Unlimited Formula',
+    chassis: 'De Dion rear axles and independent front suspension begin to appear. Aerodynamics remain ignored; some teams experiment with enclosed bodywork.',
+    engine:  'Regulation weight limit abandoned. Factory teams run supercharged V12s up to 6 litres producing over 500 bhp. Customer teams field older 8-cylinder units.',
+    tyres:   'Wider bias-ply tyres on steel wheels improve cornering. Dedicated wet tyres introduced by leading manufacturers.',
+    summary: 'An arms race formula dominated by well-funded factory efforts. Customer teams struggle to compete on equal terms against works machines.',
+  },
+  {
+    era: 3, years: '1940–1944', name: 'Voiturette Formula',
+    chassis: 'Smaller, lighter cars on a 1.5-litre formula. Tubular space frames become standard; some teams pioneer all-independent suspension.',
+    engine:  '1.5-litre supercharged or 4.5-litre naturally aspirated. Pre-war voiturette machinery pressed back into service; development is limited by material shortages.',
+    tyres:   'Narrow treaded cross-ply tyres. Tyre durability is a greater concern than outright grip on tight circuits.',
+    summary: 'Racing resumes on a restricted formula. Ingenuity and preparation matter more than outright resources in an era of scarcity.',
+  },
+  {
+    era: 4, years: '1945–1949', name: 'Post-War Formula A',
+    chassis: 'Space frame construction refined by wartime aircraft experience. Disc brakes appear at the front on leading cars; drum brakes remain on most.',
+    engine:  '1.5-litre supercharged or 4.5-litre naturally aspirated maintained. Fuel quality improves significantly; power outputs climb.',
+    tyres:   'Improved synthetic rubber compounds replace wartime substitutes. Wider tyres with reduced tread depth begin to appear.',
+    summary: 'A boom period as manufacturers return to racing. The supercharged versus naturally aspirated debate defines team strategy.',
+  },
+  {
+    era: 5, years: '1950–1954', name: '2.5-Litre Formula',
+    chassis: 'Front-engined cars reach their developmental peak. De Dion and independent rear suspension universal among front-runners.',
+    engine:  '2.5-litre naturally aspirated or 750 cc supercharged. The supercharger option is abandoned mid-era as fuel allowances tighten.',
+    tyres:   'Wider low-profile cross-ply tyres. Dedicated soft and hard compounds available; pit stops for tyres become strategic events.',
+    summary: 'A balanced formula that rewards chassis development as much as engine power. The era ends with the first signs of a rear-engined revolution.',
+  },
+  {
+    era: 6, years: '1955–1959', name: 'Rear-Engine Transition',
+    chassis: 'Rear-engined layout spreads rapidly from mid-field to works teams. Multi-tubular space frames give way to early semi-monocoques.',
+    engine:  '2.5-litre naturally aspirated continued. Lightweight aluminium construction allows significant power-to-weight gains.',
+    tyres:   'First use of radial-ply technology on some circuits. Crossply remains dominant but rubber compounds improve markedly.',
+    summary: 'A revolution in car layout transforms the competitive order. Teams clinging to front-engined designs fall progressively further behind.',
+  },
+  {
+    era: 7, years: '1960–1964', name: '1.5-Litre Formula',
+    chassis: 'Aluminium monocoque construction replaces space frames. Rear-engined layout now universal. Cars are smaller, lighter and more agile.',
+    engine:  '1.5-litre naturally aspirated. Compact four-cylinder and V8 units predominate; engine weight and dimensions are as important as peak power.',
+    tyres:   'Wider low-profile crossply tyres. Tyre warm-up and operating window become critical strategic factors.',
+    summary: 'A formula that equalises the field through engine restriction. Chassis design and aerodynamic refinement become the primary differentiators.',
+  },
+  {
+    era: 8, years: '1965–1969', name: '3.0-Litre Formula',
+    chassis: 'Full monocoque construction standard. Aerodynamic wings appear and grow rapidly through the era despite safety concerns.',
+    engine:  '3.0-litre naturally aspirated or 1.5-litre supercharged. Large-displacement V8s and V12s dominate; the turbo option is unexplored.',
+    tyres:   'Slick tyres introduced on dry circuits. Tyre compounds diversify; tyre strategy becomes a primary race-day variable.',
+    summary: 'Power returns and aerodynamics emerge as a new frontier. The era ends amid urgent debate about the safety consequences of high-downforce cars.',
+  },
+  {
+    era: 9, years: '1970–1974', name: 'Aerodynamic Era',
+    chassis: 'Aerodynamic downforce transformed from experiment to science. Deformable structures and roll hoops mandated following fatal accidents.',
+    engine:  '3.0-litre naturally aspirated. Cosworth DFV derivatives dominate customer supply; works V12s offer more power at the cost of reliability.',
+    tyres:   'Slick tyres universal on dry tracks. Compounds specialised by circuit type; tyre degradation modelled by engineers for the first time.',
+    summary: 'Aerodynamic development reshapes the sport. Well-funded privateer teams compete on near-equal terms with manufacturer-backed works entries.',
+  },
+  {
+    era: 10, years: '1975–1979', name: 'Ground Effect Era',
+    chassis: 'Venturi tunnels beneath the bodywork generate unprecedented downforce. Side skirts seal the underfloor to the track surface.',
+    engine:  '3.0-litre naturally aspirated. First turbo experiments appear late in the era; naturally aspirated V8s remain the reliable default.',
+    tyres:   'Radial tyres adopted universally for improved longevity. Compounds become softer as downforce reduces surface loading.',
+    summary: 'Ground effect produces cornering speeds previously unimaginable. Teams that master aerodynamic sealing gain enormous lap time advantages.',
+  },
+];
+
 // ─── Calendar epoch ───────────────────────────────────────────────────────────
 // Day 0 of Season 1. All day offsets are computed from this date.
 export const SEASON_1_START = '2026-04-19';

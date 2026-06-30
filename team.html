@@ -64,7 +64,15 @@
     .season-btn:hover:not(:disabled) { color:var(--hi); border-color:var(--mid); }
     .season-btn:disabled { opacity:0.25; cursor:default; }
 
-    #season-tech { display:flex; flex-direction:column; gap:7px; margin-bottom:14px; }
+    #season-row { display:flex; gap:20px; align-items:flex-start; margin-bottom:14px; }
+    #season-tech { display:flex; flex-direction:column; gap:7px; flex-shrink:0; }
+    #formula-era { flex:1; border-left:1px solid var(--border); padding-left:20px; font-family:'IBM Plex Sans','Segoe UI',system-ui,sans-serif; font-weight:300; }
+    .era-name { font-size:12px; color:var(--hi); letter-spacing:0.5px; margin-bottom:2px; font-weight:400; }
+    .era-years { font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; margin-bottom:10px; font-family:'Square','Courier New',monospace; }
+    .era-summary { font-size:11px; color:var(--mid); line-height:1.5; margin-bottom:10px; }
+    .era-section { display:flex; gap:8px; margin-bottom:6px; font-size:10px; line-height:1.4; }
+    .era-label { font-size:8px; letter-spacing:1.5px; color:var(--lo); text-transform:uppercase; font-family:'Square','Courier New',monospace; flex-shrink:0; padding-top:1px; width:46px; }
+    .era-text { color:var(--mid); }
     .tech-row { display:flex; align-items:center; gap:10px; font-size:9px; letter-spacing:1px; flex-wrap:wrap; }
     .tech-key { color:var(--lo); width:56px; flex-shrink:0; }
     .tech-val { color:var(--hi); min-width:80px; }
@@ -151,7 +159,10 @@
       </div>
       <div id="car-wrap"><div id="car-sprite"></div><div id="team-logo"></div></div>
       <div id="season-pane">
-        <div id="season-tech"></div>
+        <div id="season-row">
+          <div id="season-tech"></div>
+          <div id="formula-era"></div>
+        </div>
         <div class="section-label">Drivers</div>
         <div id="driver-list"></div>
       </div>
@@ -180,6 +191,7 @@
     import {
       getActiveRoster, getDisplayYear, getChassisId,
       getTeamEngine, getTeamTyre, getSeasonSnapshot, getCarNumbers,
+      getFormulaEra,
     }                                       from './worldstate.js';
     import {
       getCurrentEvent, getWorldSeed, getConstructorHistory, loadSeasonSummary,
@@ -306,6 +318,21 @@
       updateCarImage(team, season);
       updateTeamLogo(team);
       document.getElementById('season-label').textContent = `${year}`;
+
+      const formulaEra = getFormulaEra(season);
+      const feEl = document.getElementById('formula-era');
+      if (formulaEra) {
+        feEl.innerHTML = `
+          <div class="era-name">${formulaEra.name}</div>
+          <div class="era-years">${formulaEra.years}</div>
+          <div class="era-summary">${formulaEra.summary}</div>
+          <div class="era-section"><span class="era-label">Chassis</span><span class="era-text">${formulaEra.chassis}</span></div>
+          <div class="era-section"><span class="era-label">Engine</span><span class="era-text">${formulaEra.engine}</span></div>
+          <div class="era-section"><span class="era-label">Tyres</span><span class="era-text">${formulaEra.tyres}</span></div>
+        `;
+      } else {
+        feEl.innerHTML = '';
+      }
 
       document.getElementById('season-tech').innerHTML = `
         <div class="tech-row">

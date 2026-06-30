@@ -9,7 +9,7 @@
 // world state that the simulation can consume directly. Past races always use the
 // stats from their season — changing worldSeed requires resetting cached results.
 
-import { TEAMS, ENGINES, TYRES, CIRCUITS, SEASON_SCHEDULE } from './data.js';
+import { TEAMS, ENGINES, TYRES, CIRCUITS, SEASON_SCHEDULE, FORMULA_ERAS } from './data.js';
 import { DRIVER_POOL } from './drivers.js';
 import { getStandings } from './championship.js';
 
@@ -25,14 +25,20 @@ export function getChassisEra(season) {
   return Math.floor((season - 1) / 5) + 1;
 }
 
-/** Engine regulation era — resets every 3 seasons. */
+/** Engine regulation era — resets every 5 seasons (aligned with chassis and tyre formula eras). */
 export function getEngineEra(season) {
-  return Math.floor((season - 1) / 3) + 1;
+  return Math.floor((season - 1) / 5) + 1;
 }
 
 /** Tyre regulation era — resets every 5 seasons. */
 export function getTyreEra(season) {
   return Math.floor((season - 1) / 5) + 1;
+}
+
+/** Return the FORMULA_ERAS entry for the given season, or null if beyond defined eras. */
+export function getFormulaEra(season) {
+  const eraNum = getChassisEra(season);
+  return FORMULA_ERAS.find(e => e.era === eraNum) ?? null;
 }
 
 /** True if this season begins a new chassis era. */
@@ -164,7 +170,7 @@ const ENGINE_STAT_RANGES = {
 export function getEngineStats(engineId, season, worldSeed) {
   const ei         = ENGINE_INDEX[engineId];
   const engineEra  = getEngineEra(season);
-  const eraStart   = (engineEra - 1) * 3 + 1;
+  const eraStart   = (engineEra - 1) * 5 + 1;
 
   const base = {};
   for (const stat of ['power', 'reliability']) {

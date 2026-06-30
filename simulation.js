@@ -955,7 +955,7 @@ function rawPaceDelta(behind, ahead, sectorDef) {
 // cars bunched. Era scaling via circuit.overtakingDifficulty.
 function rawPassProbability(behind, ahead, sectorDef) {
   const delta = rawPaceDelta(behind, ahead, sectorDef);
-  let prob = 0.20 + delta * 5;
+  let prob = 0.07 + delta * 5;
   prob += (behind.driver.aggression - 50) / 100 * 0.12;
   const isPower = sectorDef.powerWeight > sectorDef.aeroWeight;
   prob *= isPower ? 1.8 : 0.7;

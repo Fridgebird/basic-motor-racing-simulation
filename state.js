@@ -239,7 +239,7 @@ export function initRace(seed, qualiResults = null, circuit = null, snapshot = n
       if (qr && qr.setup != null) car.setup = qr.setup;
       car.position     = i + 1;
       car.gridPosition = i + 1;
-      car.cumulativeTime = i * 0.3;
+      car.cumulativeTime = i * 0.7;
     });
   } else {
     // Fallback: synthetic qualifying grid (standalone race / no qualifying session).
@@ -261,10 +261,10 @@ export function initRace(seed, qualiResults = null, circuit = null, snapshot = n
     rawCars.forEach((car, i) => {
       car.position     = i + 1;
       car.gridPosition = i + 1;
-      // Stagger starting cumulative times by 0.3 s per grid slot.
-      // Represents the physical gap between cars on the grid at lights-out;
-      // prevents a dead-heat at tick 1 and gives the field a natural initial spread.
-      car.cumulativeTime = i * 0.3;
+      // Stagger starting cumulative times by 0.7 s per grid slot.
+      // Represents physical field spread after the standing start and first corner;
+      // prevents the entire field bunching into overtaking range simultaneously.
+      car.cumulativeTime = i * 0.7;
     });
   }
 

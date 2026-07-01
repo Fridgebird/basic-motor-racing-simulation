@@ -961,15 +961,20 @@ export class Renderer {
       : lapChartData.length;
     const lapsRecorded = Math.min(lapChartData.length, lapLimit);
 
-    // Size canvas to its CSS display width
-    const W = canvas.clientWidth || 900;
-    const H = 480;
-    if (canvas.width !== W || canvas.height !== H) {
-      canvas.width  = W;
-      canvas.height = H;
+    // Size canvas to its CSS display width, scaled for device pixel ratio
+    // so the buffer matches physical pixels and avoids blurry/blocky rendering.
+    const dpr = window.devicePixelRatio || 1;
+    const W   = canvas.clientWidth || 900;
+    const H   = 480;
+    const bufW = Math.round(W * dpr);
+    const bufH = Math.round(H * dpr);
+    if (canvas.width !== bufW || canvas.height !== bufH) {
+      canvas.width  = bufW;
+      canvas.height = bufH;
     }
 
     const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
 
     // Layout constants

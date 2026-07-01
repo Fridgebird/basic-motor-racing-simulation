@@ -1227,6 +1227,14 @@
       btn.addEventListener('click', () => switchTab(btn.dataset.panel));
     });
 
+    // Redraw the lap chart on orientation change / window resize so the canvas
+    // resizes to the new viewport width rather than staying at the old dimensions.
+    window.addEventListener('resize', () => {
+      if (document.getElementById('panel-chart').classList.contains('active')) {
+        renderer.render();
+      }
+    });
+
     // ── Hamburger menu ─────────────────────────────────────────────────────────
     const hamburgerBtn  = document.getElementById('hamburger-btn');
     const hamburgerMenu = document.getElementById('hamburger-menu');

@@ -983,7 +983,7 @@ function resolveCollisionDamage(rng) {
     const typeRoll = rng();
     const sevRoll  = rng(); // always consumed
     if (typeRoll < 0.35) return { outcome: 'none',       factor: null };
-    if (typeRoll < 0.75) return { outcome: 'damage',     factor: +(1.01 + sevRoll * 0.03).toFixed(3) };
+    if (typeRoll < 0.75) return { outcome: 'damage',     factor: +(1.002 + sevRoll * 0.008).toFixed(3) };
     return                      { outcome: 'retirement', factor: null };
   }
   return { q: carOutcome(), s: carOutcome() };

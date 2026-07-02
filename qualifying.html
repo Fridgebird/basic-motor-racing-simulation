@@ -772,7 +772,7 @@
         const pos   = pIdx % 16;
         const col   = pos % COLS;
         const row   = Math.floor(pos / COLS);
-        portraitEl.style.backgroundImage    = `url('driver_sprites_16x16_${sheet}.png')`;
+        portraitEl.style.backgroundImage    = `url('driver_sprites_16x16_${sheet}.webp')`;
         portraitEl.style.backgroundSize     = `${PX * COLS}px ${PX * COLS}px`;
         portraitEl.style.backgroundPosition = `${-(col * PX)}px ${-(row * PX)}px`;
         portraitEl.style.backgroundColor    = `${teamColour}22`;

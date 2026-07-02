@@ -154,7 +154,7 @@
         const pos   = pIdx % 16;
         const col   = pos % COLS;
         const row   = Math.floor(pos / COLS);
-        wrap.style.cssText = `background-image:url('driver_sprites_16x16_${sheet}.png');background-size:${PX*COLS}px ${PX*COLS}px;background-position:${-(col*PX)}px ${-(row*PX)}px;background-color:${teamColour}22;`;
+        wrap.style.cssText = `background-image:url('driver_sprites_16x16_${sheet}.webp');background-size:${PX*COLS}px ${PX*COLS}px;background-position:${-(col*PX)}px ${-(row*PX)}px;background-color:${teamColour}22;`;
       } else {
         wrap.style.cssText = `background:${teamColour}22;color:${teamColour};`;
         wrap.textContent = (pd.firstName[0] + pd.lastName[0]).toUpperCase();

@@ -533,7 +533,7 @@
       margin-bottom: 6px;
       flex-shrink: 0;
     }
-    #commentary-filter-btn {
+    #commentary-filter-btn, #commentary-passes-btn {
       font-size: 9px;
       padding: 2px 6px;
       border: 1px solid var(--border);
@@ -542,7 +542,8 @@
       height: auto;
       text-transform: uppercase;
     }
-    #commentary-filter-btn:hover { border-color: var(--mid); color: var(--mid); }
+    #commentary-filter-btn:hover, #commentary-passes-btn:hover { border-color: var(--mid); color: var(--mid); }
+    #commentary-passes-btn.filter-btn-active { border-color: var(--accent); color: var(--accent); }
 
     #commentary-feed {
       overflow-y: auto;
@@ -1008,6 +1009,7 @@
       <div id="panel-comm">
         <div id="commentary-title">
           <span>RACE COMMENTARY</span>
+          <button id="commentary-passes-btn">PASSES ON</button>
           <button id="commentary-filter-btn">ALL</button>
         </div>
         <div id="commentary-feed"></div>

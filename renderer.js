@@ -100,6 +100,18 @@ export class Renderer {
       });
     }
 
+    // Passes toggle — hide overtake PASS entries when false
+    this._showPasses = true;
+    const passesBtn = document.getElementById('commentary-passes-btn');
+    if (passesBtn) {
+      passesBtn.addEventListener('click', () => {
+        this._showPasses = !this._showPasses;
+        passesBtn.textContent = this._showPasses ? 'PASSES ON' : 'PASSES OFF';
+        passesBtn.classList.toggle('filter-btn-active', !this._showPasses);
+        this._rebuildCommentary();
+      });
+    }
+
     // Zoom levels — seconds of race gap visible in one strip-height
     this._zoomLevels = [240, 120, 60, 30, 15, 5];
     this._zoomIdx    = 2;   // default 60s view
@@ -277,6 +289,9 @@ export class Renderer {
     this._commentaryFilter = 'all';
     const filterBtn = document.getElementById('commentary-filter-btn');
     if (filterBtn) filterBtn.textContent = 'ALL';
+    this._showPasses = true;
+    const passesBtn2 = document.getElementById('commentary-passes-btn');
+    if (passesBtn2) { passesBtn2.textContent = 'PASSES ON'; passesBtn2.classList.remove('filter-btn-active'); }
     this._zoomIdx = 4;   // reset to default 15s
     if (this._stripCanvas) {
       this._stripCanvas.getContext('2d')
@@ -734,6 +749,7 @@ export class Renderer {
     // Skip setup rolls and failed overtake attempts (too noisy)
     if (ev.type === 'setup_roll') return null;
     if (ev.type === 'overtake' && ev.result === 'failed') return null;
+    if (ev.type === 'overtake' && ev.result === 'success' && !this._showPasses) return null;
 
     const lapStr = entry.sector > 0
       ? `L${entry.lap} Sector ${entry.sector}`

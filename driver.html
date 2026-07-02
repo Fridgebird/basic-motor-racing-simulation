@@ -230,7 +230,7 @@
         const pos   = pIdx % 16;
         const col   = pos % COLS;
         const row   = Math.floor(pos / COLS);
-        portrait.style.cssText = `background-image:url('driver_sprites_16x16_${sheet}.png');background-size:${PX*COLS}px ${PX*COLS}px;background-position:${-(col*PX)}px ${-(row*PX)}px;`;
+        portrait.style.cssText = `background-image:url('driver_sprites_16x16_${sheet}.webp');background-size:${PX*COLS}px ${PX*COLS}px;background-position:${-(col*PX)}px ${-(row*PX)}px;`;
       } else {
         portrait.style.cssText = `background:${team ? team.colour + '22' : '#1e2f44'};color:${team ? team.colour : 'var(--lo)'};`;
         portrait.textContent = (poolDriver.firstName[0] + poolDriver.lastName[0]).toUpperCase();

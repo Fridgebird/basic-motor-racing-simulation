@@ -261,7 +261,7 @@
         ph.style.color = team.colour;
         wrap.appendChild(ph);
       };
-      img.src = `car_sprites_${eraYear}_${imageId}.png`;
+      img.src = `car_sprites_${eraYear}_${imageId}.webp`;
       wrap.appendChild(img);
     }
 
@@ -281,7 +281,7 @@
         ph.style.color = team.colour;
         wrap.appendChild(ph);
       };
-      img.src = `logos/${imageId}.png`;
+      img.src = `logos/${imageId}.webp`;
       wrap.appendChild(img);
     }
 
@@ -295,7 +295,7 @@
         const pos   = pIdx % 16;
         const col   = pos % COLS;
         const row   = Math.floor(pos / COLS);
-        wrap.style.cssText = `background-image:url('driver_sprites_16x16_${sheet}.png');background-size:${PX*COLS}px ${PX*COLS}px;background-position:${-(col*PX)}px ${-(row*PX)}px;background-color:${teamColour}22;`;
+        wrap.style.cssText = `background-image:url('driver_sprites_16x16_${sheet}.webp');background-size:${PX*COLS}px ${PX*COLS}px;background-position:${-(col*PX)}px ${-(row*PX)}px;background-color:${teamColour}22;`;
       } else {
         wrap.style.background = `${teamColour}22`;
         wrap.style.color      = teamColour;

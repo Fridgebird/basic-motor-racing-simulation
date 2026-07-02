@@ -789,9 +789,13 @@
     }
 
     /* ── Live commentary bar ────────────────────────────────────────────────────── */
-    #live-comm-bar {
+    #comm-wrap {
+      position: relative;
       width: 100%;
       max-width: 1100px;
+    }
+    #live-comm-bar {
+      width: 100%;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -800,6 +804,8 @@
       border-bottom: 1px solid var(--border);
       min-height: 26px;
       overflow: hidden;
+      cursor: pointer;
+      user-select: none;
     }
     #live-comm-label {
       font-size: 8px;
@@ -819,6 +825,28 @@
     #live-comm-text .c-lap  { color: var(--lo); }
     #live-comm-text .c-tag  { font-weight: bold; }
     #live-comm-text .c-detail { color: var(--mid); }
+    #live-comm-chevron {
+      font-size: 10px;
+      color: var(--lo);
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+    #comm-wrap.drawer-open #live-comm-chevron { transform: rotate(180deg); }
+    #comm-drawer {
+      position: absolute;
+      top: 100%;
+      left: 0; right: 0;
+      z-index: 90;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-top: none;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.2s ease;
+    }
+    #comm-wrap.drawer-open #comm-drawer { max-height: 240px; }
+    #comm-drawer .c-entry { padding: 5px 10px; border-bottom: 1px solid var(--dim); }
+    #comm-drawer .c-entry:last-child { border-bottom: none; }
 
     /* ── Not available notice ─────────────────────────────────────────────────── */
     #not-available-notice {
@@ -907,10 +935,14 @@
     <button class="tab-btn" data-panel="stand">STANDINGS</button>
   </div>
 
-  <!-- ── Live commentary bar ───────────────────────────────────────────────────── -->
-  <div id="live-comm-bar">
-    <span id="live-comm-label">LATEST</span>
-    <span id="live-comm-text">—</span>
+  <!-- ── Live commentary bar + drawer ─────────────────────────────────────────── -->
+  <div id="comm-wrap">
+    <div id="live-comm-bar">
+      <span id="live-comm-label">LATEST</span>
+      <span id="live-comm-text">—</span>
+      <span id="live-comm-chevron">▾</span>
+    </div>
+    <div id="comm-drawer"></div>
   </div>
 
   <!-- ── Not available notice ─────────────────────────────────────────────────── -->
@@ -1253,13 +1285,37 @@
 
     document.addEventListener('click', () => { hamburgerMenu.style.display = 'none'; });
 
-    // ── Live commentary bar ────────────────────────────────────────────────────
+    // ── Live commentary bar + drawer ──────────────────────────────────────────
     {
+      const liveCommBar  = document.getElementById('live-comm-bar');
+      const commWrap     = document.getElementById('comm-wrap');
       const liveCommText = document.getElementById('live-comm-text');
       const commFeed     = document.getElementById('commentary-feed');
+      const commDrawer   = document.getElementById('comm-drawer');
+      const MAX_DRAWER   = 5;
+
+      function updateDrawer() {
+        commDrawer.innerHTML = '';
+        Array.from(commFeed.children).slice(0, MAX_DRAWER)
+          .forEach(item => commDrawer.appendChild(item.cloneNode(true)));
+      }
+
+      liveCommBar.addEventListener('click', e => {
+        e.stopPropagation();
+        if (commWrap.classList.contains('drawer-open')) {
+          commWrap.classList.remove('drawer-open');
+        } else {
+          updateDrawer();
+          commWrap.classList.add('drawer-open');
+        }
+      });
+
+      document.addEventListener('click', () => commWrap.classList.remove('drawer-open'));
+
       new MutationObserver(() => {
         const latest = commFeed.firstElementChild;
         if (latest) liveCommText.innerHTML = latest.innerHTML;
+        if (commWrap.classList.contains('drawer-open')) updateDrawer();
       }).observe(commFeed, { childList: true });
     }
 

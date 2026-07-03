@@ -613,6 +613,11 @@ export class Renderer {
         for (const td of tr.cells) td.classList.add('anim-retire');
       }
 
+      // Pit flash — 3× blue blink when a car first enters the pits
+      if (pitted && !this.inReplay && this.prevStatuses.get(car.driver.name) !== 'pitted') {
+        for (const td of tr.cells) td.classList.add('anim-pit');
+      }
+
       this._tbody.appendChild(tr);
     }
 

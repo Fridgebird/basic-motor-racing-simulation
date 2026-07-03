@@ -458,6 +458,11 @@
       15%, 45%, 100% { background-color: transparent; }
     }
     #timing-table td.anim-retire { animation: retire-flash 1.5s ease-out forwards; }
+    @keyframes pit-flash {
+      0%,  30%, 60% { background-color: rgba(40, 140, 255, 0.40); }
+      15%, 45%, 100% { background-color: transparent; }
+    }
+    #timing-table td.anim-pit { animation: pit-flash 1.5s ease-out forwards; }
 
     td.warn-red    { color: #ff4444; --icon-fg: #ff4444; }
     td.warn-yellow { color: #e8c400; --icon-fg: #e8c400; }

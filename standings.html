@@ -24,7 +24,8 @@
 
     #info-bar { width:100%; background:var(--bg-mid); border-bottom:1px solid var(--border); padding:6px 16px; font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
 
-    #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--dim); text-align:center; width:100%; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+    #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--lo); text-align:center; width:100%; animation:pulse 1.6s ease-in-out infinite; }
 
     #page { width:100%; max-width:860px; padding:24px 16px; }
 
@@ -82,7 +83,7 @@
   </div>
   <div id="info-bar">Championship Standings</div>
 
-  <div id="loading-state">COMPUTING…</div>
+  <div id="loading-state">COMPUTING HISTORY…</div>
 
   <div id="page" style="display:none">
     <div id="season-nav">

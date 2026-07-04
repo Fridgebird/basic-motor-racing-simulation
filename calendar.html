@@ -282,9 +282,11 @@
 
     <!-- ── Dev bar ───────────────────────────────────────────────────────────── -->
     <div id="dev-bar">
+      <button id="dev-prev-year">◀◀ PREV YEAR</button>
       <button id="dev-prev">◀ PREV</button>
       <span id="dev-label"></span>
       <button id="dev-next">NEXT ▶</button>
+      <button id="dev-next-year">NEXT YEAR ▶▶</button>
       <span class="dev-label">KEY:</span>
       <input type="number" id="world-seed-input">
       <button id="dev-reset" style="margin-left:8px;color:#cc2233;border-color:#cc2233">RESET WORLD</button>
@@ -320,7 +322,8 @@
     import {
       getCurrentEvent, getCircuit, getEventForRound,
       getTodayDayOffset, getWorldSeed, setWorldSeed,
-      advanceDevEvent, retreatDevEvent, isDevMode, enterDevMode, exitDevMode,
+      advanceDevEvent, retreatDevEvent, advanceDevYear, retreatDevYear,
+      isDevMode, enterDevMode, exitDevMode,
       resetWorld, getEventDate, formatShortDate,
     } from './championship.js';
     import { SEASON_SCHEDULE, CIRCUITS } from './data.js';
@@ -367,11 +370,17 @@
         `DEV · Day ${todayOffset} · ${todayDateStr} · ${todayEventStr}`;
       document.getElementById('world-seed-input').value = getWorldSeed();
 
+      document.getElementById('dev-prev-year').addEventListener('click', () => {
+        retreatDevYear(); location.reload();
+      });
       document.getElementById('dev-prev').addEventListener('click', () => {
         retreatDevEvent(); location.reload();
       });
       document.getElementById('dev-next').addEventListener('click', () => {
         advanceDevEvent(); location.reload();
+      });
+      document.getElementById('dev-next-year').addEventListener('click', () => {
+        advanceDevYear(); location.reload();
       });
       document.getElementById('world-seed-input').addEventListener('change', e => {
         setWorldSeed(parseInt(e.target.value, 10) || 0);

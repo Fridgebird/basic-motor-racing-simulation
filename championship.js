@@ -190,6 +190,18 @@ export function retreatDevEvent() {
   localStorage.setItem('smr_dev_today', String(cur - 1));
 }
 
+/** Step virtual today forward one full season */
+export function advanceDevYear() {
+  const numRounds = Math.max(...SEASON_SCHEDULE.map(e => e.round));
+  localStorage.setItem('smr_dev_today', String(getTodayDayOffset() + numRounds));
+}
+
+/** Step virtual today backward one full season */
+export function retreatDevYear() {
+  const numRounds = Math.max(...SEASON_SCHEDULE.map(e => e.round));
+  localStorage.setItem('smr_dev_today', String(getTodayDayOffset() - numRounds));
+}
+
 /**
  * Wipe all race results and qualifying results from localStorage.
  * Leaves dev mode state (smr_dev_mode, smr_dev_today, smr_world_seed) intact.

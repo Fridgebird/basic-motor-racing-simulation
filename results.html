@@ -79,12 +79,8 @@
     }
     #event-label { color: var(--mid); }
 
-    #loading-msg {
-      padding: 32px 16px;
-      color: var(--lo);
-      font-size: 11px;
-      letter-spacing: 0.06em;
-    }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+    #loading-msg { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--lo); text-align:center; width:100%; animation:pulse 1.6s ease-in-out infinite; }
 
     #main {
       padding: 16px 16px;
@@ -285,7 +281,7 @@
     </div>
   </div>
 
-  <div id="loading-msg">Computing results…</div>
+  <div id="loading-msg">COMPUTING RESULTS…</div>
   <div id="main" style="display:none">
     <div id="result-col">
       <div id="results-container"></div>

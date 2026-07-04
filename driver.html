@@ -26,7 +26,8 @@
 
     #sticky-header { position:sticky; top:0; z-index:100; width:100%; background:var(--bg); display:flex; flex-direction:column; align-items:center; box-shadow:0 3px 12px rgba(0,0,0,0.6); }
 
-    #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--dim); text-align:center; width:100%; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+    #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--lo); text-align:center; width:100%; animation:pulse 1.6s ease-in-out infinite; }
 
     #page { width:100%; max-width:700px; padding:16px 16px 24px; }
 

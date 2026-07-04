@@ -181,6 +181,7 @@
     }
 
     (async () => {
+      await new Promise(r => setTimeout(r, 0)); // yield to browser so loading state paints
       for (let s = 1; s <= currentSeason; s++) {
         await ensurePastResultsCached(s, simFns);
       }

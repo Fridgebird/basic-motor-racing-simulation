@@ -516,6 +516,7 @@
     });
 
     (async () => {
+      await new Promise(r => setTimeout(r, 0)); // yield to browser so loading state paints
       const loadingEl = document.getElementById('loading-state');
       for (let s = 1; s <= currentSeason; s++) {
         loadingEl.textContent = `COMPUTING SEASON ${getDisplayYear(s)}…`;

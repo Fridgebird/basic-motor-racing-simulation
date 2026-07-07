@@ -266,27 +266,46 @@ function skyState(state, sc, lap) {
 // ─── initWeather ──────────────────────────────────────────────────────────────
 // Call after initRace() and before initStrategies() so that WET_START races
 // set trackWetness before compound selection runs.
-export function initWeather(rng) {
+export function initWeather(rng, numLaps = null) {
+  const laps = numLaps ?? currentCircuit.totalLaps;
   const sc = generateWeatherScenario(
     rng,
     currentCircuit.rainProb ?? 0.10,
-    currentCircuit.totalLaps,
+    laps,
   );
   race.weatherScenario = sc;
   race.weatherState    = sc.type === 'WET_START' ? sc.initialState : 'DRY';
   race.trackWetness    = WET_TARGET[race.weatherState];
 }
 
-// Returns a plain-language forecast to show before the race starts.
-export function getWeatherForecastLabel() {
+// Advance weather by one qualifying "lap" (one driver's out-lap).
+// lap is the 1-based draw index of the driver who just finished.
+export function tickQualiWeather(rng, lap) {
+  if (!race.weatherScenario) return;
+  const prevWetness = race.trackWetness;
+  const target      = WET_TARGET[race.weatherState];
+  let newWetness;
+  if (target > race.trackWetness) {
+    const rate = race.weatherState === 'HEAVY' ? WETNESS_HEAVY_RATE : WETNESS_APPROACH_RATE;
+    newWetness = race.trackWetness + (target - race.trackWetness) * rate;
+  } else {
+    newWetness = Math.max(target, race.trackWetness - WETNESS_DRY_RATE);
+  }
+  race.trackWetness      = +(Math.max(0, Math.min(1, newWetness))).toFixed(3);
+  race.trackWetnessDelta = +(race.trackWetness - prevWetness).toFixed(4);
+  race.weatherState      = rollWeatherState(race.weatherState, race.weatherScenario, lap, rng);
+}
+
+// Returns a plain-language forecast. Pass session = 'qualifying' on the quali page.
+export function getWeatherForecastLabel(session = 'race') {
   const sc = race.weatherScenario;
   if (!sc || sc.type === 'FINE')        return 'No rain expected';
-  if (sc.type === 'SHOWER')             return 'Possible shower during the race';
+  if (sc.type === 'SHOWER')             return `Possible shower during the ${session}`;
   if (sc.type === 'CHANGEABLE')         return 'Changeable conditions expected';
   if (sc.type === 'WET_START') {
     return sc.initialState === 'HEAVY'
       ? 'Wet start · heavy rain · expected to ease'
-      : 'Wet start · expected to clear during the race';
+      : `Wet start · expected to clear during the ${session}`;
   }
   return '';
 }
@@ -1459,19 +1478,41 @@ export async function simulateQualiLap(car, rng, circuit, trackEvolution, onSect
 
     const fuelFactor    = 1.0 + (QUALI_FUEL / (car.fuelCapacity ?? 110)) * 0.03;
 
-    // Fresh soft tyre with track evolution bonus
-    const compound          = COMPOUNDS['soft'];
-    const effectiveMaxGrip  = Math.min(100, car.tyres.maxGrip + compound.gripModifier);
-    const grip              = (effectiveMaxGrip / 100) * (1 + trackEvoBonus);  // rubber = more grip
-    const tyreFactor        = 1.0 + (1 - grip) * tyreConfig.penaltyCoeff;
+    // Tyre selection: wet tyres when track wetness crosses the crossover threshold.
+    const useWetTyre = race.weatherScenario && race.trackWetness >= 0.40;
+    let tyreFactor;
+    if (useWetTyre) {
+      const wetGripBase = car.tyres.wetGrip ?? 85;
+      const wetGrip     = (wetGripBase / 100) * (0.55 + race.trackWetness * 0.45) * (1 + trackEvoBonus);
+      tyreFactor        = 1.0 + (1 - Math.max(0.1, wetGrip)) * tyreConfig.penaltyCoeff;
+    } else {
+      const compound         = COMPOUNDS['soft'];
+      const effectiveMaxGrip = Math.min(100, car.tyres.maxGrip + compound.gripModifier);
+      const grip             = (effectiveMaxGrip / 100) * (1 + trackEvoBonus);
+      tyreFactor             = 1.0 + (1 - grip) * tyreConfig.penaltyCoeff;
+    }
+
+    // Weather penalty: dry tyres struggle on a wet track; wet tyres carry a baseline drag on dry.
+    let weatherFactor = 1.0;
+    if (race.weatherScenario) {
+      weatherFactor = useWetTyre
+        ? 1.0 + (1 - race.trackWetness) * WET_TYRE_DRY_PENALTY + race.trackWetness * WET_TYRE_WET_BASELINE
+        : 1.0 + race.trackWetness * DRY_TYRE_WET_PENALTY;
+    }
 
     // ── Driver error check ────────────────────────────────────────────────────
     // Plain 0–1 roll so crash/slow thresholds are reachable for all driver stats.
     // The bounded consistencyRoll is only used for skill calculation on clean sectors.
-    const errorRoll      = rng();
-    const consistency    = car.driver.consistency;
-    const crashThreshold = (1 - consistency / 100) * CRASH_SCALE * 10; // slightly raised for 1 lap
-    const slowThreshold  = (1 - consistency / 100) * SLOW_SCALE  * 10;
+    const errorRoll   = rng();
+    const consistency = car.driver.consistency;
+    // Wet conditions raise incident probability — dry tyres in rain are far more dangerous.
+    const wetCrashMult = race.weatherScenario
+      ? (useWetTyre
+          ? 1.0 + race.trackWetness * (WET_CRASH_WET_TYRES - 1)
+          : 1.0 + race.trackWetness * (WET_CRASH_DRY_TYRES - 1))
+      : 1.0;
+    const crashThreshold = (1 - consistency / 100) * CRASH_SCALE * 10 * wetCrashMult;
+    const slowThreshold  = (1 - consistency / 100) * SLOW_SCALE  * 10 * wetCrashMult;
 
     let driverFactor;
     let eventType = null;  // null = clean, 'lockup' or 'spin' on incident
@@ -1485,7 +1526,10 @@ export async function simulateQualiLap(car, rng, circuit, trackEvolution, onSect
         rolls: { errorRoll },
         events: [{ type: 'driver_error', severity: 'crash', session: 'qualifying' }],
       });
-      if (onSector) await onSector(sectorIndex, null, null, true);
+      const wiCrash = race.weatherScenario
+        ? { compound: useWetTyre ? 'wet' : 'soft', trackWetness: race.trackWetness, weatherState: race.weatherState }
+        : null;
+      if (onSector) await onSector(sectorIndex, null, null, true, wiCrash);
       return { lapTime: null, sectorTimes, retired: true, sectorsCompleted };
 
     } else if (errorRoll < slowThreshold) {
@@ -1522,13 +1566,17 @@ export async function simulateQualiLap(car, rng, circuit, trackEvolution, onSect
       * setupFactor
       * fuelFactor
       * tyreFactor
+      * weatherFactor
       * driverFactor;
 
     sectorTimes.push(+sectorTime.toFixed(3));
     lapTime += sectorTime;
     sectorsCompleted++;
 
-    if (onSector) await onSector(sectorIndex, +sectorTime.toFixed(3), eventType, false);
+    const wi = race.weatherScenario
+      ? { compound: useWetTyre ? 'wet' : 'soft', trackWetness: race.trackWetness, weatherState: race.weatherState }
+      : null;
+    if (onSector) await onSector(sectorIndex, +sectorTime.toFixed(3), eventType, false, wi);
   }
 
   return { lapTime: +lapTime.toFixed(3), sectorTimes, retired: false, sectorsCompleted: 3 };
@@ -1544,6 +1592,11 @@ export async function simulateQualiLap(car, rng, circuit, trackEvolution, onSect
  *   Each entry: { driverName, teamId, lapTime, sectorTimes, retired, drawPosition, gridPosition, setup }
  */
 export async function runQualifyingSession(rng, circuit) {
+  // Init weather using the number of drivers as the "lap" count so rain windows
+  // are proportioned the same way as in a race. Must happen before the shuffle
+  // so rng state matches the animated path (runQualifyingSessionAnimated).
+  initWeather(rng, cars.length);
+
   // Draw order: Fisher-Yates shuffle using the seeded RNG.
   // Deterministic per event — same seed always produces the same draw.
   const drawOrder = [...cars];
@@ -1569,6 +1622,8 @@ export async function runQualifyingSession(rng, circuit) {
       sectorsCompleted: result.sectorsCompleted,
       drawPosition:     drawIndex + 1,
     });
+    // Advance weather between drivers (same tick logic as the race, one "lap" = one driver)
+    tickQualiWeather(rng, drawIndex + 1);
   }
 
   // Sort: fastest first, then retired cars ordered by sectors completed desc, then draw position desc

@@ -138,6 +138,44 @@
       margin-bottom: 8px;
     }
 
+    #quali-forecast {
+      font-size: 9px;
+      letter-spacing: 0.04em;
+      color: var(--lo);
+      padding: 6px 0 2px;
+    }
+
+    #run-order-section {
+      padding: 8px 16px 6px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-mid);
+      max-width: 900px;
+    }
+    #run-order-strip {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+    }
+    #run-order-strip::-webkit-scrollbar { display: none; }
+    .rq-pip {
+      flex-shrink: 0;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      letter-spacing: 0;
+      border-radius: 2px;
+    }
+
+    #quali-weather-strip {
+      font-size: 10px;
+      letter-spacing: 0.04em;
+      padding: 4px 0 8px;
+      margin-bottom: 2px;
+    }
+
     #driver-info-row {
       display: flex;
       align-items: center;
@@ -336,11 +374,12 @@
       min-height: 0;
       letter-spacing: 0.04em;
     }
-    .qc-perfect { color: var(--mid); }
-    .qc-sloppy  { color: var(--lo); }
-    .qc-lockup  { color: #e8c400; }
-    .qc-spin    { color: #ff8800; }
-    .qc-crash   { color: #ff4444; }
+    .qc-perfect  { color: var(--mid); }
+    .qc-sloppy   { color: var(--lo); }
+    .qc-lockup   { color: #e8c400; }
+    .qc-spin     { color: #ff8800; }
+    .qc-crash    { color: #ff4444; }
+    .qc-weather  { color: #88aacc; }
 
     /* ── Responsive: stack panels on narrow screens ─────────────────────────── */
     @media (max-width: 640px) {
@@ -379,6 +418,11 @@
     </div>
   </div>
 
+  <!-- ── Run order strip ─────────────────────────────────────────────────────── -->
+  <div id="run-order-section" style="display:none">
+    <div id="run-order-strip"></div>
+  </div>
+
   <!-- ── Main ────────────────────────────────────────────────────────────────── -->
   <div id="main">
 
@@ -396,11 +440,14 @@
       </div>
 
       <button id="btn-start-quali">START QUALIFYING</button>
+      <div id="quali-forecast"></div>
       <button id="btn-pause-quali">PAUSE</button>
       <button id="btn-goto-quali-result">QUALIFYING RESULT →</button>
       <button id="btn-goto-race">GO TO RACE →</button>
 
       <div class="panel-title" style="margin-top:12px">ON TRACK</div>
+
+      <div id="quali-weather-strip" style="display:none"></div>
 
       <div id="driver-info-row">
         <div id="driver-colour-bar"></div>
@@ -462,8 +509,8 @@
   </div>
 
   <script type="module">
-    import { initRace, cars }                        from './state.js';
-    import { setCurrentCircuit, runQualifyingSession, simulateQualiLap, initStrategies, initWeather, runRace } from './simulation.js';
+    import { initRace, cars, race }                  from './state.js';
+    import { setCurrentCircuit, runQualifyingSession, simulateQualiLap, initStrategies, initWeather, tickQualiWeather, runRace, getTrackStateLabel, getSkyStateLabel, getWeatherForecastLabel } from './simulation.js';
     import {
       getCurrentEvent, getCircuit, getSeedForEvent, getEventForRound,
       saveQualiResults, loadQualiResults, resetWorld,
@@ -561,10 +608,47 @@
     // Seed: default to championship-derived seed; user can override before session starts
     let activeSeed = seed;
     seedInput.value = seed;
+
+    function getContrastColor(hex) {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55 ? '#000000' : '#ffffff';
+    }
+
+    // Preview weather forecast and run order by silently running initRace + initWeather + shuffle.
+    // initRace resets all state deterministically, so clicking START later produces identical results.
+    function showForecast(s) {
+      const previewRng = initRace(s, null, circuit, snapshot);
+      initWeather(previewRng, cars.length);
+      document.getElementById('quali-forecast').textContent = getWeatherForecastLabel('qualifying');
+
+      // Reproduce the Fisher-Yates shuffle (same algorithm as runQualifyingSessionAnimated)
+      const previewOrder = [...cars];
+      for (let i = previewOrder.length - 1; i > 0; i--) {
+        const j = Math.floor(previewRng() * (i + 1));
+        [previewOrder[i], previewOrder[j]] = [previewOrder[j], previewOrder[i]];
+      }
+      const strip = document.getElementById('run-order-strip');
+      strip.innerHTML = '';
+      previewOrder.forEach(car => {
+        const bg  = teamColours[car.team.id] || '#2a4055';
+        const pip = document.createElement('div');
+        pip.className   = 'rq-pip';
+        pip.textContent = car.driver.number;
+        pip.style.background = bg;
+        pip.style.color      = getContrastColor(bg);
+        strip.appendChild(pip);
+      });
+      document.getElementById('run-order-section').style.display = '';
+    }
+    showForecast(activeSeed);
+
     seedInput.addEventListener('change', () => {
       if (!sessionDone && !btnStart.disabled) {
         activeSeed = parseInt(seedInput.value, 10) || seed;
         seedInput.value = activeSeed;
+        showForecast(activeSeed);
       }
     });
 
@@ -591,6 +675,7 @@
       bestSectorTimes = [null, null, null];
       poleSectorTimes = null;
       document.getElementById('session-status').textContent = 'SESSION RUNNING';
+      document.getElementById('quali-forecast').style.display = 'none';
 
       // Init cars — rolls setups (qualifying seed)
       const rng = initRace(activeSeed, null, circuit, snapshot);
@@ -663,10 +748,40 @@
       feed.appendChild(el);
     }
 
+    // ── Weather display helpers ────────────────────────────────────────────────
+    const TRACK_COLORS = { dry: '#888888', greasy: '#c8a020', damp: '#6699bb', wet: '#22aaee', flooding: '#aa22ee' };
+    const SKY_ICONS    = { 'blue skies': '☀', overcast: '☁', threatening: '⛅', drizzling: '☂', raining: '☔', torrential: '⛈' };
+    const SKY_COLORS   = { 'blue skies': '#ffdd44', overcast: '#aaaaaa', threatening: '#888888', drizzling: '#88aacc', raining: '#4488bb', torrential: '#2244aa' };
+
+    function updateWeatherStrip(weatherInfo) {
+      const el = document.getElementById('quali-weather-strip');
+      if (!weatherInfo || !race.weatherScenario) {
+        el.style.display = 'none';
+        return;
+      }
+      const trackLabel = getTrackStateLabel(weatherInfo.trackWetness);
+      const skyLabel   = getSkyStateLabel(weatherInfo.weatherState, race.weatherScenario, weatherInfo.lap ?? 0);
+      const tc   = TRACK_COLORS[trackLabel] || '#888888';
+      const sc   = SKY_COLORS[skyLabel]     || 'var(--lo)';
+      const icon = SKY_ICONS[skyLabel]      || '';
+      const compound = weatherInfo.compound === 'wet' ? ' · <span style="color:#22aaee">WET TYRE</span>' : '';
+      el.innerHTML = `<span style="color:${tc}">${trackLabel} track</span> · <span style="color:${sc}">${skyLabel} ${icon}</span>${compound}`;
+      el.style.display = '';
+    }
+
     // ── Animated qualifying session ────────────────────────────────────────────
     // Uses simulateQualiLap's onSector callback for sector-by-sector animation.
     async function runQualifyingSessionAnimated(rng, circuit) {
-      const { cars } = await import('./state.js');
+      // Init weather before the shuffle — must match runQualifyingSession's rng order exactly.
+      initWeather(rng, cars.length);
+
+      // Show weather strip immediately for any non-FINE scenario
+      updateWeatherStrip({
+        compound:     race.trackWetness >= 0.40 ? 'wet' : 'soft',
+        trackWetness: race.trackWetness,
+        weatherState: race.weatherState,
+        lap:          0,
+      });
 
       // Fisher-Yates shuffle (same algorithm as runQualifyingSession — must match)
       const drawOrder = [...cars];
@@ -678,9 +793,22 @@
       const rawResults = [];
       const sectorPause = () => parseInt(speedSel.value, 10) / 3;
 
+      const runOrderStrip   = document.getElementById('run-order-strip');
+      const runOrderSection = document.getElementById('run-order-section');
+
       for (let drawIndex = 0; drawIndex < drawOrder.length; drawIndex++) {
         const car            = drawOrder[drawIndex];
         const trackEvolution = drawOrder.length > 1 ? drawIndex / (drawOrder.length - 1) : 0;
+
+        // Pop this driver's pip — they're now on track, not upcoming
+        if (runOrderStrip.firstChild) runOrderStrip.removeChild(runOrderStrip.firstChild);
+        if (!runOrderStrip.hasChildNodes()) runOrderSection.style.display = 'none';
+
+        // Show weather conditions before the driver goes out
+        const prelapWeatherInfo = race.weatherScenario
+          ? { compound: race.trackWetness >= 0.40 ? 'wet' : 'soft', trackWetness: race.trackWetness, weatherState: race.weatherState, lap: drawIndex }
+          : null;
+        updateWeatherStrip(prelapWeatherInfo);
 
         showOnTrack(car, drawIndex, drawOrder.length);
         resetSectorCells();
@@ -689,8 +817,10 @@
 
         // simulateQualiLap calls onSector after each sector — we show it then wait
         const result = await simulateQualiLap(car, rng, circuit, trackEvolution,
-          async (sectorIndex, sectorTime, eventType, retired) => {
+          async (sectorIndex, sectorTime, eventType, retired, weatherInfo) => {
             await delay(sectorPause());
+            // Update weather strip to reflect the compound in use; lap = drawIndex for sky state
+            if (weatherInfo) updateWeatherStrip({ ...weatherInfo, lap: drawIndex });
             if (retired) {
               markSectorCrash(sectorIndex);
               addQualiCommentary(`S${sectorIndex + 1} — crash! Session over.`, 'crash');
@@ -725,6 +855,22 @@
         });
 
         updateProvisionalLeaderboard(rawResults);
+
+        // Advance weather between drivers; announce significant state changes
+        if (race.weatherScenario) {
+          const prevState = race.weatherState;
+          tickQualiWeather(rng, drawIndex + 1);
+          if (race.weatherState !== prevState) {
+            const weatherMessages = {
+              DRIZZLE: 'Light rain beginning — conditions changing.',
+              RAIN:    'Rain intensifying — track getting treacherous.',
+              HEAVY:   'Heavy rain! Extremely difficult conditions.',
+              DRY:     'Rain easing — track beginning to dry.',
+            };
+            addQualiCommentary(weatherMessages[race.weatherState] ?? 'Weather changing.', 'weather');
+          }
+        }
+
         await delay(sectorPause());
       }
 
@@ -892,6 +1038,8 @@
       portraitEl.style.fontSize           = '28px';
       portraitEl.style.lineHeight         = '46px';
       portraitEl.style.textAlign          = 'center';
+      document.getElementById('quali-weather-strip').style.display = 'none';
+      document.getElementById('run-order-section').style.display  = 'none';
     }
 
     function formatTime(seconds) {

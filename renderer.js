@@ -826,6 +826,17 @@ export class Renderer {
       const passedColour = passedCar?.team?.colour ?? '#4a6a88';
       detail   = `${entry.car.toUpperCase()} ${verb} <span class="c-team-mark" style="color:${passedColour}">■</span>${ev.passed.toUpperCase()}${posStr}`;
 
+    } else if (ev.type === 'start' && ev.severity === 'stall') {
+      tag      = 'STALL';
+      tagClass = 'tag-crash';
+      detail   = `${entry.car.toUpperCase()} — STALLS AT THE START`;
+
+    } else if (ev.type === 'start' && ev.severity === 'bad') {
+      tag      = 'START';
+      tagClass = 'tag-spin';
+      const label = ev.label === 'wheelspin' ? 'WHEELSPIN OFF THE LINE' : 'GETS BOGGED DOWN AT THE START';
+      detail   = `${entry.car.toUpperCase()} — ${label}`;
+
     } else if (ev.type === 'collision') {
       const s       = ev.parties[1];
       const sCar    = this._displayCars?.find(c => c.driver.name === s);

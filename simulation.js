@@ -409,6 +409,49 @@ export function tick(rng) {
       delete car._strategyInitPending;
     }
 
+    // ── 0. Standing start penalty (lap 1, sector 1 only) ────────────────────
+    // Era-interpolated multiplier applied to sector time. Every car takes a
+    // penalty because all standing starts are slower than rolling starts.
+    // startAbility derived from consistency — best starters are most consistent drivers.
+    let startFactor = 1.0;
+    if (race.lap === 1 && race.sector === 1) {
+      const yr = currentDisplayYear;
+      let cleanF, badF, stallF, badP, stallP;
+      if (yr <= 1970) {
+        const t = Math.max(0, Math.min(1, (yr - 1930) / 40));
+        cleanF = 1.40 + t * (1.27 - 1.40);
+        badF   = 1.85 + t * (1.60 - 1.85);
+        stallF = 2.00 + t * (2.40 - 2.00);
+        badP   = 0.30 + t * (0.22 - 0.30);
+        stallP = 0.08 + t * (0.05 - 0.08);
+      } else {
+        const t = Math.max(0, Math.min(1, (yr - 1970) / 40));
+        cleanF = 1.27 + t * (1.10 - 1.27);
+        badF   = 1.60 + t * (1.27 - 1.60);
+        stallF = 2.40 + t * (1.70 - 2.40);
+        badP   = 0.22 + t * (0.12 - 0.22);
+        stallP = 0.05 + t * (0.02 - 0.05);
+      }
+
+      const startAbility    = car.driver.consistency / 100;
+      const effectiveBadP   = badP   * (1 - startAbility);
+      const effectiveStallP = stallP * (1 - startAbility);
+      const startRoll       = rng();
+
+      if (startRoll < effectiveStallP) {
+        startFactor = stallF;
+        events.push({ type: 'start', severity: 'stall' });
+      } else if (startRoll < effectiveStallP + effectiveBadP) {
+        const rangePos = (startRoll - effectiveStallP) / effectiveBadP;
+        startFactor    = badF;
+        events.push({ type: 'start', severity: 'bad', label: rangePos < 0.5 ? 'wheelspin' : 'bogged_down' });
+      } else {
+        startFactor = cleanF;
+        // Clean standing start — penalty in sector time; no commentary event
+      }
+      factors.start = +startFactor.toFixed(4);
+    }
+
     // ── 1. Engine factor ────────────────────────────────────────────────────
     // Higher power → closer to 1.0 (no penalty). Lower power → factor rises above 1.0.
     // Formula: 1.0 + (1 - power/100) × sectorPowerWeight
@@ -545,7 +588,8 @@ export function tick(rng) {
       * weatherFactor
       * car.reliabilityFactor
       * car.puncturePenalty
-      * driverFactor;
+      * driverFactor
+      * startFactor;
 
     car.cumulativeTime += sectorTime;
     car.currentSectorTimes.push(+sectorTime.toFixed(3));

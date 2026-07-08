@@ -759,6 +759,9 @@ export function tick(rng) {
       if (car.status === 'racing' && shouldPit(car, rng)) {
         const pitEvent = executePitStop(car, rng);
         events.push(pitEvent);
+        // Add full pit duration to in-lap time so the timing sheet shows a visibly
+        // slow lap (matching real-world broadcast timing displays).
+        car.lastLapTime = +(car.lastLapTime + pitEvent.duration).toFixed(3);
         car.status = 'pitted';  // display state; cleared at start of next sector
       }
     }

@@ -99,6 +99,7 @@ export function updatePositions() {
     return a.cumulativeTime - b.cumulativeTime;
   });
 
+  if (cars.length === 0) return;
   const leaderTime = cars[0].cumulativeTime;
   cars.forEach((car, i) => {
     car.position = i + 1;

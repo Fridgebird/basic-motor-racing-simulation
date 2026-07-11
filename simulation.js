@@ -442,9 +442,12 @@ export function tick(rng) {
         startFactor = stallF;
         events.push({ type: 'start', severity: 'stall' });
       } else if (startRoll < effectiveStallP + effectiveBadP) {
-        const rangePos = (startRoll - effectiveStallP) / effectiveBadP;
-        startFactor    = badF;
-        events.push({ type: 'start', severity: 'bad', label: rangePos < 0.5 ? 'wheelspin' : 'bogged_down' });
+        // Interpolate factor across the bad range: mild rolls get a small penalty,
+        // severe rolls approach badF. Tier drives commentary selection in the renderer.
+        const rangePos  = (startRoll - effectiveStallP) / effectiveBadP;
+        startFactor     = cleanF + rangePos * (badF - cleanF);
+        const tier      = rangePos < 0.33 ? 'mild' : rangePos < 0.67 ? 'moderate' : 'severe';
+        events.push({ type: 'start', severity: 'bad', tier });
       } else {
         startFactor = cleanF;
         // Clean standing start — penalty in sector time; no commentary event

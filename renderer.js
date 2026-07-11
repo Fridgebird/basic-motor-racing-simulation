@@ -829,13 +829,38 @@ export class Renderer {
     } else if (ev.type === 'start' && ev.severity === 'stall') {
       tag      = 'STALL';
       tagClass = 'tag-crash';
-      detail   = `${entry.car.toUpperCase()} — STALLS AT THE START`;
+      const stallLines = [
+        'STALLS AT THE START!',
+        'STALLS ON THE GRID — LEFT BEHIND',
+        'STALLS! THE FIELD STREAMS PAST',
+      ];
+      detail = `${entry.car.toUpperCase()} — ${stallLines[entry.car.charCodeAt(0) % stallLines.length]}`;
 
     } else if (ev.type === 'start' && ev.severity === 'bad') {
       tag      = 'START';
       tagClass = 'tag-spin';
-      const label = ev.label === 'wheelspin' ? 'WHEELSPIN OFF THE LINE' : 'GETS BOGGED DOWN AT THE START';
-      detail   = `${entry.car.toUpperCase()} — ${label}`;
+      const startLines = {
+        mild: [
+          'SLIGHT WHEELSPIN OFF THE LINE',
+          'HESITANT AWAY, LOSES A PLACE',
+          'FRACTIONALLY SLOW OFF THE LINE',
+          'LOSES TRACTION BRIEFLY AT THE START',
+        ],
+        moderate: [
+          'BOGGED DOWN OFF THE LINE',
+          'POOR START — DROPS SEVERAL POSITIONS',
+          'STRUGGLES FOR GRIP AT THE START',
+          'BAD GETAWAY, LOSES MULTIPLE PLACES',
+        ],
+        severe: [
+          'GEARBOX PROBLEM OFF THE LINE',
+          'CLUTCH JUDDER — DROPS TO THE BACK',
+          'NIGHTMARE START — DROPS TO THE BACK OF THE FIELD',
+          'MAJOR PROBLEM OFF THE LINE',
+        ],
+      };
+      const pool = startLines[ev.tier] ?? startLines.moderate;
+      detail = `${entry.car.toUpperCase()} — ${pool[entry.car.charCodeAt(0) % pool.length]}`;
 
     } else if (ev.type === 'collision') {
       const s       = ev.parties[1];

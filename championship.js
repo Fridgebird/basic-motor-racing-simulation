@@ -339,15 +339,15 @@ export async function ensurePastResultsCached(season, simFns) {
   const numRounds   = Math.max(...SEASON_SCHEDULE.map(e => e.round));
   const seasonStart = (season - 1) * numRounds;
 
+  // Resolve season-accurate stats once per season (snapshot is same for all rounds)
+  const snapshot = getSeasonSnapshot ? getSeasonSnapshot(season, getWorldSeed()) : null;
+
   for (let r = 1; r <= numRounds; r++) {
     const absOffset = seasonStart + (r - 1);
     if (absOffset >= todayOffset) break;   // skip today's and future rounds
 
     const circuitId = SEASON_SCHEDULE.find(e => e.round === r).circuitId;
     const circuit   = CIRCUITS[circuitId];
-
-    // Resolve season-accurate stats once per round (snapshot is same for whole season)
-    const snapshot = getSeasonSnapshot ? getSeasonSnapshot(season, getWorldSeed()) : null;
 
     // ── Qualifying ─────────────────────────────────────────────────────────
     if (!loadQualiResults(season, r)) {

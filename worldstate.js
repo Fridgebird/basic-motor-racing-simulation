@@ -424,7 +424,7 @@ export function getDriverDepartureReason(driverId, lastSeason, worldSeed) {
 // The reigning champion's team gets 1 and 2 (champion = 1, teammate = 2).
 // All other teams use their permanent baseNumbers from data.js.
 
-export function getCarNumbers(season, worldSeed) {
+export function getCarNumbers(season, worldSeed, precomputedRoster = null) {
   const numbers = new Map(); // driverId → carNumber
 
   // Try to get last season's champion
@@ -440,7 +440,7 @@ export function getCarNumbers(season, worldSeed) {
     }
   }
 
-  const roster = getActiveRoster(season, worldSeed);
+  const roster = precomputedRoster ?? getActiveRoster(season, worldSeed);
 
   if (champDriverName) {
     // Find the champion's driverId from the roster
@@ -536,7 +536,7 @@ export function getCarSpriteSheetForEra(chassisEra) {
 
 export function getSeasonSnapshot(season, worldSeed) {
   const roster     = getActiveRoster(season, worldSeed);
-  const carNumbers = getCarNumbers(season, worldSeed);
+  const carNumbers = getCarNumbers(season, worldSeed, roster);
 
   // Build resolved driver objects (matching the shape state.js expects)
   const drivers = roster.map(({ driverId, teamId, birthYear }) => {

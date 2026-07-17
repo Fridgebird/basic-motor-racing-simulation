@@ -602,20 +602,22 @@
     /* ── Visual starting grid ────────────────────────────────────────────────── */
     #visual-grid {
       display: flex;
-      gap: 6px;
-      padding: 8px 0 24px;
-      align-items: flex-start;
-    }
-    .vg-col {
-      flex: 1;
-      display: flex;
       flex-direction: column;
       gap: 24px;
+      padding: 8px 0 24px;
+    }
+    .vg-pair {
+      display: flex;
+      gap: 6px;
+      align-items: flex-start;
+    }
+    .vg-slot-l, .vg-slot-r {
+      flex: 1;
+      display: flex;
       min-width: 0;
     }
-    /* Cards meet in the middle — left column right-aligns, right column left-aligns */
-    .vg-left  { align-items: flex-end; }
-    .vg-right { align-items: flex-start; margin-top: 36px; }
+    .vg-slot-l { justify-content: flex-end; }
+    .vg-slot-r { justify-content: flex-start; margin-top: 36px; }
 
     .vg-card {
       border: 1px solid var(--border);
@@ -691,6 +693,11 @@
       object-fit: contain;
     }
     @media (max-width: 480px) {
+      .vg-pair       { flex-direction: column; gap: 16px; }
+      .vg-slot-l, .vg-slot-r { flex: initial; width: 88%; margin-top: 0; }
+      .vg-slot-l     { justify-content: flex-start; align-self: flex-start; }
+      .vg-slot-r     { justify-content: flex-start; align-self: flex-end; }
+      .vg-slot-l .vg-card, .vg-slot-r .vg-card { width: 100%; }
       .vg-pos        { font-size: 18px; width: 22px; }
       .vg-portrait   { width: 40px; height: 40px; }
       .vg-num        { font-size: 22px; min-width: 28px; }
@@ -699,7 +706,6 @@
       .vg-time       { font-size: 9px; }
       .vg-car        { height: 40px; }
       .vg-car img    { height: 40px; max-width: 100px; }
-      .vg-right      { margin-top: 22px; }
     }
 
     /* ── Standings panel ─────────────────────────────────────────────────────── */
@@ -1041,10 +1047,7 @@
 
       <!-- GRID tab (default) -->
       <div id="panel-grid" class="view-panel active">
-        <div id="visual-grid">
-          <div class="vg-col vg-left"  id="vg-left"></div>
-          <div class="vg-col vg-right" id="vg-right"></div>
-        </div>
+        <div id="visual-grid"></div>
       </div>
 
       <!-- RACE tab -->
@@ -1121,8 +1124,8 @@
 
     </div><!-- end #left-panel -->
 
-    <!-- Car spacing strip — always visible -->
-    <div id="strip-panel">
+    <!-- Car spacing strip — hidden on grid tab, visible on race/chart/etc -->
+    <div id="strip-panel" style="display:none">
       <div id="strip-controls">
         <button id="strip-zoom-out">−</button>
         <button id="strip-zoom-in">+</button>
@@ -1329,6 +1332,8 @@
       }
       if (target === 'chart') setTimeout(() => renderer.render(), 0);
       if (target === 'stand' && !standingsLoaded) { buildStandings(); standingsLoaded = true; }
+
+      document.getElementById('strip-panel').style.display = target === 'grid' ? 'none' : '';
     }
 
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1405,19 +1410,15 @@
 
     function buildGrid() {
       if (!qualiResults) return;
-      const leftCol  = document.getElementById('vg-left');
-      const rightCol = document.getElementById('vg-right');
-      leftCol.innerHTML  = '';
-      rightCol.innerHTML = '';
+      const container = document.getElementById('visual-grid');
+      container.innerHTML = '';
 
-      const poleTime   = qualiResults[0]?.lapTime ?? null;
-      const chassisEra = Math.floor((event.season - 1) / 5) + 1;
-      const eraYear    = 1930 + (chassisEra - 1) * 5;
-      const SPRITE_PX  = 60;
+      const poleTime    = qualiResults[0]?.lapTime ?? null;
+      const chassisEra  = Math.floor((event.season - 1) / 5) + 1;
+      const eraYear     = 1930 + (chassisEra - 1) * 5;
       const SPRITE_COLS = 4;
 
-      qualiResults.forEach((r, i) => {
-        const pos        = i + 1;
+      function buildCard(r, pos) {
         const colour     = getTeamColour(r.teamId);
         const label      = getTeamLabel(r.teamId);
         const driverSnap = snapshot?.drivers?.find(d => d.id === r.driverId || d.name === r.driverName);
@@ -1432,15 +1433,16 @@
                       : poleTime  ? `+${(r.lapTime - poleTime).toFixed(3)}`
                       : '–';
 
-        // Portrait sprite
         let portraitHtml;
         if (pIdx != null && pIdx < 32) {
           const sheet = Math.floor(pIdx / 16) + 1;
           const p   = pIdx % 16;
           const col = p % SPRITE_COLS;
           const row = Math.floor(p / SPRITE_COLS);
-          const sz  = SPRITE_PX * SPRITE_COLS;
-          portraitHtml = `<div class="vg-portrait" style="background-image:url('driver_sprites_16x16_${sheet}.webp');background-size:${sz}px ${sz}px;background-position:${-(col*SPRITE_PX)}px ${-(row*SPRITE_PX)}px;background-color:${colour}22;"></div>`;
+          // Percentage-based sprite position so portrait renders correctly at any CSS size
+          const bgX = (col / (SPRITE_COLS - 1) * 100).toFixed(4) + '%';
+          const bgY = (row / (SPRITE_COLS - 1) * 100).toFixed(4) + '%';
+          portraitHtml = `<div class="vg-portrait" style="background-image:url('driver_sprites_16x16_${sheet}.webp');background-size:${SPRITE_COLS * 100}% ${SPRITE_COLS * 100}%;background-position:${bgX} ${bgY};background-color:${colour}22;"></div>`;
         } else {
           const initials = (r.driverName || '??').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
           portraitHtml = `<div class="vg-portrait" style="background:${colour}22;display:flex;align-items:center;justify-content:center;font-size:12px;color:${colour};">${initials}</div>`;
@@ -1464,9 +1466,27 @@
             <div class="vg-num" style="color:${colour}">${carNum}</div>
           </div>
         `;
+        return card;
+      }
 
-        (pos % 2 === 1 ? leftCol : rightCol).appendChild(card);
-      });
+      for (let i = 0; i < qualiResults.length; i += 2) {
+        const pair = document.createElement('div');
+        pair.className = 'vg-pair';
+
+        const slotL = document.createElement('div');
+        slotL.className = 'vg-slot-l';
+        slotL.appendChild(buildCard(qualiResults[i], i + 1));
+        pair.appendChild(slotL);
+
+        if (qualiResults[i + 1]) {
+          const slotR = document.createElement('div');
+          slotR.className = 'vg-slot-r';
+          slotR.appendChild(buildCard(qualiResults[i + 1], i + 2));
+          pair.appendChild(slotR);
+        }
+
+        container.appendChild(pair);
+      }
     }
     buildGrid();
 

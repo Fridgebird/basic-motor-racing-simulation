@@ -679,29 +679,25 @@
       min-width: 28px;
       text-align: right;
     }
-    .vg-car-strip {
-      height: 38px;
-      border-top: 1px solid var(--border);
-      background: var(--bg-deep);
+    .vg-car {
+      flex-shrink: 0;
+      height: 40px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      padding: 2px 8px;
     }
-    .vg-car-strip img {
-      max-height: 34px;
-      max-width: 100%;
+    .vg-car img {
+      height: 40px;
+      width: auto;
+      max-width: 100px;
       object-fit: contain;
     }
     @media (max-width: 480px) {
-      .vg-pos      { font-size: 13px; width: 16px; }
-      .vg-portrait { width: 32px; height: 32px; }
-      .vg-num      { font-size: 16px; min-width: 20px; }
-      .vg-name     { font-size: 9px; }
+      .vg-pos        { font-size: 13px; width: 16px; }
+      .vg-portrait   { width: 32px; height: 32px; }
+      .vg-num        { font-size: 16px; min-width: 20px; }
+      .vg-name       { font-size: 9px; }
       .vg-team-label { display: none; }
-      .vg-car-strip  { height: 28px; }
-      .vg-car-strip img { max-height: 24px; }
+      .vg-car        { display: none; }
     }
 
     /* ── Standings panel ─────────────────────────────────────────────────────── */
@@ -1460,10 +1456,10 @@
               <div class="vg-team-label">${label}</div>
               <div class="vg-time ${timeStr ? '' : 'vg-notime'}">${timeStr ?? 'NO TIME'}<span class="vg-gap">${gapStr}</span></div>
             </div>
+            <div class="vg-car">
+              <img src="car_sprites_${eraYear}_${imageId}.webp" alt="" onerror="this.parentElement.style.display='none'">
+            </div>
             <div class="vg-num" style="color:${colour}">${carNum}</div>
-          </div>
-          <div class="vg-car-strip">
-            <img src="car_sprites_${eraYear}_${imageId}.webp" alt="" onerror="this.parentElement.style.display='none'">
           </div>
         `;
 

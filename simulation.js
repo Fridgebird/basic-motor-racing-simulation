@@ -135,7 +135,7 @@ function getEngineRetirementLabels(year) {
   const labels = ['Engine', 'Crankshaft', 'Oil leak', 'Gasket',
                   ...getEngineDegradedLabels(year)];
   // Forced-induction failures are always terminal — never shown as a health issue.
-  if (year >= 1945) labels.push('Supercharger');
+  if (year >= 1945 && year < 1955) labels.push('Supercharger');
   if (year >= 1975) labels.push('Turbo', 'Intercooler');
   return labels;
 }

@@ -602,7 +602,7 @@
     /* ── Visual starting grid ────────────────────────────────────────────────── */
     #visual-grid {
       display: flex;
-      gap: 8px;
+      gap: 12px;
       padding: 8px 0 24px;
       align-items: flex-start;
     }
@@ -610,10 +610,11 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 14px;
       min-width: 0;
+      align-items: flex-start; /* cards shrink to content width */
     }
-    .vg-right { margin-top: 46px; }
+    .vg-right { margin-top: 22px; } /* sits just above the midline of the left card */
 
     .vg-card {
       border: 1px solid var(--border);
@@ -624,7 +625,7 @@
     .vg-main {
       display: flex;
       align-items: center;
-      padding: 5px 7px;
+      padding: 5px 8px 5px 6px;
       gap: 7px;
     }
     .vg-pos {
@@ -644,15 +645,13 @@
       image-rendering: pixelated;
     }
     .vg-info {
-      flex: 1;
+      flex-shrink: 1;
       min-width: 0;
     }
     .vg-name {
       font-size: 11px;
       color: var(--hi);
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       letter-spacing: 0.03em;
     }
     .vg-team-label {
@@ -661,13 +660,12 @@
       letter-spacing: 0.5px;
       margin-top: 2px;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
     .vg-time {
       font-size: 9px;
       color: var(--mid);
       margin-top: 3px;
+      white-space: nowrap;
     }
     .vg-time .vg-gap { color: var(--lo); margin-left: 5px; }
     .vg-notime { color: var(--dim); }

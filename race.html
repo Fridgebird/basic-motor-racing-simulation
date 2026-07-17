@@ -1000,8 +1000,8 @@
       <span id="hamburger-tab-label">RACE</span>
       <button id="hamburger-btn">&#9776;</button>
       <div id="hamburger-menu" style="display:none">
-        <button class="hmenu-item" data-panel="grid">GRID</button>
-        <button class="hmenu-item hm-active" data-panel="race">RACE</button>
+        <button class="hmenu-item hm-active" data-panel="grid">GRID</button>
+        <button class="hmenu-item" data-panel="race">RACE</button>
         <button class="hmenu-item" data-panel="chart">LAP CHART</button>
         <button class="hmenu-item" data-panel="comm">COMMENTARY</button>
         <button class="hmenu-item" data-panel="stand">STANDINGS</button>
@@ -1011,8 +1011,8 @@
 
   <!-- ── Tab bar ─────────────────────────────────────────────────────────────── -->
   <div id="tab-bar">
-    <button class="tab-btn" data-panel="grid">GRID</button>
-    <button class="tab-btn active" data-panel="race">RACE</button>
+    <button class="tab-btn active" data-panel="grid">GRID</button>
+    <button class="tab-btn" data-panel="race">RACE</button>
     <button class="tab-btn" data-panel="chart">LAP CHART</button>
     <button class="tab-btn" data-panel="comm">COMMENTARY</button>
     <button class="tab-btn" data-panel="stand">STANDINGS</button>
@@ -1039,16 +1039,16 @@
     <!-- Left panel — switches between views -->
     <div id="left-panel">
 
-      <!-- GRID tab -->
-      <div id="panel-grid" class="view-panel">
+      <!-- GRID tab (default) -->
+      <div id="panel-grid" class="view-panel active">
         <div id="visual-grid">
           <div class="vg-col vg-left"  id="vg-left"></div>
           <div class="vg-col vg-right" id="vg-right"></div>
         </div>
       </div>
 
-      <!-- RACE tab (default) -->
-      <div id="panel-race" class="view-panel active">
+      <!-- RACE tab -->
+      <div id="panel-race" class="view-panel">
         <div id="timing-table-scroll">
         <table id="timing-table">
           <thead>

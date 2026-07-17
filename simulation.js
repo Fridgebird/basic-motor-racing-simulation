@@ -121,20 +121,22 @@ const DIVEBOMB_COLLISION_BASE = 0.08;  // scales with tyre wear + aggression
 // canDegrade labels can be either degraded or retirement depending on the outcome roll.
 
 function getEngineDegradedLabels(year) {
-  // Only failures a driver can plausibly continue with at reduced pace.
+  // Only failures a driver can plausibly limp on with at reduced pace.
   // Forced-induction failures (supercharger, turbo, intercooler) are always terminal — see below.
-  const labels = ['Overheating', 'Fuel starvation', 'Valve failure', 'Magneto failure'];
-  if (year >= 1960) labels.push('Fuel injection failure');
-  if (year >= 1990) labels.push('Engine management failure');
+  const labels = ['Overheating', 'Fuel supply', 'Cylinder valve'];
+  if (year < 1950)  labels.push('Magneto');    // pre-war/early post-war ignition tech
+  if (year >= 1950) labels.push('Ignition');   // misfiring plug/coil/distributor — car can limp on
+  if (year >= 1960) labels.push('Fuel injection');
+  if (year >= 1990) labels.push('Engine management');
   return labels;
 }
 
 function getEngineRetirementLabels(year) {
-  const labels = ['Engine seizure', 'Crankshaft failure', 'Oil leak', 'Blown gasket',
+  const labels = ['Engine', 'Crankshaft', 'Oil leak', 'Gasket',
                   ...getEngineDegradedLabels(year)];
   // Forced-induction failures are always terminal — never shown as a health issue.
-  if (year >= 1945) labels.push('Supercharger failure');
-  if (year >= 1975) labels.push('Turbo failure', 'Intercooler failure');
+  if (year >= 1945) labels.push('Supercharger');
+  if (year >= 1975) labels.push('Turbo', 'Intercooler');
   return labels;
 }
 
@@ -151,10 +153,13 @@ function getChassisDegradedLabels(year) {
 
 function getChassisRetirementLabels(year) {
   // Catastrophic chassis failures that always end the race, plus limping failures
-  // (any degraded issue can escalate to a retirement too)
-  return ['Transmission failure', 'Differential failure', 'Brake failure',
-          'Steering failure', 'Broken wheel', 'Hydraulic failure', 'Puncture',
-          ...getChassisDegradedLabels(year)];
+  // (any degraded issue can escalate to a retirement too).
+  // 'Brakes' (non-terminal) already covers the retirement case, so no separate 'Brake failure' needed.
+  // 'Puncture' has its own dedicated code path and should not appear here.
+  const labels = ['Transmission', 'Differential', 'Steering', 'Hydraulics',
+                  ...getChassisDegradedLabels(year)];
+  if (year < 1985) labels.push('Broken wheel');
+  return labels;
 }
 
 // ─── Weather constants ────────────────────────────────────────────────────────

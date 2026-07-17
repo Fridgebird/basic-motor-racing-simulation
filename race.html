@@ -599,34 +599,110 @@
     }
     #lap-chart-canvas { display: block; width: 100%; }
 
-    /* ── Grid panel ──────────────────────────────────────────────────────────── */
-    #grid-table {
-      border-collapse: collapse;
-      width: 100%;
+    /* ── Visual starting grid ────────────────────────────────────────────────── */
+    #visual-grid {
+      display: flex;
+      gap: 8px;
+      padding: 8px 0 24px;
+      align-items: flex-start;
     }
-    #grid-table th {
-      color: var(--lo);
-      font-size: 9px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      font-weight: normal;
-      padding: 3px 6px 6px;
-      border-bottom: 1px solid var(--border);
-      text-align: left;
+    .vg-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
     }
-    #grid-table td {
-      padding: 5px 6px;
+    .vg-right { margin-top: 46px; }
+
+    .vg-card {
+      border: 1px solid var(--border);
+      border-left-width: 3px;
+      background: var(--bg-mid);
+      overflow: hidden;
+    }
+    .vg-main {
+      display: flex;
+      align-items: center;
+      padding: 5px 7px;
+      gap: 7px;
+    }
+    .vg-pos {
+      font-size: 18px;
+      color: var(--dim);
+      width: 22px;
+      flex-shrink: 0;
+      text-align: right;
+      line-height: 1;
+    }
+    .vg-pos.p1 { color: var(--accent); }
+    .vg-portrait {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+      image-rendering: pixelated;
+    }
+    .vg-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .vg-name {
       font-size: 11px;
+      color: var(--hi);
       white-space: nowrap;
-      border-bottom: 1px solid var(--bg-mid);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: 0.03em;
     }
-    .grid-pos  { width: 36px; color: var(--lo); }
-    .grid-num  { width: 36px; color: var(--mid); }
-    .grid-driver { color: var(--hi); }
-    .grid-team { width: 160px; color: var(--lo); font-size: 10px; }
-    .grid-time { width: 90px; color: var(--mid); font-size: 10px; text-align: right; }
-    .grid-gap  { width: 80px; color: var(--lo);  font-size: 10px; text-align: right; }
-    .grid-notime { color: var(--dim); }
+    .vg-team-label {
+      font-size: 8px;
+      color: var(--lo);
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .vg-time {
+      font-size: 9px;
+      color: var(--mid);
+      margin-top: 3px;
+    }
+    .vg-time .vg-gap { color: var(--lo); margin-left: 5px; }
+    .vg-notime { color: var(--dim); }
+    .vg-num {
+      font-size: 22px;
+      font-weight: bold;
+      flex-shrink: 0;
+      line-height: 1;
+      min-width: 28px;
+      text-align: right;
+    }
+    .vg-car-strip {
+      height: 38px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-deep);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 2px 8px;
+    }
+    .vg-car-strip img {
+      max-height: 34px;
+      max-width: 100%;
+      object-fit: contain;
+    }
+    @media (max-width: 480px) {
+      .vg-pos      { font-size: 13px; width: 16px; }
+      .vg-portrait { width: 32px; height: 32px; }
+      .vg-num      { font-size: 16px; min-width: 20px; }
+      .vg-name     { font-size: 9px; }
+      .vg-team-label { display: none; }
+      .vg-car-strip  { height: 28px; }
+      .vg-car-strip img { max-height: 24px; }
+    }
 
     /* ── Standings panel ─────────────────────────────────────────────────────── */
     #stand-tables {
@@ -967,19 +1043,10 @@
 
       <!-- GRID tab -->
       <div id="panel-grid" class="view-panel">
-        <table id="grid-table">
-          <thead>
-            <tr>
-              <th class="grid-pos">POS</th>
-              <th class="grid-num">#</th>
-              <th class="grid-driver">DRIVER</th>
-              <th class="grid-team">TEAM</th>
-              <th class="grid-time">Q TIME</th>
-              <th class="grid-gap">GAP</th>
-            </tr>
-          </thead>
-          <tbody id="grid-body"></tbody>
-        </table>
+        <div id="visual-grid">
+          <div class="vg-col vg-left"  id="vg-left"></div>
+          <div class="vg-col vg-right" id="vg-right"></div>
+        </div>
       </div>
 
       <!-- RACE tab (default) -->
@@ -1092,6 +1159,7 @@
       getStandings, getStandingsThroughRound,
     } from './championship.js';
     import { getSeasonSnapshot, getDisplayYear, getCarNumbers } from './worldstate.js';
+    import { TEAMS } from './data.js';
 
     // ── Dev mode entry via ?dev=1 ──────────────────────────────────────────────
     const params = new URLSearchParams(location.search);
@@ -1339,30 +1407,67 @@
 
     function buildGrid() {
       if (!qualiResults) return;
-      const tbody    = document.getElementById('grid-body');
-      tbody.innerHTML = '';
-      const poleTime = qualiResults[0]?.lapTime || null;
+      const leftCol  = document.getElementById('vg-left');
+      const rightCol = document.getElementById('vg-right');
+      leftCol.innerHTML  = '';
+      rightCol.innerHTML = '';
+
+      const poleTime   = qualiResults[0]?.lapTime ?? null;
+      const chassisEra = Math.floor((event.season - 1) / 5) + 1;
+      const eraYear    = 1930 + (chassisEra - 1) * 5;
+      const SPRITE_PX  = 40;
+      const SPRITE_COLS = 4;
 
       qualiResults.forEach((r, i) => {
-        const timeStr  = r.lapTime ? fmtQualTime(r.lapTime) : null;
-        const gapStr   = !timeStr  ? '–'
-                       : i === 0   ? 'POLE'
-                       : poleTime  ? `+${(r.lapTime - poleTime).toFixed(3)}`
-                       : '–';
+        const pos        = i + 1;
+        const colour     = getTeamColour(r.teamId);
+        const label      = getTeamLabel(r.teamId);
         const driverSnap = snapshot?.drivers?.find(d => d.id === r.driverId || d.name === r.driverName);
-        const carNum   = carNumbers.get(driverSnap?.id ?? r.driverId) ?? '';
-        const colour   = getTeamColour(r.teamId);
-        const teamLabel = getTeamLabel(r.teamId);
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="grid-pos">${i + 1}</td>
-          <td class="grid-num">${carNum}</td>
-          <td class="grid-driver"><span class="team-dot" style="background:${colour};vertical-align:middle;margin-right:5px;"></span>${r.driverName ?? ''}</td>
-          <td class="grid-team">${teamLabel}</td>
-          <td class="grid-time ${timeStr ? '' : 'grid-notime'}">${timeStr ?? 'NO TIME'}</td>
-          <td class="grid-gap">${gapStr}</td>
+        const carNum     = carNumbers.get(driverSnap?.id ?? r.driverId) ?? r.carNumber ?? '';
+        const pIdx       = driverSnap?.portraitIndex ?? null;
+        const teamData   = TEAMS.find(t => t.id === r.teamId);
+        const imageId    = teamData?.carImageId || (r.teamId || '').toLowerCase();
+
+        const timeStr = r.lapTime ? fmtQualTime(r.lapTime) : null;
+        const gapStr  = !timeStr  ? '–'
+                      : pos === 1 ? 'POLE'
+                      : poleTime  ? `+${(r.lapTime - poleTime).toFixed(3)}`
+                      : '–';
+
+        // Portrait sprite
+        let portraitHtml;
+        if (pIdx != null && pIdx < 32) {
+          const sheet = Math.floor(pIdx / 16) + 1;
+          const p   = pIdx % 16;
+          const col = p % SPRITE_COLS;
+          const row = Math.floor(p / SPRITE_COLS);
+          const sz  = SPRITE_PX * SPRITE_COLS;
+          portraitHtml = `<div class="vg-portrait" style="background-image:url('driver_sprites_16x16_${sheet}.webp');background-size:${sz}px ${sz}px;background-position:${-(col*SPRITE_PX)}px ${-(row*SPRITE_PX)}px;background-color:${colour}22;"></div>`;
+        } else {
+          const initials = (r.driverName || '??').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+          portraitHtml = `<div class="vg-portrait" style="background:${colour}22;display:flex;align-items:center;justify-content:center;font-size:12px;color:${colour};">${initials}</div>`;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'vg-card';
+        card.style.borderLeftColor = colour;
+        card.innerHTML = `
+          <div class="vg-main">
+            <div class="vg-pos${pos === 1 ? ' p1' : ''}">${pos}</div>
+            ${portraitHtml}
+            <div class="vg-info">
+              <div class="vg-name">${(r.driverName ?? '').toUpperCase()}</div>
+              <div class="vg-team-label">${label}</div>
+              <div class="vg-time ${timeStr ? '' : 'vg-notime'}">${timeStr ?? 'NO TIME'}<span class="vg-gap">${gapStr}</span></div>
+            </div>
+            <div class="vg-num" style="color:${colour}">${carNum}</div>
+          </div>
+          <div class="vg-car-strip">
+            <img src="car_sprites_${eraYear}_${imageId}.webp" alt="" onerror="this.parentElement.style.display='none'">
+          </div>
         `;
-        tbody.appendChild(tr);
+
+        (pos % 2 === 1 ? leftCol : rightCol).appendChild(card);
       });
     }
     buildGrid();

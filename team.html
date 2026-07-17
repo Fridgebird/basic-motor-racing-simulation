@@ -126,6 +126,7 @@
         <a href="drivers.html" class="topbar-nav-link">DRIVERS</a>
         <a href="team.html" class="topbar-nav-link current">TEAMS</a>
         <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
+        <a href="champions.html" class="topbar-nav-link">CHAMPIONS</a>
       </nav>
     </div>
     <div id="info-bar">Constructor Profile</div>
@@ -202,7 +203,7 @@
     }                                       from './championship.js';
     import { initRace, cars }               from './state.js';
     import {
-      runRace, initStrategies, initWeather, setCurrentCircuit, runQualifyingSession,
+      runRace, initStrategies, initWeather, setCurrentCircuit, runQualifyingSession, setFastMode,
     }                                       from './simulation.js';
 
     const NAT_CODE = {
@@ -225,7 +226,7 @@
 
     const simFns = {
       initRace, cars, runRace, initStrategies, initWeather,
-      setCurrentCircuit, runQualifyingSession, getSeasonSnapshot,
+      setCurrentCircuit, runQualifyingSession, getSeasonSnapshot, setFastMode,
     };
 
     const SORTED_TEAMS = [...TEAMS].sort((a, b) => a.baseNumbers[0] - b.baseNumbers[0]);

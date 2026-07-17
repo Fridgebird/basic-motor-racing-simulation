@@ -13,6 +13,8 @@ import { COMPOUNDS, CIRCUIT as DEFAULT_CIRCUIT } from './data.js';
 // Defaults to the backwards-compat CIRCUIT alias (Montjuïc) until explicitly changed.
 let currentCircuit = DEFAULT_CIRCUIT;
 let currentDisplayYear = 1930;
+let fastMode = false;
+export function setFastMode(enabled) { fastMode = enabled; }
 
 /** Set the circuit for the upcoming qualifying session or race.
  *  Pass displayYear (e.g. getDisplayYear(season)) so era-aware failure labels
@@ -35,6 +37,11 @@ export function setCurrentCircuit(circuit, displayYear = 1930) {
   if (displayYear < 1945)      { eraAeroLoss = 0.15; eraRawFailPenalty = 0.20; }
   else if (displayYear < 1965) { eraAeroLoss = 0.25; eraRawFailPenalty = 0.30; }
   else                         { eraAeroLoss = 0.40; eraRawFailPenalty = 0.40; }
+
+  // Era speed: 2010 is the ceiling (1.0); 1930 cars are 1.8× slower in lap time.
+  eraSpeedFactor = displayYear >= 2010
+    ? 1.0
+    : 1.0 + 0.8 * (2010 - displayYear) / (2010 - 1930);
 }
 import { cars, race, raceLog, lapChartData, updatePositions } from './state.js';
 
@@ -90,9 +97,12 @@ const DIRTY_AIR_RANGE     = 1.00;  // seconds
 const DIRTY_AIR_WEAR_MULT = 0.20;
 // eraAeroLoss: scales with era — pre-aero cars create less dirty air.
 // eraRawFailPenalty: raw pace pass failure penalty, smaller in early eras (more room).
-// Both set in setCurrentCircuit() based on displayYear.
+// eraSpeedFactor: makes older cars slower. Linear 1.8 (1930) → 1.0 (2010, ceiling).
+//   Calibrated so 1950 gives 1.6×, matching British GP 146 km/h vs 2010's 233 km/h (62.7%).
+// All three set in setCurrentCircuit() based on displayYear.
 let eraAeroLoss       = 0.40;
 let eraRawFailPenalty = 0.40;
+let eraSpeedFactor    = 1.0;
 
 // Overtake attempt fires when gap < OVERTAKE_RANGE.
 // Two types: raw pace pass (power sectors) and divebomb (braking zones).
@@ -111,18 +121,21 @@ const DIVEBOMB_COLLISION_BASE = 0.08;  // scales with tyre wear + aggression
 // canDegrade labels can be either degraded or retirement depending on the outcome roll.
 
 function getEngineDegradedLabels(year) {
+  // Only failures a driver can plausibly continue with at reduced pace.
+  // Forced-induction failures (supercharger, turbo, intercooler) are always terminal — see below.
   const labels = ['Overheating', 'Fuel starvation', 'Valve failure', 'Magneto failure'];
-  if (year >= 1945) labels.push('Supercharger failure');
   if (year >= 1960) labels.push('Fuel injection failure');
-  if (year >= 1975) labels.push('Turbo failure', 'Intercooler failure');
   if (year >= 1990) labels.push('Engine management failure');
   return labels;
 }
 
 function getEngineRetirementLabels(year) {
-  // Catastrophic failures always retire; milder failures can also cause retirement
-  return ['Engine seizure', 'Crankshaft failure', 'Oil leak', 'Blown gasket',
-          ...getEngineDegradedLabels(year)];
+  const labels = ['Engine seizure', 'Crankshaft failure', 'Oil leak', 'Blown gasket',
+                  ...getEngineDegradedLabels(year)];
+  // Forced-induction failures are always terminal — never shown as a health issue.
+  if (year >= 1945) labels.push('Supercharger failure');
+  if (year >= 1975) labels.push('Turbo failure', 'Intercooler failure');
+  return labels;
 }
 
 function getChassisDegradedLabels(year) {
@@ -374,7 +387,11 @@ export function tick(rng) {
   // ── Snapshot positions before this tick for silent-pass detection ─────────
   // Keyed by driver name → position. Used after updatePositions() to find
   // cars that gained a place without a logged overtake event.
-  const preTickPositions = new Map(cars.map(c => [c.driver.name, c.position]));
+  // In fast mode (background history computation) skip these entirely.
+  const preTickPositions = fastMode ? null : new Map(cars.map(c => [c.driver.name, c.position]));
+
+  // Track pit compounds for lap chart — avoids O(N) raceLog.entries.find per car per lap.
+  const tickPitCompound = {};
 
   // ── Build dirty-air proximity map ──────────────────────────────────────────
   // Snapshot cumulative times before any car is processed this sector.
@@ -582,6 +599,7 @@ export function tick(rng) {
     // All factors multiply the base sector time; higher factor = slower.
     // puncturePenalty is 1.0 normally; 1.10–1.20 when running on a flat tyre.
     factors.puncture = +car.puncturePenalty.toFixed(3);
+    factors.era      = +eraSpeedFactor.toFixed(4);
     const sectorTime = sectorDef.baseSectorTime
       * engineFactor
       * chassisFactor
@@ -592,7 +610,8 @@ export function tick(rng) {
       * car.reliabilityFactor
       * car.puncturePenalty
       * driverFactor
-      * startFactor;
+      * startFactor
+      * eraSpeedFactor;
 
     car.cumulativeTime += sectorTime;
     car.currentSectorTimes.push(+sectorTime.toFixed(3));
@@ -762,6 +781,7 @@ export function tick(rng) {
       if (car.status === 'racing' && shouldPit(car, rng)) {
         const pitEvent = executePitStop(car, rng);
         events.push(pitEvent);
+        tickPitCompound[car.driver.name] = pitEvent.compound;
         // Add full pit duration to in-lap time so the timing sheet shows a visibly
         // slow lap (matching real-world broadcast timing displays).
         car.lastLapTime = +(car.lastLapTime + pitEvent.duration).toFixed(3);
@@ -777,7 +797,7 @@ export function tick(rng) {
     }
 
     // ── Race log entry ───────────────────────────────────────────────────────
-    raceLog.entries.push({
+    if (!fastMode) raceLog.entries.push({
       tick:           race.tick,
       lap:            race.lap,
       sector:         race.sector,
@@ -798,6 +818,10 @@ export function tick(rng) {
   //                proximity + aggression; collision risk on failure.
   //   Raw pace   — power/balanced sectors; triggered by intrinsic car pace advantage;
   //                no collision risk, smaller failure penalty.
+
+  // Built inline below — avoids the O(ticks²) raceLog.entries.filter scan.
+  const overtakerSet = fastMode ? null : new Set();
+
   const activeSorted = cars
     .filter(c => c.status !== 'retired')
     .sort((a, b) => a.cumulativeTime - b.cumulativeTime);
@@ -818,7 +842,8 @@ export function tick(rng) {
 
       if (roll < prob) {
         behind.cumulativeTime = ahead.cumulativeTime - 0.05;
-        raceLog.entries.push({
+        if (overtakerSet) overtakerSet.add(behind.driver.name);
+        if (!fastMode) raceLog.entries.push({
           tick: race.tick, lap: race.lap, sector: race.sector,
           car: behind.driver.name,
           events: [{ type: 'overtake', method: 'divebomb', passed: ahead.driver.name,
@@ -869,7 +894,7 @@ export function tick(rng) {
           });
         }
 
-        raceLog.entries.push({
+        if (!fastMode) raceLog.entries.push({
           tick: race.tick, lap: race.lap, sector: race.sector,
           car: behind.driver.name,
           events: logEvents,
@@ -886,7 +911,8 @@ export function tick(rng) {
 
       if (roll < prob) {
         behind.cumulativeTime = ahead.cumulativeTime - 0.05;
-        raceLog.entries.push({
+        if (overtakerSet) overtakerSet.add(behind.driver.name);
+        if (!fastMode) raceLog.entries.push({
           tick: race.tick, lap: race.lap, sector: race.sector,
           car: behind.driver.name,
           events: [{ type: 'overtake', method: 'pace', passed: ahead.driver.name,
@@ -895,7 +921,7 @@ export function tick(rng) {
         });
       } else {
         behind.cumulativeTime += eraRawFailPenalty;
-        raceLog.entries.push({
+        if (!fastMode) raceLog.entries.push({
           tick: race.tick, lap: race.lap, sector: race.sector,
           car: behind.driver.name,
           events: [{ type: 'overtake', method: 'pace', passed: ahead.driver.name,
@@ -913,12 +939,8 @@ export function tick(rng) {
   // We sort by cumulative time here (before updatePositions) to find who each
   // gainer actually displaced, then filter out cases where the passed car is
   // pitting (that's a strategy move, not a racing pass worth commentary).
-  {
-    // Set of cars that already have a formal overtake-success event this tick —
-    // silent pass detection skips these to avoid double commentary.
-    const overtakeEntries = raceLog.entries.filter(e => e.tick === race.tick &&
-      e.events.some(ev => ev.type === 'overtake' && ev.result === 'success'));
-    const overtakerSet = new Set(overtakeEntries.map(e => e.car));
+  if (!fastMode) {
+    // overtakerSet was built inline during the overtake loop above — no scan needed.
 
     // Sort active cars by cumulative time to get new implied order
     const newOrder = cars
@@ -968,18 +990,12 @@ export function tick(rng) {
 
   // ── Lap chart snapshot ────────────────────────────────────────────────────
   // Record each car's position at end of every lap (sector 3 only).
-  // Also capture pit compound if the car stopped this lap, for pit dot rendering.
-  if (race.sector === 3) {
+  if (!fastMode && race.sector === 3) {
     const entry = {};
     for (const car of cars) {
-      // Find any pit event logged for this car on this tick
-      const logEntry = raceLog.entries.find(
-        e => e.tick === race.tick && e.car === car.driver.name
-      );
-      const pitEvent = logEntry?.events.find(e => e.type === 'pit');
       entry[car.driver.name] = {
         position:    car.status === 'retired' ? null : car.position,
-        pitCompound: pitEvent ? pitEvent.compound : null,
+        pitCompound: tickPitCompound[car.driver.name] ?? null,
       };
     }
     lapChartData.push(entry);
@@ -1617,7 +1633,8 @@ export async function simulateQualiLap(car, rng, circuit, trackEvolution, onSect
       * fuelFactor
       * tyreFactor
       * weatherFactor
-      * driverFactor;
+      * driverFactor
+      * eraSpeedFactor;
 
     sectorTimes.push(+sectorTime.toFixed(3));
     lapTime += sectorTime;

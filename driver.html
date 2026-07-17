@@ -86,6 +86,7 @@
         <a href="drivers.html" class="topbar-nav-link current">DRIVERS</a>
         <a href="team.html" class="topbar-nav-link">TEAMS</a>
         <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
+        <a href="champions.html" class="topbar-nav-link">CHAMPIONS</a>
       </nav>
     </div>
     <div id="info-bar">Driver Profile</div>
@@ -151,7 +152,7 @@
     }                               from './championship.js';
     import { initRace, cars }       from './state.js';
     import {
-      runRace, initStrategies, initWeather, setCurrentCircuit, runQualifyingSession,
+      runRace, initStrategies, initWeather, setCurrentCircuit, runQualifyingSession, setFastMode,
     }                               from './simulation.js';
 
     const params        = new URLSearchParams(location.search);
@@ -162,7 +163,7 @@
 
     const simFns = {
       initRace, cars, runRace, initStrategies, initWeather,
-      setCurrentCircuit, runQualifyingSession, getSeasonSnapshot,
+      setCurrentCircuit, runQualifyingSession, getSeasonSnapshot, setFastMode,
     };
 
     const roster          = getActiveRoster(currentSeason, worldSeed);

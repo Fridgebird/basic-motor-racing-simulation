@@ -936,6 +936,46 @@
     #comm-drawer .c-entry { padding: 5px 10px; border-bottom: 1px solid var(--dim); }
     #comm-drawer .c-entry:last-child { border-bottom: none; }
 
+    /* ── Splash mode ─────────────────────────────────────────────────────────── */
+    body.splash-mode #controls,
+    body.splash-mode #tab-bar,
+    body.splash-mode #comm-wrap,
+    body.splash-mode #race-footer { display: none !important; }
+
+    #splash-label {
+      display: none;
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: var(--lo);
+      text-transform: uppercase;
+      padding: 12px 0 4px;
+    }
+    body.splash-mode #splash-label { display: block; }
+
+    #splash-cta {
+      display: none;
+      position: sticky;
+      bottom: 0;
+      padding: 48px 0 24px;
+      text-align: center;
+      background: linear-gradient(to bottom, transparent, var(--bg) 50%);
+      pointer-events: none;
+    }
+    body.splash-mode #splash-cta { display: block; }
+
+    #btn-lets-race {
+      pointer-events: all;
+      background: var(--accent);
+      color: var(--hi);
+      border: none;
+      font-size: 13px;
+      letter-spacing: 3px;
+      padding: 12px 40px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    #btn-lets-race:hover { filter: brightness(1.15); }
+
     /* ── Not available notice ─────────────────────────────────────────────────── */
     #not-available-notice {
       display: none;
@@ -949,7 +989,7 @@
     }
   </style>
 </head>
-<body>
+<body class="splash-mode">
 
   <div id="sticky-header">
 
@@ -1047,6 +1087,7 @@
 
       <!-- GRID tab (default) -->
       <div id="panel-grid" class="view-panel active">
+        <div id="splash-label">Starting Grid</div>
         <div id="visual-grid"></div>
       </div>
 
@@ -1136,6 +1177,11 @@
     </div>
 
   </div><!-- end #main-content -->
+
+  <!-- ── Splash CTA ─────────────────────────────────────────────────────────── -->
+  <div id="splash-cta">
+    <button id="btn-lets-race">LET'S RACE →</button>
+  </div>
 
   <!-- ── Footer ──────────────────────────────────────────────────────────────── -->
   <div id="race-footer">
@@ -1489,6 +1535,12 @@
       }
     }
     buildGrid();
+
+    // ── Splash → race transition ───────────────────────────────────────────────
+    document.getElementById('btn-lets-race').addEventListener('click', () => {
+      document.body.classList.remove('splash-mode');
+      switchTab('race');
+    });
 
     // ── Build standings (lazy) ─────────────────────────────────────────────────
     function buildStandings() {

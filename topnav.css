@@ -1,0 +1,50 @@
+/* ── Mobile top-nav burger ───────────────────────────────────────────────────
+   Hides .topbar-nav links on narrow screens and replaces them with a
+   hamburger button that reveals a full-width dropdown.
+   Injected by topnav.js which creates #topnav-burger dynamically.
+*/
+
+#topnav-burger {
+  display: none;
+  background: none;
+  border: 1px solid var(--border, #1e2f44);
+  color: var(--lo, #4a6a88);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 3px 9px;
+  font-family: inherit;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+#topnav-burger:hover { color: var(--mid, #8ab4d4); }
+
+@media (max-width: 640px) {
+  .topbar-nav { display: none !important; }
+  #topnav-burger { display: block; }
+
+  .topbar-nav.topnav-open {
+    display: flex !important;
+    flex-direction: column;
+    position: fixed;
+    top: 44px;
+    left: 0;
+    right: 0;
+    background: var(--bg-deep, #080c12);
+    border-bottom: 2px solid var(--accent, #cc2233);
+    z-index: 999;
+    padding: 4px 0;
+  }
+  .topbar-nav.topnav-open .topbar-nav-link {
+    display: block;
+    padding: 11px 20px;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    border-bottom: 1px solid var(--dim, #2a4055);
+    color: var(--lo, #4a6a88);
+    text-decoration: none;
+  }
+  .topbar-nav.topnav-open .topbar-nav-link:last-child { border-bottom: none; }
+  .topbar-nav.topnav-open .topbar-nav-link:hover      { color: var(--hi, #ffffff); background: var(--bg-mid, #0a0f18); }
+  .topbar-nav.topnav-open .topbar-nav-link.current    { color: var(--mid, #8ab4d4); }
+}

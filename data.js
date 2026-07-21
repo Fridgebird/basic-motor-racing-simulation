@@ -379,9 +379,9 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Riverside bends',     powerWeight: 0.03, aeroWeight: 0.05, wearWeight: 1.30, fuelWeight: 0.80, baseSectorTime: 42.0 },
-      { id: 2, label: 'Floodplain straight',  powerWeight: 0.06, aeroWeight: 0.01, wearWeight: 0.70, fuelWeight: 1.40, baseSectorTime: 48.0 },
-      { id: 3, label: 'Chicane sequence',     powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.20, fuelWeight: 0.80, baseSectorTime: 38.0 },
+      { id: 1, label: 'Riverside bends',     powerWeight: 0.03, aeroWeight: 0.05, wearWeight: 1.30, fuelWeight: 0.80, baseSectorTime: 34.0 },
+      { id: 2, label: 'Floodplain straight',  powerWeight: 0.06, aeroWeight: 0.01, wearWeight: 0.70, fuelWeight: 1.40, baseSectorTime: 39.0 },
+      { id: 3, label: 'Chicane sequence',     powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.20, fuelWeight: 0.80, baseSectorTime: 31.0 },
     ],
   },
 
@@ -405,9 +405,9 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Clifftop sweeps',      powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.20, fuelWeight: 0.85, baseSectorTime: 40.0 },
-      { id: 2, label: 'Descent section',       powerWeight: 0.05, aeroWeight: 0.02, wearWeight: 0.80, fuelWeight: 1.35, baseSectorTime: 44.0 },
-      { id: 3, label: 'Hairpin loop',          powerWeight: 0.02, aeroWeight: 0.05, wearWeight: 1.25, fuelWeight: 0.80, baseSectorTime: 36.0 },
+      { id: 1, label: 'Clifftop sweeps',      powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.20, fuelWeight: 0.85, baseSectorTime: 33.0 },
+      { id: 2, label: 'Descent section',       powerWeight: 0.05, aeroWeight: 0.02, wearWeight: 0.80, fuelWeight: 1.35, baseSectorTime: 37.0 },
+      { id: 3, label: 'Hairpin loop',          powerWeight: 0.02, aeroWeight: 0.05, wearWeight: 1.25, fuelWeight: 0.80, baseSectorTime: 30.0 },
     ],
   },
 
@@ -431,9 +431,9 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Approach straight',    powerWeight: 0.05, aeroWeight: 0.02, wearWeight: 0.75, fuelWeight: 1.35, baseSectorTime: 42.0 },
-      { id: 2, label: 'Back straight',         powerWeight: 0.06, aeroWeight: 0.01, wearWeight: 0.70, fuelWeight: 1.45, baseSectorTime: 46.0 },
-      { id: 3, label: 'Final sweeper',          powerWeight: 0.02, aeroWeight: 0.04, wearWeight: 1.20, fuelWeight: 0.80, baseSectorTime: 34.0 },
+      { id: 1, label: 'Approach straight',    powerWeight: 0.05, aeroWeight: 0.02, wearWeight: 0.75, fuelWeight: 1.35, baseSectorTime: 30.0 },
+      { id: 2, label: 'Back straight',         powerWeight: 0.06, aeroWeight: 0.01, wearWeight: 0.70, fuelWeight: 1.45, baseSectorTime: 33.0 },
+      { id: 3, label: 'Final sweeper',          powerWeight: 0.02, aeroWeight: 0.04, wearWeight: 1.20, fuelWeight: 0.80, baseSectorTime: 25.0 },
     ],
   },
 
@@ -457,8 +457,8 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Stadium section',       powerWeight: 0.03, aeroWeight: 0.05, wearWeight: 1.35, fuelWeight: 0.75, baseSectorTime: 32.0 },
-      { id: 2, label: 'Long sweeper',          powerWeight: 0.04, aeroWeight: 0.03, wearWeight: 0.90, fuelWeight: 1.15, baseSectorTime: 38.0 },
+      { id: 1, label: 'Stadium section',       powerWeight: 0.03, aeroWeight: 0.05, wearWeight: 1.35, fuelWeight: 0.75, baseSectorTime: 31.0 },
+      { id: 2, label: 'Long sweeper',          powerWeight: 0.04, aeroWeight: 0.03, wearWeight: 0.90, fuelWeight: 1.15, baseSectorTime: 37.0 },
       { id: 3, label: 'Technical infield',     powerWeight: 0.02, aeroWeight: 0.05, wearWeight: 1.35, fuelWeight: 0.75, baseSectorTime: 28.0 },
     ],
   },
@@ -483,9 +483,9 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Hillside section',      powerWeight: 0.03, aeroWeight: 0.05, wearWeight: 1.30, fuelWeight: 0.80, baseSectorTime: 30.0 },
-      { id: 2, label: 'Technical complex',     powerWeight: 0.02, aeroWeight: 0.06, wearWeight: 1.40, fuelWeight: 0.70, baseSectorTime: 28.0 },
-      { id: 3, label: 'Back straight',         powerWeight: 0.05, aeroWeight: 0.01, wearWeight: 0.80, fuelWeight: 1.35, baseSectorTime: 35.0 },
+      { id: 1, label: 'Hillside section',      powerWeight: 0.03, aeroWeight: 0.05, wearWeight: 1.30, fuelWeight: 0.80, baseSectorTime: 31.0 },
+      { id: 2, label: 'Technical complex',     powerWeight: 0.02, aeroWeight: 0.06, wearWeight: 1.40, fuelWeight: 0.70, baseSectorTime: 29.0 },
+      { id: 3, label: 'Back straight',         powerWeight: 0.05, aeroWeight: 0.01, wearWeight: 0.80, fuelWeight: 1.35, baseSectorTime: 37.0 },
     ],
   },
 
@@ -509,9 +509,9 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Fast approach',         powerWeight: 0.04, aeroWeight: 0.03, wearWeight: 0.90, fuelWeight: 1.20, baseSectorTime: 36.0 },
-      { id: 2, label: 'Technical complex',     powerWeight: 0.02, aeroWeight: 0.05, wearWeight: 1.30, fuelWeight: 0.80, baseSectorTime: 32.0 },
-      { id: 3, label: 'Back straight',         powerWeight: 0.06, aeroWeight: 0.01, wearWeight: 0.75, fuelWeight: 1.35, baseSectorTime: 38.0 },
+      { id: 1, label: 'Fast approach',         powerWeight: 0.04, aeroWeight: 0.03, wearWeight: 0.90, fuelWeight: 1.20, baseSectorTime: 32.0 },
+      { id: 2, label: 'Technical complex',     powerWeight: 0.02, aeroWeight: 0.05, wearWeight: 1.30, fuelWeight: 0.80, baseSectorTime: 29.0 },
+      { id: 3, label: 'Back straight',         powerWeight: 0.06, aeroWeight: 0.01, wearWeight: 0.75, fuelWeight: 1.35, baseSectorTime: 34.0 },
     ],
   },
 
@@ -535,9 +535,9 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Parkland section',      powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.20, fuelWeight: 0.85, baseSectorTime: 36.0 },
-      { id: 2, label: 'Cobblestone stretch',   powerWeight: 0.05, aeroWeight: 0.02, wearWeight: 1.50, fuelWeight: 1.10, baseSectorTime: 42.0 },
-      { id: 3, label: 'Hairpin loop',          powerWeight: 0.02, aeroWeight: 0.05, wearWeight: 1.35, fuelWeight: 0.75, baseSectorTime: 30.0 },
+      { id: 1, label: 'Parkland section',      powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.20, fuelWeight: 0.85, baseSectorTime: 34.0 },
+      { id: 2, label: 'Cobblestone stretch',   powerWeight: 0.05, aeroWeight: 0.02, wearWeight: 1.50, fuelWeight: 1.10, baseSectorTime: 40.0 },
+      { id: 3, label: 'Hairpin loop',          powerWeight: 0.02, aeroWeight: 0.05, wearWeight: 1.35, fuelWeight: 0.75, baseSectorTime: 28.0 },
     ],
   },
 
@@ -561,9 +561,9 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Promenade straight',    powerWeight: 0.06, aeroWeight: 0.01, wearWeight: 0.70, fuelWeight: 1.45, baseSectorTime: 24.0 },
-      { id: 2, label: 'Old-town hairpin',      powerWeight: 0.02, aeroWeight: 0.06, wearWeight: 1.45, fuelWeight: 0.70, baseSectorTime: 22.0 },
-      { id: 3, label: 'Return streets',        powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.15, fuelWeight: 0.85, baseSectorTime: 22.0 },
+      { id: 1, label: 'Promenade straight',    powerWeight: 0.06, aeroWeight: 0.01, wearWeight: 0.70, fuelWeight: 1.45, baseSectorTime: 20.0 },
+      { id: 2, label: 'Old-town hairpin',      powerWeight: 0.02, aeroWeight: 0.06, wearWeight: 1.45, fuelWeight: 0.70, baseSectorTime: 18.0 },
+      { id: 3, label: 'Return streets',        powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.15, fuelWeight: 0.85, baseSectorTime: 18.0 },
     ],
   },
 
@@ -613,9 +613,9 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Forest descent',        powerWeight: 0.04, aeroWeight: 0.03, wearWeight: 1.00, fuelWeight: 1.10, baseSectorTime: 50.0 },
-      { id: 2, label: 'Der Sprung section',    powerWeight: 0.06, aeroWeight: 0.02, wearWeight: 0.75, fuelWeight: 1.40, baseSectorTime: 56.0 },
-      { id: 3, label: 'Return sweep',          powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.20, fuelWeight: 0.80, baseSectorTime: 42.0 },
+      { id: 1, label: 'Forest descent',        powerWeight: 0.04, aeroWeight: 0.03, wearWeight: 1.00, fuelWeight: 1.10, baseSectorTime: 38.0 },
+      { id: 2, label: 'Der Sprung section',    powerWeight: 0.06, aeroWeight: 0.02, wearWeight: 0.75, fuelWeight: 1.40, baseSectorTime: 42.0 },
+      { id: 3, label: 'Return sweep',          powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.20, fuelWeight: 0.80, baseSectorTime: 32.0 },
     ],
   },
 
@@ -639,9 +639,9 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Riverside section',     powerWeight: 0.05, aeroWeight: 0.02, wearWeight: 0.80, fuelWeight: 1.35, baseSectorTime: 50.0 },
-      { id: 2, label: 'Spa district',          powerWeight: 0.04, aeroWeight: 0.03, wearWeight: 0.95, fuelWeight: 1.10, baseSectorTime: 60.0 },
-      { id: 3, label: 'Hillside loop',         powerWeight: 0.04, aeroWeight: 0.04, wearWeight: 1.10, fuelWeight: 0.95, baseSectorTime: 42.0 },
+      { id: 1, label: 'Riverside section',     powerWeight: 0.05, aeroWeight: 0.02, wearWeight: 0.80, fuelWeight: 1.35, baseSectorTime: 40.0 },
+      { id: 2, label: 'Spa district',          powerWeight: 0.04, aeroWeight: 0.03, wearWeight: 0.95, fuelWeight: 1.10, baseSectorTime: 49.0 },
+      { id: 3, label: 'Hillside loop',         powerWeight: 0.04, aeroWeight: 0.04, wearWeight: 1.10, fuelWeight: 0.95, baseSectorTime: 34.0 },
     ],
   },
 
@@ -665,9 +665,9 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Main straight',         powerWeight: 0.06, aeroWeight: 0.01, wearWeight: 0.65, fuelWeight: 1.50, baseSectorTime: 25.0 },
-      { id: 2, label: 'Back straight',         powerWeight: 0.06, aeroWeight: 0.01, wearWeight: 0.70, fuelWeight: 1.45, baseSectorTime: 26.0 },
-      { id: 3, label: 'Infield section',       powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.55, fuelWeight: 0.70, baseSectorTime: 23.0 },
+      { id: 1, label: 'Main straight',         powerWeight: 0.06, aeroWeight: 0.01, wearWeight: 0.65, fuelWeight: 1.50, baseSectorTime: 17.0 },
+      { id: 2, label: 'Back straight',         powerWeight: 0.06, aeroWeight: 0.01, wearWeight: 0.70, fuelWeight: 1.45, baseSectorTime: 18.0 },
+      { id: 3, label: 'Infield section',       powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.55, fuelWeight: 0.70, baseSectorTime: 16.0 },
     ],
   },
 
@@ -691,9 +691,9 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Harbour straight',      powerWeight: 0.05, aeroWeight: 0.02, wearWeight: 0.80, fuelWeight: 1.35, baseSectorTime: 28.0 },
-      { id: 2, label: 'Dockside section',      powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.20, fuelWeight: 0.85, baseSectorTime: 30.0 },
-      { id: 3, label: 'Tram district',         powerWeight: 0.02, aeroWeight: 0.05, wearWeight: 1.40, fuelWeight: 0.75, baseSectorTime: 30.0 },
+      { id: 1, label: 'Harbour straight',      powerWeight: 0.05, aeroWeight: 0.02, wearWeight: 0.80, fuelWeight: 1.35, baseSectorTime: 25.0 },
+      { id: 2, label: 'Dockside section',      powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.20, fuelWeight: 0.85, baseSectorTime: 27.0 },
+      { id: 3, label: 'Tram district',         powerWeight: 0.02, aeroWeight: 0.05, wearWeight: 1.40, fuelWeight: 0.75, baseSectorTime: 27.0 },
     ],
   },
 
@@ -717,9 +717,9 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Long straight',         powerWeight: 0.06, aeroWeight: 0.01, wearWeight: 0.75, fuelWeight: 1.45, baseSectorTime: 34.0 },
-      { id: 2, label: 'Back section',          powerWeight: 0.04, aeroWeight: 0.03, wearWeight: 1.00, fuelWeight: 1.10, baseSectorTime: 38.0 },
-      { id: 3, label: 'Technical complex',     powerWeight: 0.02, aeroWeight: 0.05, wearWeight: 1.40, fuelWeight: 0.70, baseSectorTime: 30.0 },
+      { id: 1, label: 'Long straight',         powerWeight: 0.06, aeroWeight: 0.01, wearWeight: 0.75, fuelWeight: 1.45, baseSectorTime: 25.0 },
+      { id: 2, label: 'Back section',          powerWeight: 0.04, aeroWeight: 0.03, wearWeight: 1.00, fuelWeight: 1.10, baseSectorTime: 28.0 },
+      { id: 3, label: 'Technical complex',     powerWeight: 0.02, aeroWeight: 0.05, wearWeight: 1.40, fuelWeight: 0.70, baseSectorTime: 22.0 },
     ],
   },
 
@@ -743,9 +743,9 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Waterfront section',    powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.10, fuelWeight: 0.85, baseSectorTime: 22.0 },
-      { id: 2, label: 'Tram district',         powerWeight: 0.02, aeroWeight: 0.06, wearWeight: 1.50, fuelWeight: 0.70, baseSectorTime: 24.0 },
-      { id: 3, label: 'Wan Chai chicane',      powerWeight: 0.02, aeroWeight: 0.05, wearWeight: 1.40, fuelWeight: 0.70, baseSectorTime: 24.0 },
+      { id: 1, label: 'Waterfront section',    powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.10, fuelWeight: 0.85, baseSectorTime: 25.0 },
+      { id: 2, label: 'Tram district',         powerWeight: 0.02, aeroWeight: 0.06, wearWeight: 1.50, fuelWeight: 0.70, baseSectorTime: 27.0 },
+      { id: 3, label: 'Wan Chai chicane',      powerWeight: 0.02, aeroWeight: 0.05, wearWeight: 1.40, fuelWeight: 0.70, baseSectorTime: 27.0 },
     ],
   },
 
@@ -769,9 +769,9 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Lakeside roads',        powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.15, fuelWeight: 0.85, baseSectorTime: 38.0 },
-      { id: 2, label: 'Forest straight',       powerWeight: 0.06, aeroWeight: 0.02, wearWeight: 0.75, fuelWeight: 1.40, baseSectorTime: 44.0 },
-      { id: 3, label: 'Return section',        powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.20, fuelWeight: 0.80, baseSectorTime: 34.0 },
+      { id: 1, label: 'Lakeside roads',        powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.15, fuelWeight: 0.85, baseSectorTime: 35.0 },
+      { id: 2, label: 'Forest straight',       powerWeight: 0.06, aeroWeight: 0.02, wearWeight: 0.75, fuelWeight: 1.40, baseSectorTime: 40.0 },
+      { id: 3, label: 'Return section',        powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.20, fuelWeight: 0.80, baseSectorTime: 31.0 },
     ],
   },
 
@@ -795,9 +795,9 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Forest approach',       powerWeight: 0.04, aeroWeight: 0.04, wearWeight: 1.30, fuelWeight: 0.90, baseSectorTime: 32.0 },
-      { id: 2, label: 'Timber straight',       powerWeight: 0.07, aeroWeight: 0.02, wearWeight: 1.00, fuelWeight: 1.35, baseSectorTime: 38.0 },
-      { id: 3, label: 'Cascade loop',          powerWeight: 0.02, aeroWeight: 0.06, wearWeight: 1.55, fuelWeight: 0.75, baseSectorTime: 28.0 },
+      { id: 1, label: 'Forest approach',       powerWeight: 0.04, aeroWeight: 0.04, wearWeight: 1.30, fuelWeight: 0.90, baseSectorTime: 27.0 },
+      { id: 2, label: 'Timber straight',       powerWeight: 0.07, aeroWeight: 0.02, wearWeight: 1.00, fuelWeight: 1.35, baseSectorTime: 32.0 },
+      { id: 3, label: 'Cascade loop',          powerWeight: 0.02, aeroWeight: 0.06, wearWeight: 1.55, fuelWeight: 0.75, baseSectorTime: 24.0 },
     ],
   },
 
@@ -821,9 +821,9 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Government quarter',    powerWeight: 0.02, aeroWeight: 0.05, wearWeight: 1.35, fuelWeight: 0.75, baseSectorTime: 26.0 },
-      { id: 2, label: 'Shalimar approach',     powerWeight: 0.04, aeroWeight: 0.03, wearWeight: 1.10, fuelWeight: 0.95, baseSectorTime: 28.0 },
-      { id: 3, label: 'Park gates',            powerWeight: 0.02, aeroWeight: 0.06, wearWeight: 1.45, fuelWeight: 0.70, baseSectorTime: 26.0 },
+      { id: 1, label: 'Government quarter',    powerWeight: 0.02, aeroWeight: 0.05, wearWeight: 1.35, fuelWeight: 0.75, baseSectorTime: 28.0 },
+      { id: 2, label: 'Shalimar approach',     powerWeight: 0.04, aeroWeight: 0.03, wearWeight: 1.10, fuelWeight: 0.95, baseSectorTime: 31.0 },
+      { id: 3, label: 'Park gates',            powerWeight: 0.02, aeroWeight: 0.06, wearWeight: 1.45, fuelWeight: 0.70, baseSectorTime: 28.0 },
     ],
   },
 
@@ -847,9 +847,9 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Harbour streets',       powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.20, fuelWeight: 0.85, baseSectorTime: 26.0 },
-      { id: 2, label: 'Historic centre',       powerWeight: 0.02, aeroWeight: 0.06, wearWeight: 1.50, fuelWeight: 0.70, baseSectorTime: 28.0 },
-      { id: 3, label: 'Coastal return',        powerWeight: 0.04, aeroWeight: 0.03, wearWeight: 1.10, fuelWeight: 0.95, baseSectorTime: 28.0 },
+      { id: 1, label: 'Harbour streets',       powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.20, fuelWeight: 0.85, baseSectorTime: 28.0 },
+      { id: 2, label: 'Historic centre',       powerWeight: 0.02, aeroWeight: 0.06, wearWeight: 1.50, fuelWeight: 0.70, baseSectorTime: 30.0 },
+      { id: 3, label: 'Coastal return',        powerWeight: 0.04, aeroWeight: 0.03, wearWeight: 1.10, fuelWeight: 0.95, baseSectorTime: 29.0 },
     ],
   },
 
@@ -873,9 +873,9 @@ export const CIRCUITS = {
     baseTyreChangeTime: 6,
     fuelRigRate:        0.12,
     sectors: [
-      { id: 1, label: 'Main straight',         powerWeight: 0.06, aeroWeight: 0.01, wearWeight: 0.70, fuelWeight: 1.45, baseSectorTime: 44.0 },
-      { id: 2, label: 'Back section',          powerWeight: 0.04, aeroWeight: 0.03, wearWeight: 0.90, fuelWeight: 1.15, baseSectorTime: 44.0 },
-      { id: 3, label: 'Return complex',        powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.20, fuelWeight: 0.80, baseSectorTime: 38.0 },
+      { id: 1, label: 'Main straight',         powerWeight: 0.06, aeroWeight: 0.01, wearWeight: 0.70, fuelWeight: 1.45, baseSectorTime: 32.0 },
+      { id: 2, label: 'Back section',          powerWeight: 0.04, aeroWeight: 0.03, wearWeight: 0.90, fuelWeight: 1.15, baseSectorTime: 32.0 },
+      { id: 3, label: 'Return complex',        powerWeight: 0.03, aeroWeight: 0.04, wearWeight: 1.20, fuelWeight: 0.80, baseSectorTime: 28.0 },
     ],
   },
 };

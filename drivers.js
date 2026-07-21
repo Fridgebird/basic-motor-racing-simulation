@@ -403,7 +403,7 @@ export const DRIVER_POOL = [
   { id: 100, firstName: 'Roberto',   lastName: 'Vitale',    nationality: 'italian',       gender: 'male',   rookieAge: 21 },
   { id: 101, firstName: 'Sunita',    lastName: 'Nair',      nationality: 'indian',        gender: 'female', rookieAge: 22 },
   { id: 102, firstName: 'Piotr',     lastName: 'Nowak',     nationality: 'polish',        gender: 'male',   rookieAge: 20 },
-  { id: 103, firstName: 'Kwame',     lastName: 'Asante',    nationality: 'ghanaian',      gender: 'male',   rookieAge: 21 },
+  { id: 103, firstName: 'Kofi',      lastName: 'Asante',    nationality: 'ghanaian',      gender: 'male',   rookieAge: 21 },
   { id: 104, firstName: 'Lucia',     lastName: 'Vidal',     nationality: 'spanish',       gender: 'female', rookieAge: 22 },
   { id: 105, firstName: 'Emilio',    lastName: 'Ramirez',   nationality: 'mexican',       gender: 'male',   rookieAge: 20 },
   { id: 106, firstName: 'Sigrid',    lastName: 'Berg',      nationality: 'norwegian',     gender: 'female', rookieAge: 21 },

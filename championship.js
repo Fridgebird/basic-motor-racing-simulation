@@ -208,11 +208,12 @@ export function retreatDevYear() {
  * Used by the dev bar "RESET WORLD" button after simulation tuning.
  */
 export function resetWorld() {
-  localStorage.removeItem('smr_championship');
+  _seasonCache = {};
+  localStorage.removeItem('smr_championship'); // legacy key cleanup
   const toRemove = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key && (key.startsWith('smr_quali_') || key.startsWith('smr_season_summary_')))
+    if (key && (key.startsWith('smr_quali_') || key.startsWith('smr_season_summary_') || key.startsWith('smr_races_')))
       toRemove.push(key);
   }
   toRemove.forEach(k => localStorage.removeItem(k));
@@ -228,10 +229,7 @@ export function resetWorld() {
  *   Array sorted by finishing position (index 0 = race winner).
  */
 export function addRaceResult(season, round, finishOrder) {
-  const state = loadChampionshipState();
-
-  if (!state.seasons[season]) state.seasons[season] = { races: {}, drivers: {}, constructors: {} };
-  const s = state.seasons[season];
+  const s = loadSeasonState(season);
 
   // Don't double-count if result already stored
   if (s.races[round]) return;
@@ -254,10 +252,8 @@ export function addRaceResult(season, round, finishOrder) {
   });
 
   // Accumulate constructor points (top two cars per team score)
-  const teamTally = {};
   finishOrder.forEach((entry, i) => {
     const pts = POINTS_TABLE[i] || 0;
-    if (!teamTally[entry.teamId]) teamTally[entry.teamId] = 0;
     // Each team's top two finishers score (like historical constructors rules)
     const scored = s.races[round].filter(r => r.teamId === entry.teamId && r.points > 0).length;
     if (scored <= 2) {
@@ -271,7 +267,7 @@ export function addRaceResult(season, round, finishOrder) {
     if (!s.constructors[entry.teamId]) s.constructors[entry.teamId] = { points: 0, wins: 0 };
   }
 
-  saveChampionshipState(state);
+  saveSeasonState(season, s);
 }
 
 /**
@@ -279,8 +275,7 @@ export function addRaceResult(season, round, finishOrder) {
  * @returns {{ drivers: Array, constructors: Array, races: Object }}
  */
 export function getStandings(season) {
-  const state = loadChampionshipState();
-  const s = state.seasons[season] || { races: {}, drivers: {}, constructors: {} };
+  const s = loadSeasonState(season);
 
   // Build name→driverId map from stored race entries
   const nameToId = {};
@@ -316,8 +311,7 @@ export function loadQualiResults(season, round) {
 
 /** True if a race result has been stored for this season/round */
 export function hasRaceResult(season, round) {
-  const state = loadChampionshipState();
-  return !!(state.seasons[season] && state.seasons[season].races[round]);
+  return !!loadSeasonState(season).races[round];
 }
 
 // ─── Silent result computation ────────────────────────────────────────────────
@@ -334,79 +328,78 @@ export function hasRaceResult(season, round) {
  * @param {{ initRace, cars, runRace, initStrategies, initWeather, setCurrentCircuit, runQualifyingSession, getSeasonSnapshot }} simFns
  */
 export async function ensurePastResultsCached(season, simFns) {
-  const { initRace, cars, runRace, initStrategies, initWeather, setCurrentCircuit, runQualifyingSession, getSeasonSnapshot } = simFns;
-  const todayOffset = getTodayDayOffset();
-  const numRounds   = Math.max(...SEASON_SCHEDULE.map(e => e.round));
-  const seasonStart = (season - 1) * numRounds;
+  const { initRace, cars, runRace, initStrategies, initWeather, setCurrentCircuit,
+          runQualifyingSession, getSeasonSnapshot, setFastMode } = simFns;
+  if (setFastMode) setFastMode(true);
+  try {
+    const todayOffset = getTodayDayOffset();
+    const numRounds   = Math.max(...SEASON_SCHEDULE.map(e => e.round));
+    const seasonStart = (season - 1) * numRounds;
 
-  // Resolve season-accurate stats once per season (snapshot is same for all rounds)
-  const snapshot = getSeasonSnapshot ? getSeasonSnapshot(season, getWorldSeed()) : null;
+    const snapshot = getSeasonSnapshot ? getSeasonSnapshot(season, getWorldSeed()) : null;
 
-  for (let r = 1; r <= numRounds; r++) {
-    const absOffset = seasonStart + (r - 1);
-    if (absOffset >= todayOffset) break;   // skip today's and future rounds
+    for (let r = 1; r <= numRounds; r++) {
+      const absOffset = seasonStart + (r - 1);
+      if (absOffset >= todayOffset) break;
 
-    const circuitId = SEASON_SCHEDULE.find(e => e.round === r).circuitId;
-    const circuit   = CIRCUITS[circuitId];
+      const circuitId = SEASON_SCHEDULE.find(e => e.round === r).circuitId;
+      const circuit   = CIRCUITS[circuitId];
 
-    // ── Qualifying ─────────────────────────────────────────────────────────
-    if (!loadQualiResults(season, r)) {
-      const qualiEvent = getEventForRound(season, r, 'qualifying');
-      const qualiSeed  = getSeedForEvent(qualiEvent, getWorldSeed());
-      setCurrentCircuit(circuit, 1929 + season);
-      const rng     = initRace(qualiSeed, null, circuit, snapshot);
-      const results = await runQualifyingSession(rng, circuit);
-      saveQualiResults(season, r, results);
+      if (!hasRaceResult(season, r)) {
+        // Run qualifying in-memory for the grid — not saved to localStorage.
+        // Saves ~4KB×20 rounds per season; results.html only shows live-watched quali.
+        const qualiEvent = getEventForRound(season, r, 'qualifying');
+        const qualiSeed  = getSeedForEvent(qualiEvent, getWorldSeed());
+        setCurrentCircuit(circuit, 1929 + season);
+        const qRng        = initRace(qualiSeed, null, circuit, snapshot);
+        const qualiResults = await runQualifyingSession(qRng, circuit);
+
+        const raceEvent = getEventForRound(season, r, 'race');
+        const raceSeed  = getSeedForEvent(raceEvent, getWorldSeed());
+        setCurrentCircuit(circuit, 1929 + season);
+        const rng = initRace(raceSeed, qualiResults, circuit, snapshot);
+        initWeather(rng);
+        initStrategies(rng);
+        runRace(rng);
+        const finishers = cars.filter(c => c.status !== 'retired')
+                              .sort((a, b) => a.position - b.position);
+        const leader = finishers[0];
+        const finishOrder = [...cars]
+          .sort((a, b) => {
+            if (a.status === 'retired' && b.status !== 'retired') return 1;
+            if (b.status === 'retired' && a.status !== 'retired') return -1;
+            return a.position - b.position;
+          })
+          .map(car => ({
+            driverId:      car.driver.id,
+            driverName:    car.driver.name,
+            teamId:        car.team.id,
+            position:      car.position,
+            retired:       car.status === 'retired',
+            gap:           (car.status !== 'retired' && leader)
+                             ? +(car.cumulativeTime - leader.cumulativeTime).toFixed(3)
+                             : null,
+            stops:         car.stopsMade,
+            gridPosition:  car.gridPosition,
+            lapsCompleted: car.status === 'retired' ? (car.retiredLap ?? 0) : circuit.totalLaps,
+            dnfReason:     car.retiredReason ?? null,
+            dnfLabel:      car.status === 'retired' ? (car.degradedLabel ?? null) : null,
+          }));
+        addRaceResult(season, r, finishOrder);
+      }
     }
 
-    // ── Race ───────────────────────────────────────────────────────────────
-    if (!hasRaceResult(season, r)) {
-      const raceEvent    = getEventForRound(season, r, 'race');
-      const raceSeed     = getSeedForEvent(raceEvent, getWorldSeed());
-      const qualiResults = loadQualiResults(season, r);
-      setCurrentCircuit(circuit, 1929 + season);
-      const rng = initRace(raceSeed, qualiResults, circuit, snapshot);
-      initWeather(rng);
-      initStrategies(rng);
-      runRace(rng);
-      const finishers = cars.filter(c => c.status !== 'retired')
-                            .sort((a, b) => a.position - b.position);
-      const leader = finishers[0];
-      const finishOrder = [...cars]
-        .sort((a, b) => {
-          if (a.status === 'retired' && b.status !== 'retired') return 1;
-          if (b.status === 'retired' && a.status !== 'retired') return -1;
-          return a.position - b.position;
-        })
-        .map(car => ({
-          driverId:      car.driver.id,
-          driverName:    car.driver.name,
-          teamId:        car.team.id,
-          position:      car.position,
-          retired:       car.status === 'retired',
-          gap:           (car.status !== 'retired' && leader)
-                           ? +(car.cumulativeTime - leader.cumulativeTime).toFixed(3)
-                           : null,
-          stops:         car.stopsMade,
-          gridPosition:  car.gridPosition,
-          lapsCompleted: car.status === 'retired' ? (car.retiredLap ?? 0) : circuit.totalLaps,
-          dnfReason:     car.retiredReason ?? null,
-          dnfLabel:      car.status === 'retired' ? (car.degradedLabel ?? null) : null,
-        }));
-      addRaceResult(season, r, finishOrder);
+    const isSeasonComplete = (seasonStart + numRounds - 1) < todayOffset;
+    if (isSeasonComplete) {
+      if (!loadSeasonSummary(season)) {
+        saveSeasonSummary(season, buildSeasonSummary(season));
+      }
+    } else {
+      const staleKey = SEASON_SUMMARY_KEY(season);
+      if (localStorage.getItem(staleKey)) localStorage.removeItem(staleKey);
     }
-  }
-
-  // Build and cache a compact season summary for profile pages.
-  // Only write for fully-completed seasons; clear any stale summary for in-progress ones.
-  const isSeasonComplete = (seasonStart + numRounds - 1) < todayOffset;
-  if (isSeasonComplete) {
-    if (!loadSeasonSummary(season)) {
-      saveSeasonSummary(season, buildSeasonSummary(season));
-    }
-  } else {
-    const staleKey = SEASON_SUMMARY_KEY(season);
-    if (localStorage.getItem(staleKey)) localStorage.removeItem(staleKey);
+  } finally {
+    if (setFastMode) setFastMode(false);
   }
 }
 
@@ -419,8 +412,7 @@ export async function ensurePastResultsCached(season, simFns) {
  * @returns {{ drivers: Array, constructors: Array }}
  */
 export function getStandingsThroughRound(season, maxRound) {
-  const state = loadChampionshipState();
-  const s     = state.seasons[season] || { races: {} };
+  const s = loadSeasonState(season);
 
   const drivers      = {};
   const constructors = {};
@@ -493,8 +485,7 @@ export function loadSeasonSummary(season) {
  * scans s.races for raceStarts, retirements, and driverId mappings.
  */
 function buildSeasonSummary(season) {
-  const state = loadChampionshipState();
-  const s = state.seasons[season] || { races: {}, drivers: {}, constructors: {} };
+  const s = loadSeasonState(season);
 
   // Build name→id map and count raceStarts/retirements from raw results
   const nameToId  = {};
@@ -568,14 +559,23 @@ export function getConstructorHistory(teamId) {
 }
 
 // ─── Championship state localStorage ─────────────────────────────────────────
+// Per-season keys keep each season's data small (~50KB) and independent,
+// preventing localStorage quota exhaustion as history grows across many seasons.
 
-const CHAMP_KEY = 'smr_championship';
+const RACES_KEY = season => `smr_races_${season}`;
 
-function loadChampionshipState() {
-  const raw = localStorage.getItem(CHAMP_KEY);
-  return raw ? JSON.parse(raw) : { seasons: {} };
+// In-memory cache: avoids repeated JSON.parse of the same season within one run.
+let _seasonCache = {};
+
+function loadSeasonState(season) {
+  if (_seasonCache[season]) return _seasonCache[season];
+  const raw = localStorage.getItem(RACES_KEY(season));
+  const state = raw ? JSON.parse(raw) : { races: {}, drivers: {}, constructors: {} };
+  _seasonCache[season] = state;
+  return state;
 }
 
-function saveChampionshipState(state) {
-  localStorage.setItem(CHAMP_KEY, JSON.stringify(state));
+function saveSeasonState(season, state) {
+  _seasonCache[season] = state;
+  localStorage.setItem(RACES_KEY(season), JSON.stringify(state));
 }

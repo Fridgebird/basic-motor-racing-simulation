@@ -395,6 +395,9 @@ export function tick(rng) {
   // In fast mode (background history computation) skip these entirely.
   const preTickPositions = fastMode ? null : new Map(cars.map(c => [c.driver.name, c.position]));
 
+  // Clear last sector's failed-overtake indicator on every car
+  for (const car of cars) car.attemptedOvertake = false;
+
   // Track pit compounds for lap chart — avoids O(N) raceLog.entries.find per car per lap.
   const tickPitCompound = {};
 
@@ -858,6 +861,7 @@ export function tick(rng) {
       } else {
         // Failed divebomb — always pay time penalty, then check for collision.
         behind.cumulativeTime += DIVEBOMB_FAIL_PENALTY;
+        behind.attemptedOvertake = true;
         const logEvents = [{ type: 'overtake', method: 'divebomb', passed: ahead.driver.name,
                              result: 'failed', gap: +gap.toFixed(3),
                              prob: +prob.toFixed(3), roll: +roll.toFixed(4) }];
@@ -926,6 +930,7 @@ export function tick(rng) {
         });
       } else {
         behind.cumulativeTime += eraRawFailPenalty;
+        behind.attemptedOvertake = true;
         if (!fastMode) raceLog.entries.push({
           tick: race.tick, lap: race.lap, sector: race.sector,
           car: behind.driver.name,

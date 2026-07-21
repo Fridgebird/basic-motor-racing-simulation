@@ -209,8 +209,9 @@ export function initRace(seed, qualiResults = null, circuit = null, snapshot = n
       currentSectorTimes: [],     // sector times building up within the current lap
 
       // ── Race status ───────────────────────────────────────────────────────
-      status:        'racing',  // 'racing' | 'pitted' | 'retired'
-      retiredReason: null,      // 'mechanical' | 'crash'
+      status:           'racing',  // 'racing' | 'pitted' | 'retired'
+      retiredReason:    null,      // 'mechanical' | 'crash'
+      attemptedOvertake: false,    // true for one sector tick when an overtake attempt failed
 
       // ── Leaderboard display ───────────────────────────────────────────────
       position:     0,     // 1–24; set by updatePositions()

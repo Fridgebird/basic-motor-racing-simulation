@@ -415,6 +415,12 @@ export class Renderer {
           posTd.textContent = `P${car.position}`;
           if (car.position === 1)      posTd.classList.add('p1');
           else if (car.position === 2) posTd.classList.add('p2');
+          if (car.attemptedOvertake) {
+            const arrow = document.createElement('span');
+            arrow.textContent = '↑';
+            arrow.style.cssText = 'color:#00cc77;font-size:9px;margin-left:2px;vertical-align:middle;';
+            posTd.appendChild(arrow);
+          }
         }
         tr.appendChild(posTd);
       }

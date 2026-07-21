@@ -966,6 +966,7 @@
       color: var(--lo);
       text-transform: uppercase;
       padding: 12px 0 4px;
+      text-align: center;
     }
     body.splash-mode #splash-label { display: block; }
 
@@ -1479,8 +1480,7 @@
         const pIdx       = driverSnap?.portraitIndex ?? null;
         const teamData   = TEAMS.find(t => t.id === r.teamId);
         const imageId    = teamData?.carImageId || (r.teamId || '').toLowerCase();
-        const carState   = cars.find(c => c.driver.name === r.driverName || c.driver.id === r.driverId);
-        const compound   = carState?.compound ?? null;
+        const compound   = cars[pos - 1]?.compound ?? null;
 
         const timeStr = r.lapTime ? fmtQualTime(r.lapTime) : null;
         const gapStr  = !timeStr  ? '–'

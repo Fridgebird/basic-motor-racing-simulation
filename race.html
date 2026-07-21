@@ -621,9 +621,23 @@
 
     .vg-card {
       border: 1px solid var(--border);
-      border-left-width: 3px;
       background: var(--bg-mid);
       overflow: hidden;
+    }
+    .vg-colour-strip {
+      width: 4px;
+      align-self: stretch;
+      flex-shrink: 0;
+      border-radius: 1px;
+    }
+    .vg-tyre-start {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 3px;
+      font-size: 9px;
+      color: var(--lo);
+      letter-spacing: 1px;
     }
     .vg-main {
       display: flex;
@@ -939,8 +953,11 @@
     /* ── Splash mode ─────────────────────────────────────────────────────────── */
     body.splash-mode #controls,
     body.splash-mode #tab-bar,
-    body.splash-mode #comm-wrap,
-    body.splash-mode #race-footer { display: none !important; }
+    body.splash-mode #comm-wrap { display: none !important; }
+
+    body.splash-mode #race-info-bar { justify-content: center; }
+    body.splash-mode .race-info-left { justify-content: center; }
+    body.splash-mode #fastest-lap-display { display: none !important; }
 
     #splash-label {
       display: none;
@@ -1181,16 +1198,6 @@
   <!-- ── Splash CTA ─────────────────────────────────────────────────────────── -->
   <div id="splash-cta">
     <button id="btn-lets-race">LET'S RACE →</button>
-  </div>
-
-  <!-- ── Footer ──────────────────────────────────────────────────────────────── -->
-  <div id="race-footer">
-    <div id="legend">
-      <span class="leg-item"><span class="leg-gain">■</span>GAINED</span>
-      <span class="leg-item"><span class="leg-lose">■</span>LOST</span>
-      <span class="leg-item"><span class="leg-pit">■</span>PIT</span>
-      <span class="leg-item"><span class="leg-ret">■</span>RETIRED</span>
-    </div>
   </div>
 
   <script type="module">
@@ -1472,6 +1479,8 @@
         const pIdx       = driverSnap?.portraitIndex ?? null;
         const teamData   = TEAMS.find(t => t.id === r.teamId);
         const imageId    = teamData?.carImageId || (r.teamId || '').toLowerCase();
+        const carState   = cars.find(c => c.driver.name === r.driverName || c.driver.id === r.driverId);
+        const compound   = carState?.compound ?? null;
 
         const timeStr = r.lapTime ? fmtQualTime(r.lapTime) : null;
         const gapStr  = !timeStr  ? '–'
@@ -1494,16 +1503,23 @@
           portraitHtml = `<div class="vg-portrait" style="background:${colour}22;display:flex;align-items:center;justify-content:center;font-size:12px;color:${colour};">${initials}</div>`;
         }
 
+        const COMPOUND_PIP  = { soft: 'pip-s', medium: 'pip-m', hard: 'pip-h', wet: 'pip-w' };
+        const COMPOUND_ABBR = { soft: 'SOFT',  medium: 'MED',   hard: 'HARD',  wet: 'WET'  };
+        const tyreHtml = compound
+          ? `<div class="vg-tyre-start"><span class="pip ${COMPOUND_PIP[compound] ?? ''}"></span>${COMPOUND_ABBR[compound] ?? compound.toUpperCase()}</div>`
+          : '';
+
         const card = document.createElement('div');
         card.className = 'vg-card';
-        card.style.borderLeftColor = colour;
         card.innerHTML = `
           <div class="vg-main">
             <div class="vg-pos${pos === 1 ? ' p1' : ''}">${pos}</div>
+            <div class="vg-colour-strip" style="background:${colour}"></div>
             ${portraitHtml}
             <div class="vg-info">
               <div class="vg-name">${(r.driverName ?? '').toUpperCase()}</div>
               <div class="vg-team-label">${label}</div>
+              ${tyreHtml}
               <div class="vg-time ${timeStr ? '' : 'vg-notime'}">${timeStr ?? 'NO TIME'}<span class="vg-gap">${gapStr}</span></div>
             </div>
             <div class="vg-car">

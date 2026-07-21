@@ -1550,8 +1550,6 @@
         container.appendChild(pair);
       }
     }
-    buildGrid();
-
     // ── Splash → race transition ───────────────────────────────────────────────
     document.getElementById('btn-lets-race').addEventListener('click', () => {
       document.body.classList.remove('splash-mode');
@@ -1661,6 +1659,7 @@
       updateWeatherDisplay();
     }
     renderer.render();
+    buildGrid();
 
     // ── startRace ──────────────────────────────────────────────────────────────
     function startRace() {

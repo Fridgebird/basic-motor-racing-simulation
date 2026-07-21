@@ -212,6 +212,7 @@ export function initRace(seed, qualiResults = null, circuit = null, snapshot = n
       status:           'racing',  // 'racing' | 'pitted' | 'retired'
       retiredReason:    null,      // 'mechanical' | 'crash'
       attemptedOvertake: false,    // true for one sector tick when an overtake attempt failed
+      botchedPit:        false,    // true for one sector tick after a botched pit stop
 
       // ── Leaderboard display ───────────────────────────────────────────────
       position:     0,     // 1–24; set by updatePositions()

@@ -395,8 +395,8 @@ export function tick(rng) {
   // In fast mode (background history computation) skip these entirely.
   const preTickPositions = fastMode ? null : new Map(cars.map(c => [c.driver.name, c.position]));
 
-  // Clear last sector's failed-overtake indicator on every car
-  for (const car of cars) car.attemptedOvertake = false;
+  // Clear last sector's transient indicators on every car
+  for (const car of cars) { car.attemptedOvertake = false; car.botchedPit = false; }
 
   // Track pit compounds for lap chart — avoids O(N) raceLog.entries.find per car per lap.
   const tickPitCompound = {};
@@ -1458,6 +1458,7 @@ function executePitStop(car, rng) {
     botchExtra             = +(5 + rng() * 20).toFixed(1);
     effectiveTyreChange    = tyreChangeTime + botchExtra;
     netTimeLost            = +(Math.max(effectiveTyreChange, fuellingTime) - Math.max(tyreChangeTime, fuellingTime)).toFixed(1);
+    car.botchedPit         = true;
   }
 
   const stationaryTime = +Math.max(effectiveTyreChange, fuellingTime).toFixed(1);

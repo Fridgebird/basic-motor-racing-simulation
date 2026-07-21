@@ -421,6 +421,12 @@ export class Renderer {
             arrow.style.cssText = 'color:#00cc77;margin-left:2px;vertical-align:middle;';
             posTd.appendChild(arrow);
           }
+          if (car.botchedPit) {
+            const bang = document.createElement('span');
+            bang.textContent = '!';
+            bang.style.cssText = 'color:#ff8800;margin-left:2px;vertical-align:middle;';
+            posTd.appendChild(bang);
+          }
         }
         tr.appendChild(posTd);
       }

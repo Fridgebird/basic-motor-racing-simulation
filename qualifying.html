@@ -257,7 +257,8 @@
       background: var(--bg-mid);
       border: 1px solid var(--border);
       border-radius: 3px;
-      min-height: 48px;
+      height: 68px;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -371,8 +372,27 @@
       margin-bottom: 10px;
       font-size: 10px;
       line-height: 1.7;
-      min-height: 0;
+      height: 76px;
+      overflow-y: auto;
       letter-spacing: 0.04em;
+    }
+    #quali-commentary::-webkit-scrollbar { display: none; }
+
+    /* ── Driver car image ────────────────────────────────────────────────────── */
+    #driver-car-image {
+      width: 90px;
+      height: 48px;
+      flex-shrink: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    #driver-car-image img {
+      max-height: 44px;
+      max-width: 90px;
+      object-fit: contain;
+      object-position: right center;
     }
     .qc-perfect  { color: var(--mid); }
     .qc-sloppy   { color: var(--lo); }
@@ -455,9 +475,12 @@
       <div id="driver-info-row">
         <div id="driver-colour-bar"></div>
         <div id="driver-portrait"></div>
-        <div>
-          <div id="current-driver-name"></div>
+        <div style="flex:1;min-width:0;overflow:hidden">
+          <div id="current-driver-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
           <div id="current-team-name"></div>
+        </div>
+        <div id="driver-car-image">
+          <img src="car_sprites_profile_1930_dbr_8_transparent.png" alt="" onerror="this.parentElement.style.display='none'">
         </div>
       </div>
 
@@ -749,6 +772,7 @@
       el.className = `qc-${style}`;
       el.textContent = text;
       feed.appendChild(el);
+      feed.scrollTop = feed.scrollHeight;
     }
 
     // ── Weather display helpers ────────────────────────────────────────────────

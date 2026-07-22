@@ -240,6 +240,18 @@
     .rg-ret { color: var(--dim) !important; }
     .rg-current-col { background: rgba(255,255,255,0.03); }
 
+    /* ── Driver hero card (race winner / championship leader) ── */
+    .hero-card { margin-bottom: 16px; }
+    .hc-label { font-size: 8px; letter-spacing: 3px; color: var(--lo); text-transform: uppercase; margin-bottom: 6px; }
+    .hc-inner { display: flex; align-items: stretch; background: var(--bg-mid); border: 1px solid var(--border); overflow: hidden; min-height: 72px; }
+    .hc-strip { width: 4px; flex-shrink: 0; }
+    .hc-portrait { width: 72px; flex-shrink: 0; background-color: var(--dim); display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--lo); }
+    .hc-info { flex: 1; min-width: 100px; padding: 12px 14px; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+    .hc-name { font-size: 15px; color: var(--hi); letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hc-team { font-size: 9px; color: var(--lo); letter-spacing: 1px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hc-car { flex: 0 1 140px; min-width: 0; overflow: hidden; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; }
+    .hc-car img { max-height: 60px; max-width: 100%; object-fit: contain; object-position: right center; }
+
     /* ── Footer ── */
     .results-footer {
       display: flex;
@@ -478,6 +490,40 @@
 
       if (nextBtn) { nextBtn.textContent = `R${round + 1} →`; footer.appendChild(nextBtn); }
 
+      // ── Hero card builder ────────────────────────────────────────────────────
+      function buildHeroCard(labelText, driverId, driverName, teamId, teamLabelStr, colour) {
+        const driver = DRIVER_POOL.find(d => d.id === driverId) ??
+                       DRIVER_POOL.find(d => `${d.firstName} ${d.lastName}` === driverName);
+        let portraitStyle = `background:${colour}22;`;
+        let initials = (driverName || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+        let showInitials = true;
+        if (driver && driver.portraitIndex != null && driver.portraitIndex < 32) {
+          const COLS = 4, pIdx = driver.portraitIndex;
+          const sheet = Math.floor(pIdx / 16) + 1;
+          const pos = pIdx % 16, col = pos % COLS, row = Math.floor(pos / COLS);
+          const bgX = (col / (COLS - 1) * 100).toFixed(3) + '%';
+          const bgY = (row / (COLS - 1) * 100).toFixed(3) + '%';
+          portraitStyle = `background-image:url('driver_sprites_16x16_${sheet}.webp');background-size:400% 400%;background-position:${bgX} ${bgY};background-color:${colour}22;`;
+          showInitials = false;
+        }
+        const card = document.createElement('div');
+        card.className = 'hero-card';
+        card.innerHTML = `
+          <div class="hc-label">${labelText}</div>
+          <div class="hc-inner">
+            <div class="hc-strip" style="background:${colour}"></div>
+            <div class="hc-portrait" style="${portraitStyle}">${showInitials ? initials : ''}</div>
+            <div class="hc-info">
+              <div class="hc-name">${(driverName || '').toUpperCase()}</div>
+              <div class="hc-team">${teamLabelStr}</div>
+            </div>
+            <div class="hc-car">
+              <img src="car_sprites_profile_1930_dbr_8_transparent.png" alt="" onerror="this.parentElement.style.display='none'">
+            </div>
+          </div>`;
+        return card;
+      }
+
       // ── Race result table ────────────────────────────────────────────────────
       function renderRace(el, colours, displayTeam) {
         if (!hasRaceResult(season, round)) {
@@ -490,6 +536,15 @@
         if (!entries) {
           el.innerHTML = '<p style="color:var(--lo);font-size:11px;padding:20px 0">No result available yet.</p>';
           return;
+        }
+
+        const winner = entries.find(e => !e.retired);
+        if (winner) {
+          el.appendChild(buildHeroCard(
+            'RACE WINNER',
+            winner.driverId, winner.driverName, winner.teamId,
+            teamLabel(winner.teamId), colours[winner.teamId] || '#888'
+          ));
         }
 
         const table = buildTable(['POS', 'DRIVER', 'TEAM', 'GAP', 'GRID', 'STATUS', 'PTS']);
@@ -589,6 +644,14 @@
 
         const panel = document.getElementById('champ-panel');
         document.getElementById('champ-col').style.display = 'block';
+
+        // Championship leader hero
+        const leader = drivers[0];
+        panel.appendChild(buildHeroCard(
+          'CHAMPIONSHIP LEADER',
+          leader.driverId, leader.name, leader.teamId,
+          teamLabel(leader.teamId), colours[leader.teamId] || '#888'
+        ));
 
         // Drivers
         const dTitle = document.createElement('div');

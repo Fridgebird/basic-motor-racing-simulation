@@ -633,6 +633,14 @@
         const poleEntry = sorted.find(r => !r.retired && r.lapTime);
         const poleTime  = poleEntry ? poleEntry.lapTime : null;
 
+        // Best sector time per sector across all drivers who completed the full lap
+        const bestSectors = [null, null, null];
+        sorted.filter(r => !r.retired && r.sectorTimes?.length === 3).forEach(r => {
+          r.sectorTimes.forEach((t, i) => {
+            if (t != null && (bestSectors[i] === null || t < bestSectors[i])) bestSectors[i] = t;
+          });
+        });
+
         sorted.forEach(r => {
           const colour   = colours[r.teamId] || '#888';
           const pos      = r.retired ? '—' : r.gridPosition;
@@ -645,12 +653,25 @@
             timeHtml = `${m}:${s}`;
             gapStr   = r.gridPosition === 1 ? '—' : (poleTime ? `+${(r.lapTime - poleTime).toFixed(3)}` : '');
           }
+
+          // Sector sub-line — shown for any driver with at least one recorded sector
+          let sectorHtml = '';
+          if (r.sectorTimes?.length > 0) {
+            const parts = [0, 1, 2].map(i => {
+              const t = r.sectorTimes[i];
+              if (t == null) return `<span style="color:var(--dim)">–</span>`;
+              const isPurple = bestSectors[i] != null && Math.abs(t - bestSectors[i]) < 0.001;
+              return `<span style="color:${isPurple ? '#cc44ff' : 'var(--lo)'}">${t.toFixed(3)}</span>`;
+            });
+            sectorHtml = `<div style="font-size:9px;margin-top:3px;letter-spacing:0.3px">${parts.join('<span style="color:var(--dim)"> · </span>')}</div>`;
+          }
+
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td class="col-pos ${pCls}">${pos}</td>
             <td class="col-name"><span class="team-dot" style="background:${colour}"></span>${driverLink(r.driverId, r.driverName)}</td>
             <td class="col-team">${displayTeam(r.teamId)}</td>
-            <td class="col-time${r.gridPosition === 1 && !r.retired ? ' pole' : ''}">${timeHtml}</td>
+            <td class="col-time${r.gridPosition === 1 && !r.retired ? ' pole' : ''}">${timeHtml}${sectorHtml}</td>
             <td class="col-gap${r.gridPosition === 1 ? ' leader' : ''}">${gapStr}</td>
           `;
           tbody.appendChild(tr);

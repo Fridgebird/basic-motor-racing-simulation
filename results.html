@@ -251,6 +251,8 @@
     .hc-team { font-size: 9px; color: var(--lo); letter-spacing: 1px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .hc-car { flex: 0 1 140px; min-width: 0; overflow: hidden; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; }
     .hc-car img { max-height: 60px; max-width: 100%; object-fit: contain; object-position: right center; }
+    .hc-carimage { flex-shrink: 0; overflow: hidden; display: flex; align-items: center; padding: 6px 10px 6px 8px; }
+    .hc-carimage img { height: 54px; width: auto; max-width: 150px; object-fit: contain; }
 
     /* ── Footer ── */
     .results-footer {
@@ -490,7 +492,27 @@
 
       if (nextBtn) { nextBtn.textContent = `R${round + 1} →`; footer.appendChild(nextBtn); }
 
-      // ── Hero card builder ────────────────────────────────────────────────────
+      // ── Hero card builders ───────────────────────────────────────────────────
+      function buildConstructorHeroCard(teamId, teamSeason, colour, teamLabelStr) {
+        const team = TEAMS.find(t => t.id === teamId);
+        const imageId  = team ? (team.carImageId || team.id.toLowerCase()) : teamId.toLowerCase();
+        const eraYear  = 1930 + Math.floor((teamSeason - 1) / 5) * 5;
+        const card = document.createElement('div');
+        card.className = 'hero-card';
+        card.innerHTML = `
+          <div class="hc-label">CONSTRUCTORS LEADER</div>
+          <div class="hc-inner">
+            <div class="hc-strip" style="background:${colour}"></div>
+            <div class="hc-carimage">
+              <img src="car_sprites_${eraYear}_${imageId}.webp" alt="" onerror="this.parentElement.style.display='none'">
+            </div>
+            <div class="hc-info">
+              <div class="hc-name">${teamLabelStr}</div>
+            </div>
+          </div>`;
+        return card;
+      }
+
       function buildHeroCard(labelText, driverId, driverName, teamId, teamLabelStr, colour) {
         const driver = DRIVER_POOL.find(d => d.id === driverId) ??
                        DRIVER_POOL.find(d => `${d.firstName} ${d.lastName}` === driverName);
@@ -679,6 +701,13 @@
 
         // Constructors
         if (constructors.length) {
+          const ctorLeader = constructors[0];
+          panel.appendChild(buildConstructorHeroCard(
+            ctorLeader.id, season,
+            colours[ctorLeader.id] || '#888',
+            teamLabel(ctorLeader.id)
+          ));
+
           const cTitle = document.createElement('div');
           cTitle.className = 'panel-title';
           cTitle.textContent = 'Constructors';

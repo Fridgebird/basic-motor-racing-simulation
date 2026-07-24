@@ -414,7 +414,7 @@
 
       const nameEl = document.getElementById('team-name');
       nameEl.innerHTML = '';
-      const sponsor = getTitleSponsor(team.id, year);
+      const sponsor = getTitleSponsor(team.id, getDisplayYear(viewedSeason));
       const nameSpan = document.createElement('span');
       if (sponsor) {
         nameSpan.innerHTML = `<span style="color:var(--lo);font-weight:normal">${sponsor.toUpperCase()}</span> ${team.name.toUpperCase()}`;

@@ -143,6 +143,8 @@
     .col-status     { min-width: 56px; }
     .col-time       { font-variant-numeric: tabular-nums; }
     .col-time.pole  { color: var(--hi); }
+    .col-sector     { font-variant-numeric: tabular-nums; color: var(--lo); font-size: 10px; white-space: nowrap; }
+    .col-sector.sector-purple { color: #cc44ff; }
 
     .status-mech  { color: var(--accent); font-size: 9px; letter-spacing: 0.06em; }
     .status-crash { color: var(--accent); font-size: 9px; letter-spacing: 0.06em; }
@@ -621,7 +623,7 @@
           return;
         }
 
-        const table = buildTable(['POS', 'DRIVER', 'TEAM', 'LAP TIME', 'GAP']);
+        const table = buildTable(['POS', 'DRIVER', 'TEAM', 'LAP TIME', 'S1', 'S2', 'S3', 'GAP']);
         const tbody = table.querySelector('tbody');
 
         const sorted = [...results].sort((a, b) => {
@@ -654,24 +656,20 @@
             gapStr   = r.gridPosition === 1 ? '—' : (poleTime ? `+${(r.lapTime - poleTime).toFixed(3)}` : '');
           }
 
-          // Sector sub-line — shown for any driver with at least one recorded sector
-          let sectorHtml = '';
-          if (r.sectorTimes?.length > 0) {
-            const parts = [0, 1, 2].map(i => {
-              const t = r.sectorTimes[i];
-              if (t == null) return `<span style="color:var(--dim)">–</span>`;
-              const isPurple = bestSectors[i] != null && Math.abs(t - bestSectors[i]) < 0.001;
-              return `<span style="color:${isPurple ? '#cc44ff' : 'var(--lo)'}">${t.toFixed(3)}</span>`;
-            });
-            sectorHtml = `<div style="font-size:9px;margin-top:3px;letter-spacing:0.3px">${parts.join('<span style="color:var(--dim)"> · </span>')}</div>`;
-          }
+          const sectorCells = [0, 1, 2].map(i => {
+            const t = r.sectorTimes?.[i];
+            if (t == null) return `<td class="col-sector">–</td>`;
+            const isPurple = bestSectors[i] != null && Math.abs(t - bestSectors[i]) < 0.001;
+            return `<td class="col-sector${isPurple ? ' sector-purple' : ''}">${t.toFixed(3)}</td>`;
+          }).join('');
 
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td class="col-pos ${pCls}">${pos}</td>
             <td class="col-name"><span class="team-dot" style="background:${colour}"></span>${driverLink(r.driverId, r.driverName)}</td>
             <td class="col-team">${displayTeam(r.teamId)}</td>
-            <td class="col-time${r.gridPosition === 1 && !r.retired ? ' pole' : ''}">${timeHtml}${sectorHtml}</td>
+            <td class="col-time${r.gridPosition === 1 && !r.retired ? ' pole' : ''}">${timeHtml}</td>
+            ${sectorCells}
             <td class="col-gap${r.gridPosition === 1 ? ' leader' : ''}">${gapStr}</td>
           `;
           tbody.appendChild(tr);

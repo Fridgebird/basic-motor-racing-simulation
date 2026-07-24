@@ -192,7 +192,6 @@
 
   <script type="module">
     import { TEAMS, ENGINES, TYRES }       from './data.js';
-    import { getTitleSponsor }             from './sponsors.js';
     import { DRIVER_POOL }                  from './drivers.js';
     import {
       getActiveRoster, getDisplayYear, getChassisId,
@@ -220,6 +219,9 @@
       'norwegian':'no',  'polish':'pl',      'portuguese':'pt', 'senegalese':'sn',
       'south african':'za','spanish':'es',   'swedish':'se',    'swiss':'ch',
     };
+
+    // Fallback until sponsors.js is dynamically loaded; returns null = no sponsor shown
+    let getTitleSponsor = () => null;
 
     const params        = new URLSearchParams(location.search);
     const teamIdParam   = params.get('id');
@@ -526,6 +528,10 @@
 
     (async () => {
       await new Promise(r => setTimeout(r, 0)); // yield to browser so loading state paints
+      try {
+        const mod = await import('./sponsors.js');
+        getTitleSponsor = mod.getTitleSponsor;
+      } catch {}
       const loadingEl = document.getElementById('loading-state');
       for (let s = 1; s <= currentSeason; s++) {
         loadingEl.textContent = `COMPUTING SEASON ${getDisplayYear(s)}…`;

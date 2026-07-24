@@ -192,6 +192,7 @@
 
   <script type="module">
     import { TEAMS, ENGINES, TYRES }       from './data.js';
+    import { getTitleSponsor }             from './sponsors.js';
     import { DRIVER_POOL }                  from './drivers.js';
     import {
       getActiveRoster, getDisplayYear, getChassisId,
@@ -411,8 +412,13 @@
 
       const nameEl = document.getElementById('team-name');
       nameEl.innerHTML = '';
+      const sponsor = getTitleSponsor(team.id, year);
       const nameSpan = document.createElement('span');
-      nameSpan.textContent = team.name.toUpperCase();
+      if (sponsor) {
+        nameSpan.innerHTML = `<span style="color:var(--lo);font-weight:normal">${sponsor.toUpperCase()}</span> ${team.name.toUpperCase()}`;
+      } else {
+        nameSpan.textContent = team.name.toUpperCase();
+      }
       nameEl.appendChild(nameSpan);
       const flagCode = NAT_CODE[team.nationality.toLowerCase()];
       if (flagCode) {

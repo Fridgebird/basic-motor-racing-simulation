@@ -142,11 +142,10 @@
   </div>
 
   <script type="module">
-    import { DRIVER_POOL }          from './drivers.js';
     import { TEAMS }                from './data.js';
     import {
       getActiveRoster, getDisplayYear, getDriverAge, getSeasonSnapshot,
-      getDriverDepartureReason,
+      getDriverDepartureReason, getDriverProfile,
     }                               from './worldstate.js';
     import {
       getCurrentEvent, getWorldSeed, getCareerStats, ensurePastResultsCached,
@@ -171,8 +170,8 @@
     const roster          = getActiveRoster(currentSeason, worldSeed);
     const activeDriverIds = roster.map(e => e.driverId)
       .sort((a, b) => {
-        const da = DRIVER_POOL.find(d => d.id === a);
-        const db = DRIVER_POOL.find(d => d.id === b);
+        const da = getDriverProfile(a);
+        const db = getDriverProfile(b);
         return (da?.lastName ?? '').localeCompare(db?.lastName ?? '')
             || (da?.firstName ?? '').localeCompare(db?.firstName ?? '');
       });
@@ -182,7 +181,7 @@
     const requestedId = driverIdParam != null ? parseInt(driverIdParam, 10) : NaN;
     const viewIds = activeDriverIds.includes(requestedId)
       ? activeDriverIds
-      : (DRIVER_POOL.find(d => d.id === requestedId) ? [requestedId] : activeDriverIds);
+      : (getDriverProfile(requestedId) ? [requestedId] : activeDriverIds);
 
     let currentIdx = 0;
     if (driverIdParam != null) {
@@ -208,18 +207,24 @@
 
     function render(idx) {
       const dId        = viewIds[idx];
-      const poolDriver = DRIVER_POOL.find(d => d.id === dId);
+      const poolDriver = getDriverProfile(dId);
       if (!poolDriver) return;
 
       const rosterEntry = roster.find(e => e.driverId === dId);
       const team        = rosterEntry ? TEAMS.find(t => t.id === rosterEntry.teamId) : null;
 
-      // Resolve birthYear: current roster entry has it; for retired drivers fall back to
-      // pool birthYear (S1 starters) or compute from rookieAge + first career season.
-      let birthYear = rosterEntry?.birthYear ?? poolDriver.birthYear;
-      if (birthYear == null && poolDriver.rookieAge != null) {
+      // Resolve birthYear: current roster entry has it directly.
+      // For retired drivers, S1 starters carry birthYear on poolDriver; rookies must
+      // be reconstructed from the season roster of their first career season.
+      let birthYear = rosterEntry?.birthYear ?? poolDriver.birthYear ?? null;
+      if (birthYear == null) {
         const career = getCareerStats(dId);
-        if (career.length > 0) birthYear = getDisplayYear(career[0].season) - poolDriver.rookieAge;
+        if (career.length > 0) {
+          const firstSeason  = career[0].season;
+          const firstRoster  = getActiveRoster(firstSeason, worldSeed);
+          const firstEntry   = firstRoster.find(e => e.driverId === dId);
+          if (firstEntry) birthYear = firstEntry.birthYear;
+        }
       }
       const age = birthYear != null ? getDriverAge(dId, currentSeason, birthYear) : '?';
 
@@ -274,7 +279,8 @@
         if (career.length > 0) {
           const lastSeason = career[career.length - 1].season;
           const reason = getDriverDepartureReason(dId, lastSeason, worldSeed);
-          if (reason === 'replaced') statusLabel = 'REPLACED';
+          if (reason === 'released') statusLabel = 'RELEASED';
+          else if (reason === 'transferred') statusLabel = 'TRANSFERRED';
           else if (reason === 'retired') statusLabel = 'RETIRED';
         }
         teamName.textContent = statusLabel;

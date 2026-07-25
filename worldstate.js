@@ -10,7 +10,7 @@
 // stats from their season — changing worldSeed requires resetting cached results.
 
 import { TEAMS, ENGINES, TYRES, CIRCUITS, SEASON_SCHEDULE, FORMULA_ERAS } from './data.js';
-import { DRIVER_POOL } from './drivers.js';
+import { DRIVER_POOL, ROOKIE_NAME_POOL } from './drivers.js';
 import { getStandings } from './championship.js';
 
 // ─── Era detection ────────────────────────────────────────────────────────────
@@ -89,6 +89,19 @@ const SALT_DRIVER     = 0x40000;
 const SALT_CONTRACT   = 0x50000;
 const SALT_RETIRE     = 0x60000;
 const SALT_DEVELOP    = 0x70000;
+const SALT_ROOKIE_AGE = 0x80000;
+
+// ─── Driver profile lookup ────────────────────────────────────────────────────
+// Abstracts the two-pool structure: DRIVER_POOL for S1 starters (ids 0–23),
+// ROOKIE_NAME_POOL for later entrants (ids 24+, index = id - 24).
+
+export function getDriverProfile(driverId) {
+  if (driverId < 24) {
+    return DRIVER_POOL.find(d => d.id === driverId) ?? null;
+  }
+  const entry = ROOKIE_NAME_POOL[driverId - 24];
+  return entry ?? null;
+}
 
 // ─── Team chassis stats ───────────────────────────────────────────────────────
 // At each chassis era boundary: all stats rerolled fresh (no memory of prior era).
@@ -281,11 +294,9 @@ function consistencyArcMultiplier(age) {
 }
 
 export function getDriverStats(driverId, season, worldSeed, birthYear) {
-  const driver = DRIVER_POOL.find(d => d.id === driverId);
-  if (!driver) throw new Error(`Unknown driverId: ${driverId}`);
+  if (birthYear == null) throw new Error(`getDriverStats: birthYear is required (driverId ${driverId})`);
 
-  const effectiveBirthYear = birthYear ?? driver.birthYear;
-  const age         = driverAge(effectiveBirthYear, season);
+  const age         = driverAge(birthYear, season);
   const skillArc    = skillArcMultiplier(age);
   const conArc      = consistencyArcMultiplier(age);
 
@@ -306,19 +317,24 @@ export function getDriverStats(driverId, season, worldSeed, birthYear) {
 }
 
 export function getDriverAge(driverId, season, birthYear) {
-  const driver = DRIVER_POOL.find(d => d.id === driverId);
-  if (!driver) return null;
-  const effectiveBirthYear = birthYear ?? driver.birthYear;
-  return driverAge(effectiveBirthYear, season);
+  if (birthYear == null) {
+    const profile = getDriverProfile(driverId);
+    if (!profile) return null;
+    birthYear = profile.birthYear ?? null;
+    if (birthYear == null) return null;
+  }
+  return driverAge(birthYear, season);
 }
 
 // ─── Driver lifecycle ─────────────────────────────────────────────────────────
 // Computed forward from Season 1; never stored (fully deterministic from worldSeed).
 //
 // Each season end:
-//   1. Performance-based firing: if effectiveSkill < team minimum, driver is released.
-//   2. Age-based retirement: probability rises steeply after 38.
-//   3. Vacant slots: filled by next eligible rookie from DRIVER_POOL (by id order).
+//   1. Age retirement: drivers above threshold roll against retirementProbability.
+//   2. Contract expiry: drivers whose contractEnd == season become free agents.
+//   3. Transfer market: free agents + rookies fill vacancies; teams pick in descending
+//      fundingLevel order; within a team, rookies beat veterans with equal or lower skill.
+//   4. Unplaced free agents are released; slots still vacant after market get rookies.
 
 function retirementProbability(age) {
   if (age < 35) return 0.02;
@@ -330,94 +346,152 @@ function retirementProbability(age) {
   return 0.96;
 }
 
-function teamMinSkill(team) {
-  // Only truly poor performers at established teams get dropped.
-  // Range 40–60: avoids firing developing drivers who haven't peaked yet.
-  return Math.round(40 + (team.fundingLevel / 100) * 20);
-}
-
-/** Returns the active driver roster for the start of a season: Array<{driverId, teamId, birthYear}>. */
+/** Returns the active driver roster for the start of a season: Array<{driverId, teamId, birthYear, contractEnd}>. */
 export function getActiveRoster(season, worldSeed) {
-  // Season 1: all pool drivers with a fixed birthYear who are at least 20.
-  // Rookie-pool drivers have rookieAge instead of birthYear and enter later.
+  // Season 1: all DRIVER_POOL entries with a birthYear old enough to race.
+  // Stagger initial contracts 1–3 seasons using a seeded hash so the transfer
+  // market never empties all at once.
   let roster = DRIVER_POOL
     .filter(d => d.birthYear != null && driverAge(d.birthYear, 1) >= 20)
-    .map(d => ({ driverId: d.id, teamId: d.startTeam, birthYear: d.birthYear }));
+    .map(d => {
+      const stagger    = seededInt(1, 3, worldSeed + SALT_CONTRACT, d.id, 0xFFFF);
+      const contractEnd = 1 + stagger; // expires after S2, S3, or S4
+      return { driverId: d.id, teamId: d.startTeam, birthYear: d.birthYear, contractEnd };
+    });
 
-  // Track which pool drivers have entered (to avoid re-entry)
-  const entered = new Set(roster.map(r => r.driverId));
+  // Track which rookie-pool indices have been consumed (to avoid re-entry).
+  // Rookies enter by ROOKIE_NAME_POOL index order; nextRookieIdx is the cursor.
+  let nextRookieIdx = 0;
 
   // Advance season by season from S2
   for (let s = 2; s <= season; s++) {
-    roster = applySeasonEndTransitions(roster, s, worldSeed, entered);
+    ({ roster, nextRookieIdx } = applySeasonEndTransitions(roster, s, worldSeed, nextRookieIdx));
   }
 
   return roster;
 }
 
-function applySeasonEndTransitions(roster, season, worldSeed, entered) {
-  // Step 1: Check each driver for firing or retirement
-  const active = roster.filter(entry => {
-    const driver = DRIVER_POOL.find(d => d.id === entry.driverId);
-    if (!driver) return false;
+function applySeasonEndTransitions(roster, season, worldSeed, nextRookieIdx) {
+  const prevSeason = season - 1;
 
-    const age   = driverAge(entry.birthYear, season - 1); // age at END of previous season
-    const team  = TEAMS.find(t => t.id === entry.teamId);
-    const stats = getDriverStats(entry.driverId, season - 1, worldSeed, entry.birthYear);
-
-    // Performance-based firing: drop drivers whose skill falls below the team's floor.
-    // Threshold range 40–60 so only genuine backmarkers at established teams get cut.
-    const minSkill = teamMinSkill(team);
-    if (stats.skill < minSkill) return false; // fired
-
-    // Age-based retirement
+  // ── Step 1: Age retirement ───────────────────────────────────────────────
+  // Roll against retirementProbability using age at END of previous season.
+  const survived = roster.filter(entry => {
+    const age        = driverAge(entry.birthYear, prevSeason);
     const retireProb = retirementProbability(age);
     const retireRoll = hash32(worldSeed + SALT_RETIRE, entry.driverId, season);
-    return retireRoll >= retireProb; // true = stays; false = retires
+    return retireRoll >= retireProb; // true = stays active; false = retires
   });
 
-  // Step 2: Fill vacant team slots with rookies from the dynamic pool.
-  // Rookie-pool drivers have rookieAge instead of birthYear; they enter whenever
-  // there is a vacancy — no fixed-year eligibility window that can expire.
-  const teamSlots = {};
-  for (const team of TEAMS) {
-    teamSlots[team.id] = active.filter(r => r.teamId === team.id).length;
+  // ── Step 2: Split into contracted vs free agents ─────────────────────────
+  // A driver whose contractEnd == prevSeason is now a free agent.
+  const contracted  = survived.filter(e => e.contractEnd > prevSeason);
+  const freeAgents  = survived.filter(e => e.contractEnd <= prevSeason);
+
+  // ── Step 3: Rank free agents + build 3 rookie candidates ────────────────
+  // Rookies always enter at a seeded age between 20–22.
+  const rookieCandidates = [];
+  let rookieIdx = nextRookieIdx;
+  for (let i = 0; i < 3 && rookieIdx < ROOKIE_NAME_POOL.length; i++, rookieIdx++) {
+    const driverId  = 24 + rookieIdx;
+    const rookieAge = seededInt(20, 22, worldSeed + SALT_ROOKIE_AGE, driverId, season);
+    const birthYear = getDisplayYear(season) - rookieAge;
+    rookieCandidates.push({ driverId, birthYear });
   }
 
-  for (const team of TEAMS) {
-    while (teamSlots[team.id] < 2) {
-      const rookie = DRIVER_POOL.find(d => d.rookieAge != null && !entered.has(d.id));
-      if (!rookie) break; // pool exhausted — leave slot vacant
+  // ── Step 4: Fill vacancies in descending fundingLevel order ─────────────
+  // Each team picks one driver per open slot from the combined free-agent +
+  // rookie pool. Rookies beat veterans with equal or lower skill.
+  const teamsSorted = [...TEAMS].sort((a, b) => b.fundingLevel - a.fundingLevel);
+  const newRoster   = [...contracted];
+  const usedIds     = new Set(contracted.map(e => e.driverId));
 
-      const birthYear = getDisplayYear(season) - rookie.rookieAge;
-      active.push({ driverId: rookie.id, teamId: team.id, birthYear });
-      entered.add(rookie.id);
-      teamSlots[team.id]++;
+  // Remaining free agents and rookie candidates share a market pool.
+  // We rank free agents by skill descending (best gets picked first).
+  const rankedFreeAgents = [...freeAgents].sort((a, b) => {
+    const sA = getDriverStats(a.driverId, prevSeason, worldSeed, a.birthYear).skill;
+    const sB = getDriverStats(b.driverId, prevSeason, worldSeed, b.birthYear).skill;
+    return sB - sA;
+  });
+
+  let consumedRookies = 0;
+
+  for (const team of teamsSorted) {
+    const slots = 2 - newRoster.filter(e => e.teamId === team.id).length;
+    for (let slot = 0; slot < slots; slot++) {
+      // Pick best available free agent (already ranked)
+      const faIdx = rankedFreeAgents.findIndex(e => !usedIds.has(e.driverId));
+
+      // Check if top rookie candidate beats the best available free agent
+      const rookieCandidate = rookieCandidates[consumedRookies] ?? null;
+
+      let chosen = null;
+      if (faIdx === -1 && rookieCandidate) {
+        // No free agents left — must use a rookie
+        chosen = { type: 'rookie', candidate: rookieCandidate };
+      } else if (faIdx !== -1 && rookieCandidate) {
+        const fa = rankedFreeAgents[faIdx];
+        const faSkill      = getDriverStats(fa.driverId, prevSeason, worldSeed, fa.birthYear).skill;
+        const rookieSkill  = getDriverStats(rookieCandidate.driverId, prevSeason, worldSeed, rookieCandidate.birthYear).skill;
+        // Rookie wins on equal or higher skill (tie-breaks in favour of youth)
+        chosen = rookieSkill >= faSkill
+          ? { type: 'rookie', candidate: rookieCandidate }
+          : { type: 'freeAgent', idx: faIdx };
+      } else if (faIdx !== -1) {
+        chosen = { type: 'freeAgent', idx: faIdx };
+      }
+      // If no one is available, slot stays vacant (rare — pool nearly exhausted)
+
+      if (!chosen) continue;
+
+      if (chosen.type === 'rookie') {
+        const c           = chosen.candidate;
+        const contractLen = seededInt(1, 3, worldSeed + SALT_CONTRACT, c.driverId, season);
+        newRoster.push({ driverId: c.driverId, teamId: team.id, birthYear: c.birthYear, contractEnd: season + contractLen - 1 });
+        usedIds.add(c.driverId);
+        consumedRookies++;
+      } else {
+        const fa          = rankedFreeAgents[chosen.idx];
+        const contractLen = seededInt(1, 3, worldSeed + SALT_CONTRACT, fa.driverId, season);
+        newRoster.push({ driverId: fa.driverId, teamId: team.id, birthYear: fa.birthYear, contractEnd: season + contractLen - 1 });
+        usedIds.add(fa.driverId);
+      }
     }
   }
 
-  return active;
+  // ── Step 5: Advance the rookie cursor by however many rookies were consumed ─
+  // Any rookie candidates that weren't consumed remain available next season.
+  nextRookieIdx += consumedRookies;
+
+  return { roster: newRoster, nextRookieIdx };
 }
 
 /**
- * Returns why a driver left the active roster after lastSeason.
- * 'replaced' — dropped for poor performance
- * 'retired'  — age-based retirement
+ * Returns why a driver left (or didn't leave) the active roster after lastSeason.
+ * 'retired'    — age-based retirement roll triggered
+ * 'released'   — contract expired and not re-signed by any team
+ * 'transferred'— contract expired and re-signed by a different team
+ * 'active'     — still on the roster (contract runs or renewed in place)
  */
 export function getDriverDepartureReason(driverId, lastSeason, worldSeed) {
   const rosterAtSeason = getActiveRoster(lastSeason, worldSeed);
   const entry = rosterAtSeason.find(e => e.driverId === driverId);
-  if (!entry) return 'retired'; // wasn't there — treat as retired
+  if (!entry) return 'retired'; // was never active — treat as retired
 
-  const team  = TEAMS.find(t => t.id === entry.teamId);
-  const stats = getDriverStats(driverId, lastSeason, worldSeed, entry.birthYear);
-
-  if (stats.skill < teamMinSkill(team)) return 'replaced';
-
+  // Check retirement roll (age at END of lastSeason)
   const age        = driverAge(entry.birthYear, lastSeason);
   const retireProb = retirementProbability(age);
   const retireRoll = hash32(worldSeed + SALT_RETIRE, driverId, lastSeason + 1);
-  return retireRoll < retireProb ? 'retired' : 'active';
+  if (retireRoll < retireProb) return 'retired';
+
+  // If contract hasn't expired, driver stays active
+  if (entry.contractEnd > lastSeason) return 'active';
+
+  // Contract expired — check the next season's roster to see what happened
+  const rosterNext = getActiveRoster(lastSeason + 1, worldSeed);
+  const entryNext  = rosterNext.find(e => e.driverId === driverId);
+  if (!entryNext) return 'released';
+  return entryNext.teamId !== entry.teamId ? 'transferred' : 'active';
 }
 
 // ─── Car numbers ──────────────────────────────────────────────────────────────
@@ -445,7 +519,7 @@ export function getCarNumbers(season, worldSeed, precomputedRoster = null) {
   if (champDriverName) {
     // Find the champion's driverId from the roster
     const champEntry = roster.find(r => {
-      const d = DRIVER_POOL.find(p => p.id === r.driverId);
+      const d = getDriverProfile(r.driverId);
       return d && `${d.firstName} ${d.lastName}` === champDriverName;
     });
 
@@ -540,7 +614,7 @@ export function getSeasonSnapshot(season, worldSeed) {
 
   // Build resolved driver objects (matching the shape state.js expects)
   const drivers = roster.map(({ driverId, teamId, birthYear }) => {
-    const poolDriver = DRIVER_POOL.find(d => d.id === driverId);
+    const poolDriver = getDriverProfile(driverId);
     const stats      = getDriverStats(driverId, season, worldSeed, birthYear);
     const number     = carNumbers.get(driverId) ?? 0;
     return {

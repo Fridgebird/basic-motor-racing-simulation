@@ -54,7 +54,7 @@ export const TITLE_SPONSORS = {
   ],
 
   mistral: [
-    { fromYear: 1966, sponsor: 'Triomphe' },
+    { fromYear: 1966, sponsor: 'Triomphe', url: 'https://example.com/' },
     { fromYear: 1981, sponsor: 'Lumière' },
     { fromYear: 1996, sponsor: 'Châtelain Finance' },
     { fromYear: 2006, sponsor: 'Vent Nouveau' },
@@ -105,19 +105,21 @@ export const TITLE_SPONSORS = {
 };
 
 /**
- * Returns the active title sponsor name for a team in a given display year,
- * or null if no sponsor applies (before 1966, or team not listed).
+ * Returns the active sponsor entry { fromYear, sponsor, url? } for a team in
+ * a given display year, or null if no sponsor applies (before 1966, or team
+ * not listed). The url field is optional — omit or set to null/undefined for
+ * sponsors without a web presence.
  * @param {string} teamId
  * @param {number} displayYear  e.g. 1971
- * @returns {string|null}
+ * @returns {{ fromYear: number, sponsor: string, url?: string }|null}
  */
-export function getTitleSponsor(teamId, displayYear) {
+export function getTitleSponsorEntry(teamId, displayYear) {
   if (displayYear < 1966) return null;
   const entries = TITLE_SPONSORS[teamId];
   if (!entries || entries.length === 0) return null;
   let active = null;
   for (const e of entries) {
-    if (e.fromYear <= displayYear) active = e.sponsor;
+    if (e.fromYear <= displayYear) active = e;
     else break;
   }
   return active;

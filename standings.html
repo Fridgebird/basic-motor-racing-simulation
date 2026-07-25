@@ -143,8 +143,7 @@
 
   <script type="module">
     import { TEAMS, ENGINES, CIRCUITS, SEASON_SCHEDULE } from './data.js';
-    import { DRIVER_POOL } from './drivers.js';
-    import { getDisplayYear, getSeasonSnapshot, getTeamEngine } from './worldstate.js';
+    import { getDisplayYear, getSeasonSnapshot, getTeamEngine, getDriverProfile } from './worldstate.js';
     import {
       getCurrentEvent, getWorldSeed, getStandings, getStandingsThroughRound,
       ensurePastResultsCached, getLastCompletedRace, formatAsOfLabel,
@@ -199,8 +198,7 @@
     }
 
     function buildHeroCard(labelText, driverId, driverName, teamId, teamLabelStr, colour) {
-      const driver = DRIVER_POOL.find(d => d.id === driverId) ??
-                     DRIVER_POOL.find(d => `${d.firstName} ${d.lastName}` === driverName);
+      const driver = getDriverProfile(driverId);
       let portraitStyle = `background:${colour}22;`;
       let initials = (driverName || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
       let showInitials = true;

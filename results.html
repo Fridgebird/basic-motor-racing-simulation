@@ -323,7 +323,7 @@
     import { DRIVER_POOL } from './drivers.js';
     import { initRace, cars } from './state.js';
     import { runRace, initStrategies, initWeather, setCurrentCircuit, runQualifyingSession } from './simulation.js';
-    import { getSeasonSnapshot, getTeamEngine } from './worldstate.js';
+    import { getSeasonSnapshot, getTeamEngine, getDriverProfile } from './worldstate.js';
 
     (async () => {
       const params    = new URLSearchParams(location.search);
@@ -516,8 +516,7 @@
       }
 
       function buildHeroCard(labelText, driverId, driverName, teamId, teamLabelStr, colour) {
-        const driver = DRIVER_POOL.find(d => d.id === driverId) ??
-                       DRIVER_POOL.find(d => `${d.firstName} ${d.lastName}` === driverName);
+        const driver = getDriverProfile(driverId);
         let portraitStyle = `background:${colour}22;`;
         let initials = (driverName || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
         let showInitials = true;

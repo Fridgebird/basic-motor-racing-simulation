@@ -93,6 +93,7 @@
     .driver-chip-num { width:32px; height:32px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:bold; color:var(--hi); letter-spacing:0; }
     .driver-chip-name { font-size:11px; color:var(--hi); }
     .driver-chip-nat { font-size:9px; letter-spacing:1px; color:var(--lo); }
+    .driver-chip-contract { font-size:8px; letter-spacing:1px; color:var(--lo); }
     #team-name { font-size:18px; letter-spacing:2px; color:var(--hi); margin-bottom:4px; font-weight:bold; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
     .flag-strip { width:48px; height:24px; border-radius:2px; object-fit:cover; display:block; flex-shrink:0; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.2); }
 
@@ -192,11 +193,10 @@
 
   <script type="module">
     import { TEAMS, ENGINES, TYRES }       from './data.js';
-    import { DRIVER_POOL }                  from './drivers.js';
     import {
       getActiveRoster, getDisplayYear, getChassisId,
       getTeamEngine, getTeamTyre, getSeasonSnapshot, getCarNumbers,
-      getFormulaEra,
+      getFormulaEra, getDriverProfile,
     }                                       from './worldstate.js';
     import {
       getCurrentEvent, getWorldSeed, getConstructorHistory, loadSeasonSummary,
@@ -221,7 +221,7 @@
     };
 
     // Fallback until sponsors.js is dynamically loaded; returns null = no sponsor shown
-    let getTitleSponsor = () => null;
+    let getTitleSponsorEntry = () => null;
 
     const params        = new URLSearchParams(location.search);
     const teamIdParam   = params.get('id');
@@ -311,7 +311,8 @@
     }
 
     function renderSeasonPane(team, season) {
-      const year      = getDisplayYear(season);
+      const year         = getDisplayYear(season);
+      const seasonSponsor = getTitleSponsorEntry(team.id, year);
       const engineId  = getTeamEngine(team.id, season, worldSeed);
       const tyreId    = getTeamTyre(team.id, season, worldSeed);
       const chassis   = getChassisId(team.id, season);
@@ -366,6 +367,13 @@
             ${pips(bucket(tyr.wearRate, [0.0108, 0.0127]),  'pip-wear', 'WEAR')}
           </div>
         </div>
+        ${seasonSponsor ? `
+        <div class="tech-row">
+          <span class="tech-key">SPONSOR</span>
+          <span class="tech-val">${seasonSponsor.url
+            ? `<a href="${seasonSponsor.url}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">${seasonSponsor.sponsor}</a>`
+            : seasonSponsor.sponsor}</span>
+        </div>` : ''}
       `;
 
       const seasonRoster = getActiveRoster(season, worldSeed).filter(e => e.teamId === team.id);
@@ -373,10 +381,11 @@
       const driverList   = document.getElementById('driver-list');
       driverList.innerHTML = '';
       seasonRoster.forEach(entry => {
-        const pd = DRIVER_POOL.find(d => d.id === entry.driverId);
+        const pd = getDriverProfile(entry.driverId);
         if (!pd) return;
         const nat  = pd.nationality.charAt(0).toUpperCase() + pd.nationality.slice(1);
         const num  = carNumbers.get(entry.driverId) ?? '';
+        const contractYear = year >= 1966 ? getDisplayYear(entry.contractEnd) : null;
         const chip = document.createElement('a');
         chip.href      = `driver.html?id=${entry.driverId}&season=${season}`;
         chip.className = 'driver-chip';
@@ -387,7 +396,7 @@
         numEl.textContent = num;
         chip.appendChild(numEl);
         const info = document.createElement('div');
-        info.innerHTML = `<div class="driver-chip-name">${pd.firstName} ${pd.lastName}</div><div class="driver-chip-nat">${nat}</div>`;
+        info.innerHTML = `<div class="driver-chip-name">${pd.firstName} ${pd.lastName}</div><div class="driver-chip-nat">${nat}</div>${contractYear ? `<div class="driver-chip-contract">CONTRACT TO ${contractYear}</div>` : ''}`;
         chip.appendChild(info);
         driverList.appendChild(chip);
       });
@@ -414,10 +423,10 @@
 
       const nameEl = document.getElementById('team-name');
       nameEl.innerHTML = '';
-      const sponsor = getTitleSponsor(team.id, getDisplayYear(viewedSeason));
+      const sponsorEntry = getTitleSponsorEntry(team.id, getDisplayYear(viewedSeason));
       const nameSpan = document.createElement('span');
-      if (sponsor) {
-        nameSpan.innerHTML = `<span style="color:var(--lo);font-weight:normal">${sponsor.toUpperCase()}</span> ${team.name.toUpperCase()}`;
+      if (sponsorEntry) {
+        nameSpan.innerHTML = `<span style="color:var(--lo);font-weight:normal">${sponsorEntry.sponsor.toUpperCase()}</span> ${team.name.toUpperCase()}`;
       } else {
         nameSpan.textContent = team.name.toUpperCase();
       }
@@ -451,7 +460,7 @@
         const csPos  = (currentSeasonCtorStandings.constructors.findIndex(c => c.id === team.id) + 1) || '?';
         const activeRosterNow = getActiveRoster(currentSeason, worldSeed).filter(e => e.teamId === team.id);
         const csDriverNames   = activeRosterNow.map(e => {
-          const pd = DRIVER_POOL.find(d => d.id === e.driverId);
+          const pd = getDriverProfile(e.driverId);
           return pd ? pd.lastName : '—';
         }).join(' / ');
         const csTr = document.createElement('tr');
@@ -530,7 +539,7 @@
       await new Promise(r => setTimeout(r, 0)); // yield to browser so loading state paints
       try {
         const mod = await import('./sponsors.js');
-        getTitleSponsor = mod.getTitleSponsor;
+        getTitleSponsorEntry = mod.getTitleSponsorEntry;
       } catch {}
       const loadingEl = document.getElementById('loading-state');
       for (let s = 1; s <= currentSeason; s++) {

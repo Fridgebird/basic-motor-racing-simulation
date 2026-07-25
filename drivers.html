@@ -59,7 +59,7 @@
     .status-badge { font-size:8px; letter-spacing:1px; padding:2px 6px; border:1px solid; display:inline-block; white-space:nowrap; }
     .status-active   { color:#55aa88; border-color:#55aa88; }
     .status-retired  { color:var(--lo); border-color:var(--dim); }
-    .status-replaced { color:#cc8833; border-color:#cc8833; }
+    .status-released { color:#cc8833; border-color:#cc8833; }
   </style>
   <link rel="stylesheet" href="topnav.css">
   <script src="topnav.js" defer></script>
@@ -84,7 +84,7 @@
       <button class="filter-btn active" data-filter="all">ALL</button>
       <button class="filter-btn" data-filter="active">ACTIVE</button>
       <button class="filter-btn" data-filter="retired">RETIRED</button>
-      <button class="filter-btn" data-filter="replaced">REPLACED</button>
+      <button class="filter-btn" data-filter="released">RELEASED</button>
       <span id="result-count"></span>
     </div>
   </div>
@@ -112,10 +112,10 @@
   </div>
 
   <script type="module">
-    import { DRIVER_POOL }     from './drivers.js';
     import { TEAMS }           from './data.js';
     import {
       getActiveRoster, getDisplayYear, getDriverDepartureReason, getSeasonSnapshot,
+      getDriverProfile,
     }                          from './worldstate.js';
     import {
       getCurrentEvent, getWorldSeed, getCareerStats, ensurePastResultsCached,
@@ -203,11 +203,21 @@
       const activeRoster = getActiveRoster(currentSeason, worldSeed);
       const activeIds    = new Set(activeRoster.map(e => e.driverId));
 
+      // Collect every driverId that has appeared on any season's roster up to currentSeason.
+      const seenIds = new Set();
+      for (let s = 1; s <= currentSeason; s++) {
+        const r = getActiveRoster(s, worldSeed);
+        r.forEach(e => seenIds.add(e.driverId));
+      }
+
       const rows = [];
 
-      for (const pd of DRIVER_POOL) {
-        const career = getCareerStats(pd.id); // completed seasons only (no current-season summary)
-        const cs     = csDriverMap.get(pd.id);
+      for (const driverId of seenIds) {
+        const pd = getDriverProfile(driverId);
+        if (!pd) continue;
+
+        const career = getCareerStats(driverId); // completed seasons only (no current-season summary)
+        const cs     = csDriverMap.get(driverId);
         if (!career.length && !cs) continue; // never raced
 
         const totals = career.reduce((acc, s) => ({
@@ -219,14 +229,14 @@
         const seasonCount = career.length + (cs ? 1 : 0);
 
         let status, teamId;
-        if (activeIds.has(pd.id)) {
+        if (activeIds.has(driverId)) {
           status = 'active';
-          teamId = activeRoster.find(e => e.driverId === pd.id)?.teamId;
+          teamId = activeRoster.find(e => e.driverId === driverId)?.teamId;
         } else {
           teamId = career[career.length - 1].teamId;
           const lastSeason = career[career.length - 1].season;
-          const reason = getDriverDepartureReason(pd.id, lastSeason, worldSeed);
-          status = reason === 'replaced' ? 'replaced' : 'retired';
+          const reason = getDriverDepartureReason(driverId, lastSeason, worldSeed);
+          status = (reason === 'released' || reason === 'transferred') ? 'released' : 'retired';
         }
 
         const team       = TEAMS.find(t => t.id === teamId);
@@ -248,7 +258,7 @@
         tr.appendChild(portraitTd);
 
         tr.insertAdjacentHTML('beforeend', `
-          <td class="col-name"><a href="driver.html?id=${pd.id}&season=${currentSeason}">${pd.lastName.toUpperCase()}, ${pd.firstName.toUpperCase()}</a></td>
+          <td class="col-name"><a href="driver.html?id=${driverId}&season=${currentSeason}">${pd.lastName.toUpperCase()}, ${pd.firstName.toUpperCase()}</a></td>
           <td class="col-nat">${flagHtml}</td>
           <td>${teamLink}</td>
           <td class="col-num">${seasonCount}</td>

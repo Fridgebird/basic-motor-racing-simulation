@@ -42,6 +42,33 @@ export function setCurrentCircuit(circuit, displayYear = 1930) {
   eraSpeedFactor = displayYear >= 2010
     ? 1.0
     : 1.0 + 0.8 * (2010 - displayYear) / (2010 - 1930);
+
+  // Linear interpolation through keyframe pairs [year, value].
+  function eraLerp(year, kf) {
+    if (year <= kf[0][0]) return kf[0][1];
+    for (let i = 1; i < kf.length; i++) {
+      if (year <= kf[i][0]) {
+        const t = (year - kf[i-1][0]) / (kf[i][0] - kf[i-1][0]);
+        return kf[i-1][1] + t * (kf[i][1] - kf[i-1][1]);
+      }
+    }
+    return kf[kf.length - 1][1];
+  }
+
+  // Tyre change time (seconds at pitCrewRating 100):
+  //   1930s: manual jacks, hammer-and-chisel wheel pins → very slow
+  //   late 1970s: pneumatic guns appear → sharp drop
+  //   modern: slick wheel nuts, choreographed crews → 5s
+  eraTyreChangeTime = eraLerp(displayYear, [
+    [1930, 45], [1955, 30], [1970, 18], [1982, 10], [1995, 7], [2010, 5],
+  ]);
+
+  // Fuel rig rate (seconds per kg added):
+  //   1930s: gravity-fed churns → slow
+  //   1980s: pressurised rigs → modern floor
+  eraFuelRigRate = eraLerp(displayYear, [
+    [1930, 0.40], [1955, 0.28], [1970, 0.20], [1982, 0.15], [1995, 0.12],
+  ]);
 }
 import { cars, race, raceLog, lapChartData, updatePositions } from './state.js';
 
@@ -99,10 +126,17 @@ const DIRTY_AIR_WEAR_MULT = 0.20;
 // eraRawFailPenalty: raw pace pass failure penalty, smaller in early eras (more room).
 // eraSpeedFactor: makes older cars slower. Linear 1.8 (1930) → 1.0 (2010, ceiling).
 //   Calibrated so 1950 gives 1.6×, matching British GP 146 km/h vs 2010's 233 km/h (62.7%).
-// All three set in setCurrentCircuit() based on displayYear.
+// eraTyreChangeTime: seconds for a tyre change at pitCrewRating 100.
+//   1930: 45s (hammer/chisel, manual jacks) → 5s by 2010 (pneumatic guns, slick wheels).
+// eraFuelRigRate: seconds per kg of fuel added.
+//   1930: 0.40 s/kg (fuel from churns) → 0.12 s/kg by 1990 (pressurised rigs).
+//   Consequence: tyre change dominates stops until ~1980s, then fuelling takes over.
+// All set in setCurrentCircuit() based on displayYear.
 let eraAeroLoss       = 0.40;
 let eraRawFailPenalty = 0.40;
 let eraSpeedFactor    = 1.0;
+let eraTyreChangeTime = 6;
+let eraFuelRigRate    = 0.12;
 
 // Overtake attempt fires when gap < OVERTAKE_RANGE.
 // Two types: raw pace pass (power sectors) and divebomb (braking zones).
@@ -1316,7 +1350,7 @@ function crossoverPitBenefits(car) {
     const paceGainPerLap = (tf_worn_avg - tf_fresh_avg) * baseLapTime;
     if (paceGainPerLap <= 0) return false;
 
-    const tyreChangeTime = currentCircuit.baseTyreChangeTime * (1 + (1 - car.team.pitCrewRating / 100));
+    const tyreChangeTime = eraTyreChangeTime * (1 + (1 - car.team.pitCrewRating / 100));
     const pitCostEst     = currentCircuit.pitLaneTime + tyreChangeTime;
     const agg            = car.driver.aggression / 100;
 
@@ -1342,7 +1376,7 @@ function crossoverPitBenefits(car) {
   const avgGainPerLap = (tf_currentAvg - tf_newAvg) * baseLapTime;
   if (avgGainPerLap <= 0) return false;  // new compound not faster on average
 
-  const tyreChangeTime = currentCircuit.baseTyreChangeTime * (1 + (1 - car.team.pitCrewRating / 100));
+  const tyreChangeTime = eraTyreChangeTime * (1 + (1 - car.team.pitCrewRating / 100));
   const pitStopCost    = currentCircuit.pitLaneTime + tyreChangeTime;
 
   return (lapsRemaining * avgGainPerLap) > pitStopCost;
@@ -1443,8 +1477,8 @@ function executePitStop(car, rng) {
 
   // ── Stop time: pit lane traversal + max(tyre change, fuelling) ──────────────
   const pitLaneTime    = currentCircuit.pitLaneTime;
-  const tyreChangeTime = currentCircuit.baseTyreChangeTime * (1 + (1 - car.team.pitCrewRating / 100));
-  const fuellingTime   = fuelAdded > 0 ? fuelAdded * currentCircuit.fuelRigRate : 0;
+  const tyreChangeTime = eraTyreChangeTime * (1 + (1 - car.team.pitCrewRating / 100));
+  const fuellingTime   = fuelAdded > 0 ? fuelAdded * eraFuelRigRate : 0;
 
   // ── Botched pit stop ──────────────────────────────────────────────────────
   // Probability scales with crew rating^2 so top crews almost never botch.

@@ -93,7 +93,6 @@
     .driver-chip-num { width:32px; height:32px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:bold; color:var(--hi); letter-spacing:0; }
     .driver-chip-name { font-size:11px; color:var(--hi); }
     .driver-chip-nat { font-size:9px; letter-spacing:1px; color:var(--lo); }
-    .driver-chip-contract { font-size:8px; letter-spacing:1px; color:var(--lo); vertical-align:middle; }
     #team-name { font-size:18px; letter-spacing:2px; color:var(--hi); margin-bottom:4px; font-weight:bold; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
     .flag-strip { width:48px; height:24px; border-radius:2px; object-fit:cover; display:block; flex-shrink:0; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.2); }
 
@@ -385,8 +384,8 @@
         if (!pd) return;
         const nat  = pd.nationality.charAt(0).toUpperCase() + pd.nationality.slice(1);
         const num  = carNumbers.get(entry.driverId) ?? '';
-        const yrsLeft = year >= 1966 ? (entry.contractEnd - season + 1) : null;
-        const yrsStr  = yrsLeft != null ? (yrsLeft === 1 ? '1 YR' : `${yrsLeft} YRS`) : null;
+        const yrsLeft = entry.contractEnd - season + 1;
+        const yrsStr  = yrsLeft === 1 ? '1 YR' : `${yrsLeft} YRS`;
         const chip = document.createElement('a');
         chip.href      = `driver.html?id=${entry.driverId}&season=${season}`;
         chip.className = 'driver-chip';
@@ -397,7 +396,7 @@
         numEl.textContent = num;
         chip.appendChild(numEl);
         const info = document.createElement('div');
-        info.innerHTML = `<div class="driver-chip-name">${pd.firstName} ${pd.lastName}${yrsStr ? ` <span class="driver-chip-contract">${yrsStr}</span>` : ''}</div><div class="driver-chip-nat">${nat}</div>`;
+        info.innerHTML = `<div class="driver-chip-name">${pd.firstName} ${pd.lastName}</div><div class="driver-chip-nat">${nat} - ${yrsStr} CONTRACT</div>`;
         chip.appendChild(info);
         driverList.appendChild(chip);
       });

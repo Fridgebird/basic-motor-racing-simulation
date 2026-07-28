@@ -354,8 +354,8 @@ export function getActiveRoster(season, worldSeed) {
   let roster = DRIVER_POOL
     .filter(d => d.birthYear != null && driverAge(d.birthYear, 1) >= 20)
     .map(d => {
-      const stagger    = seededInt(1, 3, worldSeed + SALT_CONTRACT, d.id, 0xFFFF);
-      const contractEnd = 1 + stagger; // expires after S2, S3, or S4
+      const stagger    = seededInt(0, 2, worldSeed + SALT_CONTRACT, d.id, 0xFFFF);
+      const contractEnd = 1 + stagger; // expires after S1, S2, or S3
       return { driverId: d.id, teamId: d.startTeam, birthYear: d.birthYear, contractEnd };
     });
 
@@ -388,11 +388,15 @@ function applySeasonEndTransitions(roster, season, worldSeed, nextRookieIdx) {
   const contracted  = survived.filter(e => e.contractEnd > prevSeason);
   const freeAgents  = survived.filter(e => e.contractEnd <= prevSeason);
 
-  // ── Step 3: Rank free agents + build 3 rookie candidates ────────────────
+  // ── Step 3: Rank free agents + build rookie candidates ──────────────────
+  // Pool size = max(3, retirements): retirements are permanent exits and each
+  // one should produce at least one genuine new-entrant opportunity.
   // Rookies always enter at a seeded age between 20–22.
+  const retirements      = roster.length - survived.length;
+  const rookiePoolSize   = Math.max(3, retirements);
   const rookieCandidates = [];
   let rookieIdx = nextRookieIdx;
-  for (let i = 0; i < 3 && rookieIdx < ROOKIE_NAME_POOL.length; i++, rookieIdx++) {
+  for (let i = 0; i < rookiePoolSize && rookieIdx < ROOKIE_NAME_POOL.length; i++, rookieIdx++) {
     const driverId  = 24 + rookieIdx;
     const rookieAge = seededInt(20, 22, worldSeed + SALT_ROOKIE_AGE, driverId, season);
     const birthYear = getDisplayYear(season) - rookieAge;

@@ -114,17 +114,6 @@
     }
     .dev-label { color: var(--dim); }
 
-    /* ── Info bar ──────────────────────────────────────────────────────────────── */
-    #info-bar {
-      width: 100%;
-      background: var(--bg-mid);
-      border-bottom: 1px solid var(--border);
-      padding: 6px 16px;
-      font-size: 9px;
-      letter-spacing: 2px;
-      color: var(--lo);
-      text-transform: uppercase;
-    }
 
     /* ── Main content ──────────────────────────────────────────────────────────── */
     #main {
@@ -192,7 +181,7 @@
     .hero-circuit-meta {
       font-size: 9px;
       letter-spacing: 1.5px;
-      color: var(--dim);
+      color: var(--lo);
       text-transform: uppercase;
       margin-top: 12px;
       margin-bottom: 24px;
@@ -254,7 +243,6 @@
     #track-image {
       display: block;
       width: 100%;
-      max-width: 600px;
       height: auto;
       border: 1px solid var(--border);
       margin-bottom: 24px;
@@ -289,7 +277,7 @@
       font-size: 13px;
       color: var(--mid);
       line-height: 1.75;
-      max-width: 600px;
+      margin-bottom: 28px;
     }
 
     /* ── Sector table ──────────────────────────────────────────────────────────── */
@@ -334,7 +322,6 @@
       <button id="dev-reset" style="margin-left:8px;color:#cc2233;border-color:#cc2233">RESET WORLD</button>
       <button id="dev-exit" style="color:#cc2233;border-color:#cc2233">EXIT DEV</button>
     </div>
-    <div id="info-bar">Today's Race</div>
   </div>
 
   <div id="main">
@@ -422,10 +409,6 @@
     const circuit      = getCircuit(event);
     const numRounds    = Math.max(...SEASON_SCHEDULE.map(e => e.round));
     const year         = 1929 + event.season;
-
-    // ── Info bar ───────────────────────────────────────────────────────────────
-    document.getElementById('info-bar').textContent =
-      `Today's Race · Round ${event.round} of ${numRounds} · ${year}`;
 
     // ── Hero ───────────────────────────────────────────────────────────────────
     document.getElementById('hero-race-name').textContent   = `${year} ${circuit.eventName}`;

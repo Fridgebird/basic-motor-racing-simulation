@@ -86,8 +86,7 @@
 
   <script type="module">
     import { TEAMS, ENGINES } from './data.js';
-    import { DRIVER_POOL } from './drivers.js';
-    import { getDisplayYear, getTeamEngine, getSeasonSnapshot } from './worldstate.js';
+    import { getDisplayYear, getTeamEngine, getSeasonSnapshot, getDriverProfile } from './worldstate.js';
     import {
       getCurrentEvent, getWorldSeed, ensurePastResultsCached,
       loadSeasonSummary,
@@ -153,7 +152,7 @@
           const driverLink = ch.driverId != null
             ? `<a href="driver.html?id=${ch.driverId}&season=${s}">${driverName}</a>`
             : driverName;
-          const pd        = DRIVER_POOL.find(d => d.id === ch.driverId);
+          const pd        = getDriverProfile(ch.driverId);
           const natKey    = (pd?.nationality ?? '').toLowerCase();
           const flagCode  = NAT_CODE[natKey] ?? '';
           const flagHtml  = flagCode

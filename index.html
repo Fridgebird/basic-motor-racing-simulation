@@ -205,14 +205,6 @@
       border-left: 1px solid var(--border);
     }
 
-    .action-group-label {
-      font-size: 9px;
-      letter-spacing: 2px;
-      color: var(--lo);
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
-
     .action-btns {
       display: flex;
       flex-direction: column;
@@ -287,7 +279,7 @@
       padding:3px 8px; border-bottom:1px solid var(--border); font-weight:normal;
     }
     .sector-table td { padding:5px 8px; border-bottom:1px solid var(--dim); }
-    .sector-table td:first-child { color:var(--lo); width:36px; }
+    .sector-table td:first-child { color:var(--lo); white-space:nowrap; }
     .sector-table td.sec-label { color:var(--hi); }
     .sector-table td.sec-char  { color:var(--lo); font-size:10px; }
     .char-power    { color:#e87040; }
@@ -339,23 +331,6 @@
 
     <div class="hero-circuit-meta" id="hero-circuit-meta">–</div>
 
-    <div id="action-panel">
-      <div class="action-group">
-        <div class="action-group-label">Qualifying</div>
-        <div class="action-btns">
-          <a id="btn-watch-quali" href="" class="action-btn primary">WATCH QUALIFYING →</a>
-          <a id="btn-result-quali" href="" class="action-btn spoiler">QUALIFYING RESULT →</a>
-        </div>
-      </div>
-      <div class="action-group">
-        <div class="action-group-label">Race</div>
-        <div class="action-btns">
-          <a id="btn-watch-race" href="" class="action-btn primary">WATCH RACE →</a>
-          <a id="btn-result-race" href="" class="action-btn spoiler">RACE RESULT →</a>
-        </div>
-      </div>
-    </div>
-
     <img id="track-image" src="" alt="" style="display:none">
 
     <div id="circuit-info">
@@ -373,9 +348,24 @@
       </table>
     </div>
 
-    <div id="strategy-info" style="margin-bottom:20px">
+    <div id="strategy-info" style="margin-bottom:28px">
       <div class="section-title">Strategy Notes</div>
       <div class="stat-grid" id="strategy-grid"></div>
+    </div>
+
+    <div id="action-panel">
+      <div class="action-group">
+        <div class="action-btns">
+          <a id="btn-watch-quali" href="" class="action-btn primary">WATCH QUALI →</a>
+          <a id="btn-result-quali" href="" class="action-btn spoiler">QUALI RESULT →</a>
+        </div>
+      </div>
+      <div class="action-group">
+        <div class="action-btns">
+          <a id="btn-watch-race" href="" class="action-btn primary">WATCH RACE →</a>
+          <a id="btn-result-race" href="" class="action-btn spoiler">RACE RESULT →</a>
+        </div>
+      </div>
     </div>
   </div>
 

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -43,180 +43,10 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 0 8px 32px;
+      padding: 0 0 48px;
     }
 
-    /* ── Topbar ──────────────────────────────────────────────────────────────── */
-    #topbar {
-      width: 100%;
-      max-width: 900px;
-      background: var(--bg-deep);
-      border: 1px solid var(--border);
-      border-bottom: 2px solid var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 14px;
-      margin-bottom: 8px;
-    }
-    .b-flat {
-      font-size: 14px;
-      letter-spacing: 3px;
-      color: var(--hi);
-      text-transform: uppercase;
-      line-height: 1;
-    }
-    .b-flat em { font-style: normal; color: var(--mid); }
-    .topbar-nav { display: flex; gap: 16px; margin-left: auto; margin-right: 16px; }
-    .topbar-nav-link {
-      color: var(--lo);
-      text-decoration: none;
-      font-size: 10px;
-      letter-spacing: 0.08em;
-    }
-    .topbar-nav-link:hover { color: var(--mid); }
-    .topbar-nav-link.current { color: var(--mid); }
-
-    /* ── Season header ───────────────────────────────────────────────────────── */
-    #season-header {
-      width: 100%;
-      max-width: 900px;
-      padding: 10px 4px 8px;
-      border-bottom: 1px solid var(--border);
-    }
-    #season-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    #season-title {
-      font-size: 9px;
-      letter-spacing: 3px;
-      color: var(--mid);
-      text-transform: uppercase;
-      flex: 1;
-    }
-    .season-nav-btn {
-      font-family: inherit;
-      font-size: 9px;
-      letter-spacing: 1px;
-      color: var(--lo);
-      background: none;
-      border: 1px solid var(--border);
-      padding: 3px 8px;
-      cursor: pointer;
-    }
-    .season-nav-btn:hover { color: var(--hi); border-color: var(--mid); }
-
-    /* ── Calendar table ──────────────────────────────────────────────────────── */
-    #calendar-wrap {
-      width: 100%;
-      max-width: 900px;
-    }
-
-    #calendar-table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    #calendar-table th {
-      color: var(--lo);
-      font-size: 9px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      font-weight: normal;
-      text-align: left;
-      padding: 3px 8px 6px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    #calendar-table td {
-      padding: 8px 8px;
-      font-size: 11px;
-      white-space: nowrap;
-      vertical-align: middle;
-    }
-
-    .cal-row {
-      border-bottom: 1px solid var(--bg-mid);
-    }
-
-    /* Column widths */
-    .cal-round   { width: 36px;  color: var(--lo); font-size: 11px; }
-    .cal-event   { min-width: 140px; color: var(--hi); }
-    .cal-circuit { min-width: 120px; color: var(--lo); }
-    .cal-info    { width: 28px; }
-    .cal-actions { width: auto; text-align: right; }
-
-    .event-name  { color: var(--hi); font-size: 11px; }
-    .circuit-name-text { color: var(--lo); font-size: 10px; letter-spacing: 0.05em; }
-
-    /* Upcoming rows */
-    .cal-row.upcoming td { color: var(--dim); }
-    .cal-row.upcoming .event-name { color: var(--lo); }
-
-    /* Action buttons */
-    .action-btns {
-      display: flex;
-      gap: 6px;
-      justify-content: flex-end;
-      align-items: center;
-    }
-
-    .btn-cal {
-      background: var(--bg-deep);
-      border: 1px solid var(--border);
-      color: var(--lo);
-      font-family: inherit;
-      font-size: 9px;
-      letter-spacing: 0.08em;
-      padding: 3px 8px;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-block;
-    }
-    .btn-cal:hover { color: var(--mid); border-color: var(--mid); }
-
-    .btn-watch {
-      color: var(--mid);
-      border-color: var(--lo);
-    }
-    .btn-watch:hover { color: var(--hi); border-color: var(--mid); }
-
-    .btn-info {
-      padding: 3px 6px;
-      color: var(--dim);
-      border-color: var(--dim);
-      font-size: 10px;
-    }
-    .btn-info:hover { color: var(--lo); border-color: var(--lo); }
-
-    .btn-locked {
-      color: var(--dim);
-      border-color: var(--bg-mid);
-      pointer-events: none;
-      cursor: default;
-      opacity: 0.5;
-    }
-
-    .btn-spoiler {
-      color: var(--lo);
-      border-color: var(--dim);
-      border-style: dashed;
-    }
-    .btn-spoiler:hover { color: var(--mid); border-color: var(--lo); }
-
-    /* Separator between quali and race button groups */
-    .btn-separator {
-      display: inline-block;
-      width: 1px;
-      height: 16px;
-      background: var(--border);
-      margin: 0 4px;
-      vertical-align: middle;
-    }
-
-    /* ── Sticky header ──────────────────────────────────────────────────────── */
+    /* ── Sticky header ────────────────────────────────────────────────────────── */
     #sticky-header {
       position: sticky;
       top: 0;
@@ -226,9 +56,26 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding-bottom: 12px;
       box-shadow: 0 3px 12px rgba(0,0,0,0.6);
     }
+
+    /* ── Topbar ───────────────────────────────────────────────────────────────── */
+    #topbar {
+      width: 100%;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-bottom: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      height: 44px;
+    }
+    .b-flat { font-size: 15px; color: var(--hi); letter-spacing: 0.04em; flex-shrink: 0; }
+    .b-flat em { font-style: normal; color: var(--mid); }
+    .topbar-nav { display: flex; gap: 16px; margin-left: auto; margin-right: 16px; }
+    .topbar-nav-link { color: var(--lo); text-decoration: none; font-size: 10px; letter-spacing: 0.08em; }
+    .topbar-nav-link:hover { color: var(--mid); }
+    .topbar-nav-link.current { color: var(--mid); }
 
     /* ── Dev bar ──────────────────────────────────────────────────────────────── */
     #dev-bar {
@@ -239,7 +86,6 @@
       justify-content: center;
       gap: 12px;
       padding: 6px 8px;
-      margin-bottom: 6px;
       background: var(--bg-deep);
       border: 1px solid var(--border);
       font-size: 11px;
@@ -265,6 +111,178 @@
       padding: 2px 4px;
     }
     .dev-label { color: var(--dim); }
+
+    /* ── Season header ────────────────────────────────────────────────────────── */
+    #season-header {
+      width: 100%;
+      max-width: 900px;
+      padding: 12px 16px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    #season-label {
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: var(--lo);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    #season-year-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    #season-year {
+      font-size: 26px;
+      letter-spacing: 2px;
+      color: var(--hi);
+      flex: 1;
+    }
+    .season-nav-btn {
+      font-family: inherit;
+      font-size: 9px;
+      letter-spacing: 1px;
+      color: var(--lo);
+      background: none;
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      cursor: pointer;
+    }
+    .season-nav-btn:hover { color: var(--hi); border-color: var(--mid); }
+
+    /* ── Calendar list ────────────────────────────────────────────────────────── */
+    #calendar-list {
+      width: 100%;
+      max-width: 900px;
+      padding: 0 0 16px;
+    }
+
+    /* ── Event card ───────────────────────────────────────────────────────────── */
+    .cal-card {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .cal-card:first-child { border-top: none; }
+
+    .cal-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .cal-rnd {
+      font-size: 10px;
+      color: var(--lo);
+      letter-spacing: 1px;
+      width: 28px;
+      flex-shrink: 0;
+    }
+    .cal-flag {
+      width: 32px;
+      height: 16px;
+      object-fit: cover;
+      border-radius: 1px;
+      flex-shrink: 0;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
+    }
+    .cal-flag-placeholder {
+      width: 32px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+    .cal-event-name {
+      font-size: 13px;
+      color: var(--hi);
+      letter-spacing: 0.04em;
+    }
+
+    .cal-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-left: 38px; /* indent to align with event name (28px rnd + 10px gap) */
+      margin-bottom: 8px;
+    }
+    .cal-circuit-name {
+      font-size: 10px;
+      color: var(--lo);
+      letter-spacing: 0.05em;
+      text-decoration: none;
+    }
+    .cal-circuit-name:hover { color: var(--mid); }
+
+    .btn-info {
+      font-family: inherit;
+      font-size: 10px;
+      color: var(--dim);
+      border: 1px solid var(--dim);
+      background: none;
+      padding: 1px 5px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      line-height: 1.4;
+    }
+    .btn-info:hover { color: var(--lo); border-color: var(--lo); }
+
+    .cal-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding-left: 38px;
+      flex-wrap: wrap;
+    }
+
+    .cal-btn-group {
+      display: flex;
+      gap: 4px;
+    }
+
+    .cal-btn-sep {
+      width: 1px;
+      height: 16px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .btn-cal {
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      color: var(--lo);
+      font-family: inherit;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      padding: 3px 8px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    .btn-cal:hover { color: var(--mid); border-color: var(--mid); }
+
+    .btn-watch {
+      color: var(--mid);
+      border-color: var(--lo);
+    }
+    .btn-watch:hover { color: var(--hi); border-color: var(--mid); }
+
+    .btn-locked {
+      color: var(--dim);
+      border-color: var(--bg-mid);
+      pointer-events: none;
+      cursor: default;
+      opacity: 0.5;
+    }
+
+    .btn-spoiler {
+      border-style: dashed;
+    }
+    .btn-spoiler:hover { color: var(--mid); border-color: var(--lo); }
+
+    /* Dim upcoming rows */
+    .cal-card.upcoming .cal-event-name { color: var(--lo); }
+    .cal-card.upcoming .cal-circuit-name { color: var(--dim); }
+    .cal-card.upcoming .cal-rnd { color: var(--dim); }
+    .cal-card.upcoming .cal-flag { opacity: 0.4; }
   </style>
   <link rel="stylesheet" href="topnav.css">
   <script src="topnav.js" defer></script>
@@ -272,7 +290,6 @@
 <body>
 
   <div id="sticky-header">
-    <!-- ── Topbar ────────────────────────────────────────────────────────────── -->
     <div id="topbar">
       <div class="b-flat">Simple <em>Motor Racing</em></div>
       <nav class="topbar-nav">
@@ -285,7 +302,6 @@
       </nav>
     </div>
 
-    <!-- ── Dev bar ───────────────────────────────────────────────────────────── -->
     <div id="dev-bar">
       <button id="dev-prev-year">◀◀ PREV YEAR</button>
       <button id="dev-prev">◀ PREV</button>
@@ -298,30 +314,17 @@
       <button id="dev-exit" style="color:#cc2233;border-color:#cc2233">EXIT DEV</button>
     </div>
 
-    <!-- ── Season header ─────────────────────────────────────────────────────── -->
     <div id="season-header">
-      <button id="season-prev" class="season-nav-btn" style="display:none">← S?</button>
-      <span id="season-title">–</span>
-      <button id="season-next" class="season-nav-btn" style="display:none">S? →</button>
+      <div id="season-label">World Championship Calendar</div>
+      <div id="season-year-row">
+        <button id="season-prev" class="season-nav-btn" style="display:none">◀</button>
+        <div id="season-year">–</div>
+        <button id="season-next" class="season-nav-btn" style="display:none">▶</button>
+      </div>
     </div>
   </div>
 
-  <!-- ── Calendar ─────────────────────────────────────────────────────────────── -->
-  <div id="calendar-wrap">
-    <table id="calendar-table">
-      <thead>
-        <tr>
-          <th class="cal-round">RND</th>
-          <th class="cal-event">EVENT</th>
-          <th class="cal-circuit">CIRCUIT</th>
-          <th class="cal-info"></th>
-          <th class="cal-actions">QUALIFYING</th>
-          <th class="cal-actions">RACE</th>
-        </tr>
-      </thead>
-      <tbody id="calendar-body"></tbody>
-    </table>
-  </div>
+  <div id="calendar-list"></div>
 
   <script type="module">
     import {
@@ -333,30 +336,39 @@
     } from './championship.js';
     import { SEASON_SCHEDULE, CIRCUITS } from './data.js';
 
-    // ── Dev mode entry via ?dev=1 ──────────────────────────────────────────────
+    const NAT_CODE = {
+      'australia':       'au', 'new zealand':    'nz', 'argentina':      'ar',
+      'mexico':          'mx', 'japan':          'jp', 'kenya':          'ke',
+      'belgium':         'be', 'france':         'fr', 'italy':          'it',
+      'germany':         'de', 'czechoslovakia': 'cz', 'england':        'gb',
+      'sweden':          'se', 'finland':        'fi', 'hong kong':      'hk',
+      'canada':          'ca', 'united states':  'us', 'pakistan':       'pk',
+      'brazil':          'br', 'south africa':   'za',
+    };
+
+    // ── Dev mode entry via ?dev=1 ────────────────────────────────────────────────
     const params = new URLSearchParams(location.search);
     if (params.get('dev') === '1') {
       enterDevMode();
       history.replaceState(null, '', location.pathname);
     }
 
-    // ── Resolve context ────────────────────────────────────────────────────────
     const todayOffset  = getTodayDayOffset();
     const currentEvent = getCurrentEvent();
     const numRounds    = Math.max(...SEASON_SCHEDULE.map(e => e.round));
 
     let viewSeason = currentEvent.season;
 
-    // ── Season header + nav ────────────────────────────────────────────────────
-    const prevBtn   = document.getElementById('season-prev');
-    const nextBtn   = document.getElementById('season-next');
-    const titleEl   = document.getElementById('season-title');
+    // ── Season header + nav ──────────────────────────────────────────────────────
+    const prevBtn  = document.getElementById('season-prev');
+    const nextBtn  = document.getElementById('season-next');
+    const yearEl   = document.getElementById('season-year');
 
     function updateSeasonHeader() {
       const year = 1929 + viewSeason;
-      titleEl.textContent   = `${year} — Calendar`;
-      prevBtn.textContent   = `← ${year - 1}`;
-      nextBtn.textContent   = `${year + 1} →`;
+      yearEl.textContent    = year;
+      prevBtn.textContent   = `◀ ${year - 1}`;
+      nextBtn.textContent   = `${year + 1} ▶`;
       prevBtn.style.display = viewSeason > 1 ? 'inline-block' : 'none';
       nextBtn.style.display = viewSeason < currentEvent.season ? 'inline-block' : 'none';
     }
@@ -364,9 +376,9 @@
     prevBtn.addEventListener('click', () => { viewSeason--; updateSeasonHeader(); buildCalendar(viewSeason); });
     nextBtn.addEventListener('click', () => { viewSeason++; updateSeasonHeader(); buildCalendar(viewSeason); });
 
-    // ── Dev bar ────────────────────────────────────────────────────────────────
-    const devBar = document.getElementById('dev-bar');
+    // ── Dev bar ──────────────────────────────────────────────────────────────────
     if (isDevMode()) {
+      const devBar        = document.getElementById('dev-bar');
       const todayDateStr  = formatShortDate(getEventDate(todayOffset));
       const todayEventStr = `Race Day — R${currentEvent.round} · ${1929 + currentEvent.season}`;
 
@@ -375,18 +387,10 @@
         `DEV · Day ${todayOffset} · ${todayDateStr} · ${todayEventStr}`;
       document.getElementById('world-seed-input').value = getWorldSeed();
 
-      document.getElementById('dev-prev-year').addEventListener('click', () => {
-        retreatDevYear(); location.reload();
-      });
-      document.getElementById('dev-prev').addEventListener('click', () => {
-        retreatDevEvent(); location.reload();
-      });
-      document.getElementById('dev-next').addEventListener('click', () => {
-        advanceDevEvent(); location.reload();
-      });
-      document.getElementById('dev-next-year').addEventListener('click', () => {
-        advanceDevYear(); location.reload();
-      });
+      document.getElementById('dev-prev-year').addEventListener('click', () => { retreatDevYear(); location.reload(); });
+      document.getElementById('dev-prev').addEventListener('click',      () => { retreatDevEvent(); location.reload(); });
+      document.getElementById('dev-next').addEventListener('click',      () => { advanceDevEvent(); location.reload(); });
+      document.getElementById('dev-next-year').addEventListener('click', () => { advanceDevYear(); location.reload(); });
       document.getElementById('world-seed-input').addEventListener('change', e => {
         setWorldSeed(parseInt(e.target.value, 10) || 0);
         location.reload();
@@ -396,12 +400,10 @@
           resetWorld(); location.reload();
         }
       });
-      document.getElementById('dev-exit').addEventListener('click', () => {
-        exitDevMode(); location.reload();
-      });
+      document.getElementById('dev-exit').addEventListener('click', () => { exitDevMode(); location.reload(); });
     }
 
-    // ── Build calendar rows (one per round) ───────────────────────────────────
+    // ── Button helpers ───────────────────────────────────────────────────────────
     function watchBtn(href, unlocked) {
       if (!unlocked) return `<span class="btn-cal btn-watch btn-locked">WATCH</span>`;
       return `<a href="${href}" class="btn-cal btn-watch">WATCH</a>`;
@@ -414,35 +416,25 @@
       return `<a href="${href}" class="btn-cal">RESULT</a>`;
     }
 
+    // ── Build calendar cards ─────────────────────────────────────────────────────
     function buildCalendar(s) {
       const seasonStart = (s - 1) * numRounds;
-      const tbody = document.getElementById('calendar-body');
-      tbody.innerHTML = '';
+      const list = document.getElementById('calendar-list');
+      list.innerHTML = '';
 
-      // Group schedule by round
       const rounds = [];
       SEASON_SCHEDULE.forEach(entry => {
-        let round = rounds.find(r => r.round === entry.round);
-        if (!round) {
-          round = { round: entry.round, circuitId: entry.circuitId };
-          rounds.push(round);
+        if (!rounds.find(r => r.round === entry.round)) {
+          rounds.push({ round: entry.round, circuitId: entry.circuitId });
         }
       });
 
-      rounds.forEach(roundData => {
-        const { round, circuitId } = roundData;
-        const circuit = CIRCUITS[circuitId];
-
-        // Qualifying and race share the same day — both use round-1 as the offset
+      rounds.forEach(({ round, circuitId }) => {
+        const circuit     = CIRCUITS[circuitId];
         const sharedOffset = seasonStart + (round - 1);
-        const qualiOffset  = sharedOffset;
-        const raceOffset   = sharedOffset;
-
-        const qualiUnlocked = qualiOffset <= todayOffset;
-        const raceUnlocked  = raceOffset  <= todayOffset;
-        const qualiToday    = qualiOffset === todayOffset;
-        const raceToday     = raceOffset  === todayOffset;
-        const isUpcoming    = !qualiUnlocked;
+        const unlocked    = sharedOffset <= todayOffset;
+        const isToday     = sharedOffset === todayOffset;
+        const isUpcoming  = !unlocked;
 
         const qualiResultHref = `results.html?season=${s}&round=${round}&type=qualifying`;
         const qualiWatchHref  = `qualifying.html?season=${s}&round=${round}`;
@@ -450,39 +442,40 @@
         const raceWatchHref   = `race.html?season=${s}&round=${round}`;
         const circuitHref     = `circuit.html?circuitId=${circuitId}`;
 
-        const tr = document.createElement('tr');
-        tr.className = `cal-row${isUpcoming ? ' upcoming' : ''}`;
+        const flagCode = NAT_CODE[(circuit.country || '').toLowerCase()];
+        const flagHtml = flagCode
+          ? `<img class="cal-flag" src="https://flagcdn.com/w40/${flagCode}.png" alt="${circuit.country}">`
+          : `<span class="cal-flag-placeholder"></span>`;
 
-        tr.innerHTML = `
-          <td class="cal-round">R${round}</td>
-          <td class="cal-event">
-            <div class="event-name">${circuit.eventName}</div>
-          </td>
-          <td class="cal-circuit">
-            <span class="circuit-name-text">${circuit.name}</span>
-          </td>
-          <td class="cal-info">
-            <a href="${circuitHref}" class="btn-cal btn-info" title="Circuit info">ⓘ</a>
-          </td>
-          <td class="cal-actions">
-            <div class="action-btns">
-              ${watchBtn(qualiWatchHref, qualiUnlocked)}
-              ${resultBtn(qualiResultHref, qualiUnlocked, qualiToday)}
+        const card = document.createElement('div');
+        card.className = `cal-card${isUpcoming ? ' upcoming' : ''}`;
+        card.innerHTML = `
+          <div class="cal-top">
+            <span class="cal-rnd">R${round}</span>
+            ${flagHtml}
+            <div class="cal-event-name">${circuit.eventName}</div>
+          </div>
+          <div class="cal-meta">
+            <a href="${circuitHref}" class="cal-circuit-name">${circuit.name}</a>
+            <a href="${circuitHref}" class="btn-info">ⓘ</a>
+          </div>
+          <div class="cal-actions">
+            <div class="cal-btn-group">
+              ${watchBtn(qualiWatchHref, unlocked)}
+              ${resultBtn(qualiResultHref, unlocked, isToday)}
             </div>
-          </td>
-          <td class="cal-actions">
-            <div class="action-btns">
-              ${watchBtn(raceWatchHref, raceUnlocked)}
-              ${resultBtn(raceResultHref, raceUnlocked, raceToday)}
+            <span class="cal-btn-sep"></span>
+            <div class="cal-btn-group">
+              ${watchBtn(raceWatchHref, unlocked)}
+              ${resultBtn(raceResultHref, unlocked, isToday)}
             </div>
-          </td>
+          </div>
         `;
-
-        tbody.appendChild(tr);
+        list.appendChild(card);
       });
     }
 
-    // ── Initial render ─────────────────────────────────────────────────────────
+    // ── Initial render ───────────────────────────────────────────────────────────
     updateSeasonHeader();
     buildCalendar(viewSeason);
   </script>

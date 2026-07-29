@@ -274,10 +274,6 @@
 
     /* ── Sector table ──────────────────────────────────────────────────────────── */
     .sector-table { width:100%; border-collapse:collapse; font-size:11px; }
-    .sector-table th {
-      text-align:left; color:var(--lo); font-size:9px; letter-spacing:0.10em;
-      padding:3px 8px; border-bottom:1px solid var(--border); font-weight:normal;
-    }
     .sector-table td { padding:5px 8px; border-bottom:1px solid var(--dim); }
     .sector-table td:first-child { color:var(--lo); white-space:nowrap; }
     .sector-table td.sec-label { color:var(--hi); }
@@ -343,7 +339,6 @@
     <div id="sector-info" style="margin-bottom:20px">
       <div class="section-title">Sector Characteristics</div>
       <table class="sector-table">
-        <thead><tr><th>#</th><th>SECTOR</th><th>CHARACTER</th></tr></thead>
         <tbody id="sector-tbody"></tbody>
       </table>
     </div>
@@ -496,8 +491,8 @@
 
     // ── Strategy notes ─────────────────────────────────────────────────────────
     const strategyRows = [
-      ['Fuel load', fuelLoad(circuit.baseFuelBurnPerLap)],
-      ['Pit lane',  `~${circuit.pitLaneTime} sec time loss`],
+      ['Fuel load',           fuelLoad(circuit.baseFuelBurnPerLap)],
+      ['Pit lane time loss',  pitLaneLoss(circuit.pitLaneTime)],
     ];
     const strategyGrid = document.getElementById('strategy-grid');
     strategyRows.forEach(([label, value]) => {
@@ -568,6 +563,12 @@
     function fuelLoad(burnPerLap) {
       if (burnPerLap < 1.2)   return 'Low';
       if (burnPerLap <= 1.55) return 'Moderate';
+      return 'High';
+    }
+
+    function pitLaneLoss(seconds) {
+      if (seconds <= 19) return 'Low';
+      if (seconds <= 21) return 'Moderate';
       return 'High';
     }
 

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event — Simple Motor Racing</title>
+  <style>
+    @font-face { font-family:'Square'; src:url('Square.ttf') format('truetype'); font-display:swap; font-weight:normal; font-style:normal; }
+    @font-face { font-family:'Square'; src:url('Squareo.ttf') format('truetype'); font-display:swap; font-weight:normal; font-style:oblique; }
+    @font-face { font-family:'IBMPlex'; src:url('IBMPlexSans-VariableFont_wdth,wght.ttf') format('truetype'); font-weight:100 900; }
+    @font-face { font-family:'TechRounded'; src:url('TechnicalRoundedVP-ThinOblique.otf') format('opentype'); font-weight:normal; }
+
+    :root {
+      --bg:      #0d1117;
+      --bg-deep: #080c12;
+      --bg-mid:  #0a0f18;
+      --border:  #1e2f44;
+      --hi:      #ffffff;
+      --mid:     #8ab4d4;
+      --lo:      #4a6a88;
+      --dim:     #2a4055;
+      --accent:  #cc2233;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--hi);
+      font-family: 'Square', 'Courier New', monospace;
+      font-size: 13px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 8px 48px;
+    }
+
+    /* ── Topbar ───────────────────────────────────────────────────────────────── */
+    #topbar {
+      width: 100%;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-bottom: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      height: 44px;
+    }
+    .b-flat { font-size: 15px; color: var(--hi); letter-spacing: 0.04em; flex-shrink: 0; }
+    .b-flat em { font-style: normal; color: var(--mid); }
+    .topbar-nav { display: flex; gap: 16px; margin-left: auto; margin-right: 16px; }
+    .topbar-nav-link { color: var(--lo); text-decoration: none; font-size: 10px; letter-spacing: 0.08em; }
+    .topbar-nav-link:hover { color: var(--mid); }
+
+    /* ── Main content ─────────────────────────────────────────────────────────── */
+    #main {
+      width: 100%;
+      max-width: 760px;
+      padding: 28px 16px 0;
+    }
+
+    /* ── Back link ────────────────────────────────────────────────────────────── */
+    .back-link {
+      display: inline-block;
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--lo);
+      text-decoration: none;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .back-link:hover { color: var(--mid); }
+
+    /* ── Hero ─────────────────────────────────────────────────────────────────── */
+    .hero-race-name {
+      font-size: 26px;
+      letter-spacing: 2px;
+      color: var(--hi);
+      text-transform: uppercase;
+      line-height: 1.15;
+      margin-bottom: 8px;
+    }
+
+    .hero-subtitle {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--lo);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .hero-circuit-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 6px;
+    }
+
+    .event-flag {
+      width: 72px;
+      height: 36px;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+    }
+
+    .hero-circuit-name {
+      font-size: 14px;
+      letter-spacing: 1px;
+      color: var(--mid);
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+
+    .hero-circuit-location { font-size: 11px; letter-spacing: 1px; color: var(--lo); }
+
+    .hero-circuit-meta {
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      color: var(--lo);
+      text-transform: uppercase;
+      margin-top: 12px;
+      margin-bottom: 24px;
+    }
+
+    /* ── Action panel ─────────────────────────────────────────────────────────── */
+    #action-panel {
+      display: flex;
+      gap: 0;
+      margin-bottom: 28px;
+      border: 1px solid var(--border);
+      background: var(--bg-mid);
+    }
+
+    .action-group { flex: 1; padding: 16px 20px; }
+    .action-group + .action-group { border-left: 1px solid var(--border); }
+
+    .action-btns { display: flex; flex-direction: column; gap: 8px; }
+
+    .action-btn {
+      display: block;
+      font-family: inherit;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-decoration: none;
+      padding: 8px 14px;
+      border: 1px solid var(--border);
+      background: var(--bg-deep);
+      color: var(--lo);
+      text-transform: uppercase;
+      cursor: pointer;
+      text-align: center;
+    }
+    .action-btn:hover { color: var(--mid); border-color: var(--mid); }
+    .action-btn.primary { color: var(--mid); border-color: var(--lo); }
+    .action-btn.primary:hover { color: var(--hi); border-color: var(--mid); }
+    .action-btn.spoiler { border-style: dashed; color: var(--lo); border-color: var(--dim); }
+    .action-btn.spoiler:hover { color: var(--mid); border-color: var(--lo); }
+    .action-btn.locked { color: var(--dim); border-color: var(--bg-mid); pointer-events: none; opacity: 0.5; }
+
+    /* ── Track image ──────────────────────────────────────────────────────────── */
+    #track-image {
+      display: block;
+      width: 100%;
+      height: auto;
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    /* ── Stats grid ───────────────────────────────────────────────────────────── */
+    #circuit-info { margin-bottom: 20px; }
+
+    .section-title {
+      font-size: 9px;
+      color: var(--lo);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+      margin-bottom: 10px;
+    }
+
+    .stat-grid { display: grid; grid-template-columns: 160px 1fr; gap: 6px 0; }
+    .stat-label { font-size: 10px; color: var(--lo); letter-spacing: 0.06em; padding: 3px 0; }
+    .stat-value { font-size: 11px; color: var(--mid); padding: 3px 0; }
+
+    /* ── Profile text ─────────────────────────────────────────────────────────── */
+    .circuit-profile {
+      font-family: 'TechRounded', 'IBMPlex', 'Segoe UI', system-ui, sans-serif;
+      font-size: 13px;
+      color: var(--mid);
+      line-height: 1.75;
+      margin-bottom: 28px;
+    }
+
+    /* ── Sector table ─────────────────────────────────────────────────────────── */
+    .sector-table { width:100%; border-collapse:collapse; font-size:11px; }
+    .sector-table td { padding:5px 8px; border-bottom:1px solid var(--dim); }
+    .sector-table td:first-child { color:var(--lo); white-space:nowrap; }
+    .sector-table td.sec-label { color:var(--hi); }
+    .sector-table td.sec-char  { color:var(--lo); font-size:10px; }
+    .char-power    { color:#e87040; }
+    .char-aero     { color:#40a0e8; }
+    .char-balanced { color:var(--mid); }
+  </style>
+  <link rel="stylesheet" href="topnav.css">
+  <script src="topnav.js" defer></script>
+</head>
+<body>
+
+  <div id="topbar">
+    <div class="b-flat">Simple <em>Motor Racing</em></div>
+    <nav class="topbar-nav">
+      <a href="index.html" class="topbar-nav-link">HOME</a>
+      <a href="calendar.html" class="topbar-nav-link">CALENDAR</a>
+      <a href="drivers.html" class="topbar-nav-link">DRIVERS</a>
+      <a href="team.html" class="topbar-nav-link">TEAMS</a>
+      <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
+      <a href="champions.html" class="topbar-nav-link">CHAMPIONS</a>
+    </nav>
+  </div>
+
+  <div id="main">
+    <a href="calendar.html" class="back-link">← Calendar</a>
+    <div class="hero-race-name" id="hero-race-name">–</div>
+    <div class="hero-subtitle" id="hero-subtitle">–</div>
+
+    <div class="hero-circuit-row">
+      <img class="event-flag" id="event-flag" src="" alt="" style="display:none">
+      <div>
+        <div class="hero-circuit-name" id="hero-circuit-name">–</div>
+        <div class="hero-circuit-location" id="hero-circuit-location">–</div>
+      </div>
+    </div>
+
+    <div class="hero-circuit-meta" id="hero-circuit-meta">–</div>
+
+    <img id="track-image" src="" alt="" style="display:none">
+
+    <div id="circuit-info">
+      <div class="section-title">Circuit</div>
+      <div class="stat-grid" id="stat-grid"></div>
+    </div>
+
+    <div class="circuit-profile" id="circuit-profile"></div>
+
+    <div id="sector-info" style="margin-bottom:20px">
+      <div class="section-title">Sector Characteristics</div>
+      <table class="sector-table">
+        <tbody id="sector-tbody"></tbody>
+      </table>
+    </div>
+
+    <div id="strategy-info" style="margin-bottom:28px">
+      <div class="section-title">Strategy Notes</div>
+      <div class="stat-grid" id="strategy-grid"></div>
+    </div>
+
+    <div id="action-panel">
+      <div class="action-group">
+        <div class="action-btns">
+          <a id="btn-watch-quali" href="" class="action-btn primary">WATCH QUALI →</a>
+          <a id="btn-result-quali" href="" class="action-btn spoiler">QUALI RESULT →</a>
+        </div>
+      </div>
+      <div class="action-group">
+        <div class="action-btns">
+          <a id="btn-watch-race" href="" class="action-btn primary">WATCH RACE →</a>
+          <a id="btn-result-race" href="" class="action-btn spoiler">RACE RESULT →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import {
+      getCurrentEvent, getTodayDayOffset, getWorldSeed,
+    } from './championship.js';
+    import { SEASON_SCHEDULE, CIRCUITS } from './data.js';
+
+    const NAT_CODE = {
+      'australia':      'au', 'new zealand':  'nz', 'argentina':    'ar',
+      'mexico':         'mx', 'japan':        'jp', 'kenya':        'ke',
+      'belgium':        'be', 'france':       'fr', 'italy':        'it',
+      'germany':        'de', 'czechoslovakia':'cz', 'england':      'gb',
+      'sweden':         'se', 'finland':      'fi', 'hong kong':    'hk',
+      'canada':         'ca', 'united states':'us', 'pakistan':     'pk',
+      'brazil':         'br', 'south africa': 'za',
+    };
+
+    const params     = new URLSearchParams(location.search);
+    const season     = parseInt(params.get('season'), 10) || getCurrentEvent().season;
+    const round      = parseInt(params.get('round'),  10) || getCurrentEvent().round;
+    const numRounds  = Math.max(...SEASON_SCHEDULE.map(e => e.round));
+    const schedEntry = SEASON_SCHEDULE.find(e => e.round === round);
+    const circuit    = schedEntry ? CIRCUITS[schedEntry.circuitId] : null;
+
+    if (!circuit) {
+      document.getElementById('hero-race-name').textContent = 'Event not found';
+    } else {
+      const year       = 1929 + season;
+      const todayOffset = getTodayDayOffset();
+      const dayOffset   = (season - 1) * numRounds + (round - 1);
+      const isUnlocked  = dayOffset <= todayOffset;
+      const isToday     = dayOffset === todayOffset;
+
+      document.title = `${year} ${circuit.eventName} — Simple Motor Racing`;
+
+      // ── Hero ──────────────────────────────────────────────────────────────────
+      document.getElementById('hero-race-name').textContent    = `${year} ${circuit.eventName}`;
+      document.getElementById('hero-subtitle').textContent     = `World Championship · Round ${round} of ${numRounds}`;
+      document.getElementById('hero-circuit-name').textContent = circuit.name;
+      document.getElementById('hero-circuit-location').textContent =
+        [circuit.location, circuit.country].filter(Boolean).join(' · ');
+      document.getElementById('hero-circuit-meta').textContent =
+        [circuit.type, circuit.character].filter(Boolean).join('  ·  ');
+
+      // ── Flag ──────────────────────────────────────────────────────────────────
+      const flagCode = NAT_CODE[(circuit.country || '').toLowerCase()];
+      if (flagCode) {
+        const flagEl = document.getElementById('event-flag');
+        flagEl.src   = `https://flagcdn.com/w160/${flagCode}.png`;
+        flagEl.alt   = circuit.country;
+        flagEl.style.display = '';
+      }
+
+      // ── Track image ────────────────────────────────────────────────────────────
+      const trackImg = document.getElementById('track-image');
+      trackImg.src   = `tracks/${circuit.id}.webp`;
+      trackImg.alt   = circuit.name;
+      trackImg.style.display = '';
+      trackImg.onerror = () => { trackImg.style.display = 'none'; };
+
+      // ── Circuit stats ──────────────────────────────────────────────────────────
+      const raceDistKm = circuit.lengthKm ? (circuit.lengthKm * circuit.totalLaps).toFixed(0) : null;
+      const statRows = [
+        ['Length',        circuit.lengthKm ? `${circuit.lengthKm.toFixed(3)} km` : '–'],
+        ['Race distance', raceDistKm ? `${circuit.totalLaps} laps · ${raceDistKm} km` : `${circuit.totalLaps} laps`],
+        ['Abrasiveness',  abrasiveness(circuit.trackAbrasiveness)],
+        ['Overtaking',    overtaking(circuit.overtakingDifficulty)],
+      ];
+      const statGrid = document.getElementById('stat-grid');
+      statRows.forEach(([label, value]) => {
+        const lEl = document.createElement('div'); lEl.className = 'stat-label'; lEl.textContent = label;
+        const vEl = document.createElement('div'); vEl.className = 'stat-value'; vEl.textContent = value;
+        statGrid.append(lEl, vEl);
+      });
+
+      // ── Profile text ───────────────────────────────────────────────────────────
+      if (circuit.profile) {
+        document.getElementById('circuit-profile').textContent = circuit.profile;
+      }
+
+      // ── Sector characteristics ─────────────────────────────────────────────────
+      const sectorTbody = document.getElementById('sector-tbody');
+      circuit.sectors.forEach(sec => {
+        const char = sectorCharacter(sec);
+        const tr   = document.createElement('tr');
+        tr.innerHTML = `
+          <td>Sector ${sec.id}</td>
+          <td class="sec-label">${sec.label}</td>
+          <td class="sec-char ${char.cls}">${char.text}</td>
+        `;
+        sectorTbody.appendChild(tr);
+      });
+
+      // ── Strategy notes ─────────────────────────────────────────────────────────
+      const strategyRows = [
+        ['Fuel load',          fuelLoad(circuit.baseFuelBurnPerLap)],
+        ['Pit lane time loss', pitLaneLoss(circuit.pitLaneTime)],
+      ];
+      const strategyGrid = document.getElementById('strategy-grid');
+      strategyRows.forEach(([label, value]) => {
+        const lEl = document.createElement('div'); lEl.className = 'stat-label'; lEl.textContent = label;
+        const vEl = document.createElement('div'); vEl.className = 'stat-value'; vEl.textContent = value;
+        strategyGrid.append(lEl, vEl);
+      });
+
+      // ── Action buttons ─────────────────────────────────────────────────────────
+      const qualiWatchHref  = `qualifying.html?season=${season}&round=${round}`;
+      const qualiResultHref = `results.html?season=${season}&round=${round}&type=qualifying`;
+      const raceWatchHref   = `race.html?season=${season}&round=${round}`;
+      const raceResultHref  = `results.html?season=${season}&round=${round}&type=race`;
+
+      const btnWatchQuali  = document.getElementById('btn-watch-quali');
+      const btnResultQuali = document.getElementById('btn-result-quali');
+      const btnWatchRace   = document.getElementById('btn-watch-race');
+      const btnResultRace  = document.getElementById('btn-result-race');
+
+      btnWatchQuali.href  = qualiWatchHref;
+      btnResultQuali.href = qualiResultHref;
+      btnWatchRace.href   = raceWatchHref;
+      btnResultRace.href  = raceResultHref;
+
+      if (!isUnlocked) {
+        [btnWatchQuali, btnResultQuali, btnWatchRace, btnResultRace].forEach(btn => {
+          btn.classList.add('locked');
+          btn.removeAttribute('href');
+        });
+      } else if (isToday) {
+        btnResultQuali.addEventListener('click', e => {
+          if (!confirm('Show qualifying result? This contains spoilers.')) e.preventDefault();
+        });
+        btnResultRace.addEventListener('click', e => {
+          if (!confirm("Show today's race result? This contains spoilers.")) e.preventDefault();
+        });
+      }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────────
+    function abrasiveness(val) {
+      if (val <= 0.30) return 'Smooth';
+      if (val <= 0.45) return 'Moderate';
+      if (val <= 0.55) return 'Aggressive';
+      return 'Destructive';
+    }
+    function overtaking(val) {
+      if (!val) return '—';
+      if (val <= 0.55) return 'Very difficult';
+      if (val <= 0.75) return 'Difficult';
+      if (val <= 0.95) return 'Moderate';
+      if (val <= 1.10) return 'Average';
+      if (val <= 1.30) return 'Good';
+      return 'Excellent';
+    }
+    function fuelLoad(burnPerLap) {
+      if (burnPerLap < 1.2)   return 'Low';
+      if (burnPerLap <= 1.55) return 'Moderate';
+      return 'High';
+    }
+    function pitLaneLoss(seconds) {
+      if (seconds <= 19) return 'Low';
+      if (seconds <= 21) return 'Moderate';
+      return 'High';
+    }
+    function sectorCharacter(sec) {
+      const { powerWeight, aeroWeight } = sec;
+      if (powerWeight > aeroWeight * 1.5) return { text: 'Power-limited',   cls: 'char-power' };
+      if (aeroWeight  > powerWeight * 1.5) return { text: 'Chassis-limited', cls: 'char-aero' };
+      return { text: 'Balanced', cls: 'char-balanced' };
+    }
+  </script>
+
+</body>
+</html>

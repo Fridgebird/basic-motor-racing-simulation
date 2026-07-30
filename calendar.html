@@ -199,84 +199,31 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      padding-left: 38px; /* indent to align with event name (28px rnd + 10px gap) */
+      padding-left: 38px;
       margin-bottom: 8px;
     }
     .cal-circuit-name {
       font-size: 10px;
       color: var(--lo);
       letter-spacing: 0.05em;
-      text-decoration: none;
     }
-    .cal-circuit-name:hover { color: var(--mid); }
 
-    .btn-info {
-      font-family: inherit;
-      font-size: 10px;
-      color: var(--dim);
-      border: 1px solid var(--dim);
-      background: none;
-      padding: 1px 5px;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-block;
-      line-height: 1.4;
-    }
-    .btn-info:hover { color: var(--lo); border-color: var(--lo); }
-
-    .cal-actions {
-      display: flex;
-      align-items: center;
-      gap: 6px;
+    .cal-goto {
       padding-left: 38px;
-      flex-wrap: wrap;
     }
-
-    .cal-btn-group {
-      display: flex;
-      gap: 4px;
-    }
-
-    .cal-btn-sep {
-      width: 1px;
-      height: 16px;
-      background: var(--border);
-      flex-shrink: 0;
-    }
-
-    .btn-cal {
-      background: var(--bg-deep);
-      border: 1px solid var(--border);
-      color: var(--lo);
+    .btn-goto {
+      display: inline-block;
       font-family: inherit;
       font-size: 9px;
       letter-spacing: 0.08em;
-      padding: 3px 8px;
-      cursor: pointer;
       text-decoration: none;
-      display: inline-block;
+      padding: 4px 12px;
+      border: 1px solid var(--lo);
+      background: var(--bg-deep);
+      color: var(--mid);
       white-space: nowrap;
     }
-    .btn-cal:hover { color: var(--mid); border-color: var(--mid); }
-
-    .btn-watch {
-      color: var(--mid);
-      border-color: var(--lo);
-    }
-    .btn-watch:hover { color: var(--hi); border-color: var(--mid); }
-
-    .btn-locked {
-      color: var(--dim);
-      border-color: var(--bg-mid);
-      pointer-events: none;
-      cursor: default;
-      opacity: 0.5;
-    }
-
-    .btn-spoiler {
-      border-style: dashed;
-    }
-    .btn-spoiler:hover { color: var(--mid); border-color: var(--lo); }
+    .btn-goto:hover { color: var(--hi); border-color: var(--mid); }
 
     /* Dim upcoming rows */
     .cal-card.upcoming .cal-event-name { color: var(--lo); }
@@ -403,19 +350,6 @@
       document.getElementById('dev-exit').addEventListener('click', () => { exitDevMode(); location.reload(); });
     }
 
-    // ── Button helpers ───────────────────────────────────────────────────────────
-    function watchBtn(href, unlocked) {
-      if (!unlocked) return `<span class="btn-cal btn-watch btn-locked">WATCH</span>`;
-      return `<a href="${href}" class="btn-cal btn-watch">WATCH</a>`;
-    }
-    function resultBtn(href, unlocked, isToday) {
-      if (!unlocked) return `<span class="btn-cal btn-locked">RESULT</span>`;
-      if (isToday) {
-        return `<a href="${href}" class="btn-cal btn-spoiler" onclick="return confirm('Show today\\'s result? This contains spoilers.')">RESULT</a>`;
-      }
-      return `<a href="${href}" class="btn-cal">RESULT</a>`;
-    }
-
     // ── Build calendar cards ─────────────────────────────────────────────────────
     function buildCalendar(s) {
       const seasonStart = (s - 1) * numRounds;
@@ -430,17 +364,10 @@
       });
 
       rounds.forEach(({ round, circuitId }) => {
-        const circuit     = CIRCUITS[circuitId];
-        const sharedOffset = seasonStart + (round - 1);
-        const unlocked    = sharedOffset <= todayOffset;
-        const isToday     = sharedOffset === todayOffset;
-        const isUpcoming  = !unlocked;
-
-        const qualiResultHref = `results.html?season=${s}&round=${round}&type=qualifying`;
-        const qualiWatchHref  = `qualifying.html?season=${s}&round=${round}`;
-        const raceResultHref  = `results.html?season=${s}&round=${round}&type=race`;
-        const raceWatchHref   = `race.html?season=${s}&round=${round}`;
-        const circuitHref     = `circuit.html?circuitId=${circuitId}`;
+        const circuit    = CIRCUITS[circuitId];
+        const dayOffset  = seasonStart + (round - 1);
+        const isUpcoming = dayOffset > todayOffset;
+        const eventHref  = `event.html?season=${s}&round=${round}`;
 
         const flagCode = NAT_CODE[(circuit.country || '').toLowerCase()];
         const flagHtml = flagCode
@@ -456,19 +383,10 @@
             <div class="cal-event-name">${circuit.eventName}</div>
           </div>
           <div class="cal-meta">
-            <a href="${circuitHref}" class="cal-circuit-name">${circuit.name}</a>
-            <a href="${circuitHref}" class="btn-info">ⓘ</a>
+            <span class="cal-circuit-name">${circuit.name}</span>
           </div>
-          <div class="cal-actions">
-            <div class="cal-btn-group">
-              ${watchBtn(qualiWatchHref, unlocked)}
-              ${resultBtn(qualiResultHref, unlocked, isToday)}
-            </div>
-            <span class="cal-btn-sep"></span>
-            <div class="cal-btn-group">
-              ${watchBtn(raceWatchHref, unlocked)}
-              ${resultBtn(raceResultHref, unlocked, isToday)}
-            </div>
+          <div class="cal-goto">
+            <a href="${eventHref}" class="btn-goto">GO TO →</a>
           </div>
         `;
         list.appendChild(card);

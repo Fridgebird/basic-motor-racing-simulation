@@ -127,8 +127,30 @@
     }
 
     /* ── Year scroller ────────────────────────────────────────────────────────── */
-    #season-scroller {
+    #scroller-wrap {
+      display: flex;
+      align-items: stretch;
       width: 100%;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .scroll-arrow {
+      flex-shrink: 0;
+      width: 28px;
+      background: var(--bg-deep);
+      border: none;
+      border-bottom: 1px solid var(--border);
+      color: var(--lo);
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      margin-bottom: -1px;
+    }
+    .scroll-arrow:hover { color: var(--hi); background: var(--bg-mid); }
+    .scroll-arrow[aria-hidden="true"] { visibility: hidden; }
+
+    #season-scroller {
+      flex: 1;
       overflow-x: auto;
       scrollbar-width: none;
       -ms-overflow-style: none;
@@ -138,7 +160,6 @@
     #season-scroll-inner {
       display: flex;
       flex-wrap: nowrap;
-      border-bottom: 1px solid var(--border);
     }
 
     .yr-btn {
@@ -152,7 +173,7 @@
       background: none;
       color: var(--lo);
       cursor: pointer;
-      margin-bottom: -1px; /* overlap the container border-bottom */
+      margin-bottom: -1px;
     }
     .yr-btn:hover { color: var(--mid); }
     .yr-btn.active { color: var(--hi); border-bottom-color: var(--accent); }
@@ -271,8 +292,12 @@
 
     <div id="season-header">
       <div id="season-label">World Championship Calendar</div>
-      <div id="season-scroller">
-        <div id="season-scroll-inner"></div>
+      <div id="scroller-wrap">
+        <button id="scroll-left"  class="scroll-arrow" aria-label="Scroll left"  aria-hidden="true">&#8249;</button>
+        <div id="season-scroller">
+          <div id="season-scroll-inner"></div>
+        </div>
+        <button id="scroll-right" class="scroll-arrow" aria-label="Scroll right" aria-hidden="true">&#8250;</button>
       </div>
     </div>
   </div>
@@ -313,6 +338,25 @@
     let viewSeason = currentEvent.season;
 
     // ── Year scroller ────────────────────────────────────────────────────────────
+    const scroller   = document.getElementById('season-scroller');
+    const arrowLeft  = document.getElementById('scroll-left');
+    const arrowRight = document.getElementById('scroll-right');
+
+    function updateArrows() {
+      const atStart = scroller.scrollLeft <= 1;
+      const atEnd   = scroller.scrollLeft >= scroller.scrollWidth - scroller.clientWidth - 1;
+      arrowLeft.setAttribute('aria-hidden',  atStart ? 'true' : 'false');
+      arrowRight.setAttribute('aria-hidden', atEnd   ? 'true' : 'false');
+    }
+
+    arrowLeft.addEventListener('click', () => {
+      scroller.scrollBy({ left: -scroller.clientWidth * 0.6, behavior: 'smooth' });
+    });
+    arrowRight.addEventListener('click', () => {
+      scroller.scrollBy({ left:  scroller.clientWidth * 0.6, behavior: 'smooth' });
+    });
+    scroller.addEventListener('scroll', updateArrows);
+
     function buildScroller() {
       const inner = document.getElementById('season-scroll-inner');
       for (let s = 1; s <= currentEvent.season; s++) {
@@ -327,13 +371,12 @@
         });
         inner.appendChild(btn);
       }
-      // Position active year without animation on first paint
-      setActiveYear(false);
+      setActiveYear(false);  // centre active year on first paint
+      updateArrows();
     }
 
     function setActiveYear(animate) {
-      const scroller = document.getElementById('season-scroller');
-      let activeBtn  = null;
+      let activeBtn = null;
       scroller.querySelectorAll('.yr-btn').forEach(btn => {
         const isActive = +btn.dataset.s === viewSeason;
         btn.classList.toggle('active', isActive);
@@ -343,11 +386,11 @@
       if (animate) {
         activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
       } else {
-        // Manual centering: works across all browsers including older Safari
         scroller.scrollLeft = activeBtn.offsetLeft
           - scroller.clientWidth / 2
           + activeBtn.offsetWidth / 2;
       }
+      updateArrows();
     }
 
     // ── Dev bar ──────────────────────────────────────────────────────────────────

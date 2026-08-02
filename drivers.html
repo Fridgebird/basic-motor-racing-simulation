@@ -36,9 +36,6 @@
     #search { font-family:inherit; font-size:10px; letter-spacing:1px; background:var(--bg-mid); border:1px solid var(--border); color:var(--hi); padding:5px 12px; width:180px; outline:none; }
     #search:focus { border-color:var(--lo); }
     #search::placeholder { color:var(--dim); }
-    .filter-btn { font-family:inherit; font-size:9px; letter-spacing:1px; color:var(--lo); background:none; border:1px solid var(--border); padding:4px 11px; cursor:pointer; text-transform:uppercase; }
-    .filter-btn:hover { color:var(--hi); border-color:var(--mid); }
-    .filter-btn.active { color:var(--hi); border-color:var(--mid); background:var(--bg-mid); }
     #result-count { font-size:9px; letter-spacing:2px; color:var(--dim); margin-left:auto; }
 
     #driver-table { width:100%; border-collapse:collapse; border:1px solid var(--border); }
@@ -52,14 +49,22 @@
     .portrait-cell { width:40px; padding:4px 6px 4px 10px !important; }
     .portrait-thumb { width:32px; height:32px; flex-shrink:0; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:bold; overflow:hidden; }
     .col-name { color:var(--hi); white-space:nowrap; }
-    .col-nat { padding:4px 8px !important; }
-    .col-nat img { height:12px; vertical-align:middle; border-radius:1px; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.15); display:block; }
+    .driver-flag { height:11px; vertical-align:middle; margin-right:6px; border-radius:1px; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.15); flex-shrink:0; }
     .col-num { text-align:right; color:var(--lo); }
+    .col-num-hi { text-align:right; color:var(--mid); }
 
     .status-badge { font-size:8px; letter-spacing:1px; padding:2px 6px; border:1px solid; display:inline-block; white-space:nowrap; }
     .status-active   { color:#55aa88; border-color:#55aa88; }
     .status-retired  { color:var(--lo); border-color:var(--dim); }
     .status-released { color:#cc8833; border-color:#cc8833; }
+
+    #driver-table th[data-col] { cursor:pointer; user-select:none; }
+    #driver-table th[data-col]:hover { color:var(--mid); }
+    .sort-ind { color:var(--accent); margin-left:2px; }
+
+    .filter-btn { font-family:inherit; font-size:9px; letter-spacing:1px; color:var(--lo); background:none; border:none; padding:4px 0; cursor:pointer; text-transform:uppercase; text-decoration:underline; text-underline-offset:3px; }
+    .filter-btn:hover { color:var(--mid); }
+    .filter-btn.active { color:var(--hi); font-weight:bold; }
   </style>
   <link rel="stylesheet" href="topnav.css">
   <script src="topnav.js" defer></script>
@@ -97,13 +102,13 @@
       <thead>
         <tr>
           <th class="portrait-cell"></th>
-          <th>DRIVER</th>
-          <th class="col-nat"></th>
+          <th data-col="name">DRIVER<span class="sort-ind"></span></th>
           <th>TEAM</th>
-          <th style="text-align:right">S</th>
-          <th style="text-align:right">W</th>
-          <th style="text-align:right">T</th>
-          <th style="text-align:right">PTS</th>
+          <th style="text-align:right" data-col="seasons">SEASONS<span class="sort-ind"></span></th>
+          <th style="text-align:right" data-col="wins">WINS<span class="sort-ind"></span></th>
+          <th style="text-align:right" data-col="poles">POLES<span class="sort-ind"></span></th>
+          <th style="text-align:right" data-col="titles">TITLES<span class="sort-ind"></span></th>
+          <th style="text-align:right" data-col="pts">POINTS<span class="sort-ind"></span></th>
           <th>STATUS</th>
         </tr>
       </thead>
@@ -168,6 +173,8 @@
     let allRows = [];
     let currentFilter = 'all';
     let currentSearch = '';
+    let sortKey = 'name';
+    let sortDir = 1; // 1 = asc, -1 = desc
 
     function applyFilters() {
       const q = currentSearch.toLowerCase();
@@ -181,6 +188,23 @@
       filtered.forEach(r => tbody.appendChild(r.el));
       document.getElementById('result-count').textContent =
         `${filtered.length} DRIVER${filtered.length !== 1 ? 'S' : ''}`;
+    }
+
+    function applySortIndicators() {
+      document.querySelectorAll('#driver-table th[data-col]').forEach(th => {
+        const ind = th.querySelector('.sort-ind');
+        if (!ind) return;
+        ind.textContent = th.dataset.col === sortKey ? (sortDir > 0 ? ' ▲' : ' ▼') : '';
+      });
+    }
+
+    function sortAndRender() {
+      allRows.sort((a, b) => {
+        const va = a.sortData[sortKey], vb = b.sortData[sortKey];
+        return sortDir * (typeof va === 'string' ? va.localeCompare(vb) : va - vb);
+      });
+      applySortIndicators();
+      applyFilters();
     }
 
     (async () => {
@@ -222,9 +246,10 @@
 
         const totals = career.reduce((acc, s) => ({
           wins:   acc.wins   + s.wins,
+          poles:  acc.poles  + (s.poles  ?? 0),
           titles: acc.titles + (s.champion ? 1 : 0),
           pts:    acc.pts    + s.points,
-        }), { wins: 0, titles: 0, pts: 0 });
+        }), { wins: 0, poles: 0, titles: 0, pts: 0 });
         if (cs) { totals.wins += cs.wins; totals.pts += cs.pts; }
         const seasonCount = career.length + (cs ? 1 : 0);
 
@@ -247,8 +272,8 @@
           ? `<a href="team.html?id=${team.id}&season=${currentSeason}">${team.shortName.toUpperCase()}</a>`
           : '—';
         const flagHtml = flagCode
-          ? `<img src="https://flagcdn.com/w40/${flagCode}.png" alt="${natLabel}" title="${natLabel}">`
-          : natLabel;
+          ? `<img class="driver-flag" src="https://flagcdn.com/w40/${flagCode}.png" alt="${natLabel}" title="${natLabel}">`
+          : '';
 
         const tr = document.createElement('tr');
 
@@ -258,11 +283,11 @@
         tr.appendChild(portraitTd);
 
         tr.insertAdjacentHTML('beforeend', `
-          <td class="col-name"><a href="driver.html?id=${driverId}&season=${currentSeason}">${pd.lastName.toUpperCase()}, ${pd.firstName.toUpperCase()}</a></td>
-          <td class="col-nat">${flagHtml}</td>
+          <td class="col-name">${flagHtml}<a href="driver.html?id=${driverId}&season=${currentSeason}">${pd.lastName.toUpperCase()}, ${pd.firstName.toUpperCase()}</a></td>
           <td>${teamLink}</td>
           <td class="col-num">${seasonCount}</td>
-          <td class="col-num">${totals.wins}</td>
+          <td class="col-num-hi">${totals.wins}</td>
+          <td class="col-num">${totals.poles}</td>
           <td class="col-num">${totals.titles}</td>
           <td class="col-num">${totals.pts}</td>
           <td><span class="status-badge status-${status}">${status.toUpperCase()}</span></td>
@@ -273,19 +298,24 @@
           firstName: pd.firstName,
           searchKey: `${pd.firstName} ${pd.lastName}`.toLowerCase(),
           status,
+          sortData: {
+            name:    `${pd.lastName} ${pd.firstName}`.toLowerCase(),
+            seasons: seasonCount,
+            wins:    totals.wins,
+            poles:   totals.poles,
+            titles:  totals.titles,
+            pts:     totals.pts,
+          },
           el: tr,
         });
       }
 
-      rows.sort((a, b) =>
-        a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)
-      );
       allRows = rows;
 
       document.getElementById('loading-state').style.display = 'none';
       document.getElementById('controls').style.display = '';
       document.getElementById('page').style.display = '';
-      applyFilters();
+      sortAndRender();
 
       document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -299,6 +329,19 @@
       document.getElementById('search').addEventListener('input', e => {
         currentSearch = e.target.value;
         applyFilters();
+      });
+
+      document.querySelectorAll('#driver-table th[data-col]').forEach(th => {
+        th.addEventListener('click', () => {
+          const col = th.dataset.col;
+          if (col === sortKey) {
+            sortDir = -sortDir;
+          } else {
+            sortKey = col;
+            sortDir = col === 'name' ? 1 : -1; // numeric cols default desc
+          }
+          sortAndRender();
+        });
       });
     })();
   </script>

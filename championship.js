@@ -493,10 +493,22 @@ function buildSeasonSummary(season) {
   for (const raceResult of Object.values(s.races)) {
     for (const entry of raceResult) {
       if (entry.driverId != null) nameToId[entry.driverName] = entry.driverId;
-      if (!extraStats[entry.driverName]) extraStats[entry.driverName] = { raceStarts: 0, retirements: 0 };
+      if (!extraStats[entry.driverName]) extraStats[entry.driverName] = { raceStarts: 0, retirements: 0, poles: 0 };
       extraStats[entry.driverName].raceStarts  += 1;
       if (entry.retired) extraStats[entry.driverName].retirements += 1;
     }
+  }
+
+  // Count pole positions from qualifying results
+  const numRounds = Math.max(...SEASON_SCHEDULE.map(e => e.round));
+  for (let r = 1; r <= numRounds; r++) {
+    const qualiResult = loadQualiResults(season, r);
+    if (!qualiResult) continue;
+    const poler = qualiResult.find(e => e.gridPosition === 1);
+    if (!poler) continue;
+    const name = poler.driverName;
+    if (!extraStats[name]) extraStats[name] = { raceStarts: 0, retirements: 0, poles: 0 };
+    extraStats[name].poles = (extraStats[name].poles ?? 0) + 1;
   }
 
   // Merge with s.drivers (points/wins/podiums already correct there)
@@ -504,9 +516,10 @@ function buildSeasonSummary(season) {
   for (const [name, d] of Object.entries(s.drivers)) {
     const driverId = nameToId[name] ?? null;
     const key      = driverId ?? name;
-    const extra    = extraStats[name] || { raceStarts: 0, retirements: 0 };
+    const extra    = extraStats[name] || { raceStarts: 0, retirements: 0, poles: 0 };
     drivers[key]   = { driverId, driverName: name, teamId: d.teamId,
                        wins: d.wins, podiums: d.podiums, points: d.points,
+                       poles: extra.poles,
                        raceStarts: extra.raceStarts, retirements: extra.retirements };
   }
 

@@ -499,12 +499,11 @@ function buildSeasonSummary(season) {
     }
   }
 
-  // Count pole positions from qualifying results
-  const numRounds = Math.max(...SEASON_SCHEDULE.map(e => e.round));
-  for (let r = 1; r <= numRounds; r++) {
-    const qualiResult = loadQualiResults(season, r);
-    if (!qualiResult) continue;
-    const poler = qualiResult.find(e => e.gridPosition === 1);
+  // Count pole positions: gridPosition===1 in stored race results = started from pole.
+  // Qualifying results are not persisted for batch-computed seasons, but race results
+  // always carry gridPosition for every car regardless of how the session was computed.
+  for (const raceResult of Object.values(s.races)) {
+    const poler = raceResult.find(e => e.gridPosition === 1);
     if (!poler) continue;
     const name = poler.driverName;
     if (!extraStats[name]) extraStats[name] = { raceStarts: 0, retirements: 0, poles: 0 };

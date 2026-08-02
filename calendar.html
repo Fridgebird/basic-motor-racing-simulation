@@ -116,8 +116,7 @@
     #season-header {
       width: 100%;
       max-width: 900px;
-      padding: 12px 16px 10px;
-      border-bottom: 1px solid var(--border);
+      padding: 10px 16px 0;
     }
     #season-label {
       font-size: 9px;
@@ -126,28 +125,37 @@
       text-transform: uppercase;
       margin-bottom: 6px;
     }
-    #season-year-row {
+
+    /* ── Year scroller ────────────────────────────────────────────────────────── */
+    #season-scroller {
+      width: 100%;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    #season-scroller::-webkit-scrollbar { display: none; }
+
+    #season-scroll-inner {
       display: flex;
-      align-items: center;
-      gap: 12px;
+      flex-wrap: nowrap;
+      border-bottom: 1px solid var(--border);
     }
-    #season-year {
-      font-size: 26px;
-      letter-spacing: 2px;
-      color: var(--hi);
-      flex: 1;
-    }
-    .season-nav-btn {
+
+    .yr-btn {
+      flex-shrink: 0;
       font-family: inherit;
-      font-size: 9px;
+      font-size: 13px;
       letter-spacing: 1px;
-      color: var(--lo);
+      padding: 8px 14px;
+      border: none;
+      border-bottom: 2px solid transparent;
       background: none;
-      border: 1px solid var(--border);
-      padding: 4px 10px;
+      color: var(--lo);
       cursor: pointer;
+      margin-bottom: -1px; /* overlap the container border-bottom */
     }
-    .season-nav-btn:hover { color: var(--hi); border-color: var(--mid); }
+    .yr-btn:hover { color: var(--mid); }
+    .yr-btn.active { color: var(--hi); border-bottom-color: var(--accent); }
 
     /* ── Calendar list ────────────────────────────────────────────────────────── */
     #calendar-list {
@@ -263,10 +271,8 @@
 
     <div id="season-header">
       <div id="season-label">World Championship Calendar</div>
-      <div id="season-year-row">
-        <button id="season-prev" class="season-nav-btn" style="display:none">◀</button>
-        <div id="season-year">–</div>
-        <button id="season-next" class="season-nav-btn" style="display:none">▶</button>
+      <div id="season-scroller">
+        <div id="season-scroll-inner"></div>
       </div>
     </div>
   </div>
@@ -306,22 +312,43 @@
 
     let viewSeason = currentEvent.season;
 
-    // ── Season header + nav ──────────────────────────────────────────────────────
-    const prevBtn  = document.getElementById('season-prev');
-    const nextBtn  = document.getElementById('season-next');
-    const yearEl   = document.getElementById('season-year');
-
-    function updateSeasonHeader() {
-      const year = 1929 + viewSeason;
-      yearEl.textContent    = year;
-      prevBtn.textContent   = `◀ ${year - 1}`;
-      nextBtn.textContent   = `${year + 1} ▶`;
-      prevBtn.style.display = viewSeason > 1 ? 'inline-block' : 'none';
-      nextBtn.style.display = viewSeason < currentEvent.season ? 'inline-block' : 'none';
+    // ── Year scroller ────────────────────────────────────────────────────────────
+    function buildScroller() {
+      const inner = document.getElementById('season-scroll-inner');
+      for (let s = 1; s <= currentEvent.season; s++) {
+        const btn = document.createElement('button');
+        btn.className    = 'yr-btn' + (s === viewSeason ? ' active' : '');
+        btn.textContent  = 1929 + s;
+        btn.dataset.s    = s;
+        btn.addEventListener('click', () => {
+          viewSeason = +btn.dataset.s;
+          setActiveYear(true);
+          buildCalendar(viewSeason);
+        });
+        inner.appendChild(btn);
+      }
+      // Position active year without animation on first paint
+      setActiveYear(false);
     }
 
-    prevBtn.addEventListener('click', () => { viewSeason--; updateSeasonHeader(); buildCalendar(viewSeason); });
-    nextBtn.addEventListener('click', () => { viewSeason++; updateSeasonHeader(); buildCalendar(viewSeason); });
+    function setActiveYear(animate) {
+      const scroller = document.getElementById('season-scroller');
+      let activeBtn  = null;
+      scroller.querySelectorAll('.yr-btn').forEach(btn => {
+        const isActive = +btn.dataset.s === viewSeason;
+        btn.classList.toggle('active', isActive);
+        if (isActive) activeBtn = btn;
+      });
+      if (!activeBtn) return;
+      if (animate) {
+        activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      } else {
+        // Manual centering: works across all browsers including older Safari
+        scroller.scrollLeft = activeBtn.offsetLeft
+          - scroller.clientWidth / 2
+          + activeBtn.offsetWidth / 2;
+      }
+    }
 
     // ── Dev bar ──────────────────────────────────────────────────────────────────
     if (isDevMode()) {
@@ -394,7 +421,7 @@
     }
 
     // ── Initial render ───────────────────────────────────────────────────────────
-    updateSeasonHeader();
+    buildScroller();
     buildCalendar(viewSeason);
   </script>
 

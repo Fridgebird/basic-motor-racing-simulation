@@ -128,37 +128,29 @@
     /* ── Action panel ─────────────────────────────────────────────────────────── */
     #action-panel {
       display: flex;
-      gap: 0;
+      gap: 32px;
       margin-bottom: 28px;
-      border: 1px solid var(--border);
-      background: var(--bg-mid);
     }
 
-    .action-group { flex: 1; padding: 16px 20px; }
-    .action-group + .action-group { border-left: 1px solid var(--border); }
+    .action-group { flex: 1; }
 
-    .action-btns { display: flex; flex-direction: column; gap: 8px; }
+    .action-btns { display: flex; flex-direction: column; gap: 12px; }
 
-    .action-btn {
-      display: block;
+    .action-link {
+      display: inline-block;
       font-family: inherit;
-      font-size: 10px;
-      letter-spacing: 0.1em;
-      text-decoration: none;
-      padding: 8px 14px;
-      border: 1px solid var(--border);
-      background: var(--bg-deep);
-      color: var(--lo);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      color: var(--hi);
       text-transform: uppercase;
       cursor: pointer;
-      text-align: center;
     }
-    .action-btn:hover { color: var(--mid); border-color: var(--mid); }
-    .action-btn.primary { color: var(--mid); border-color: var(--lo); }
-    .action-btn.primary:hover { color: var(--hi); border-color: var(--mid); }
-    .action-btn.spoiler { border-style: dashed; color: var(--lo); border-color: var(--dim); }
-    .action-btn.spoiler:hover { color: var(--mid); border-color: var(--lo); }
-    .action-btn.locked { color: var(--dim); border-color: var(--bg-mid); pointer-events: none; opacity: 0.5; }
+    .action-link:hover { font-weight: bold; }
+    .action-link.spoiler { color: var(--lo); text-decoration-style: dashed; }
+    .action-link.spoiler:hover { color: var(--mid); font-weight: bold; }
+    .action-link.locked { color: var(--dim); pointer-events: none; }
 
     /* ── Track image ──────────────────────────────────────────────────────────── */
     #track-image {
@@ -261,14 +253,14 @@
     <div id="action-panel">
       <div class="action-group">
         <div class="action-btns">
-          <a id="btn-watch-quali" href="" class="action-btn primary">WATCH QUALI →</a>
-          <a id="btn-result-quali" href="" class="action-btn spoiler">QUALI RESULT →</a>
+          <a id="btn-watch-quali" href="" class="action-link">WATCH QUALI →</a>
+          <a id="btn-result-quali" href="" class="action-link spoiler">QUALI RESULT →</a>
         </div>
       </div>
       <div class="action-group">
         <div class="action-btns">
-          <a id="btn-watch-race" href="" class="action-btn primary">WATCH RACE →</a>
-          <a id="btn-result-race" href="" class="action-btn spoiler">RACE RESULT →</a>
+          <a id="btn-watch-race" href="" class="action-link">WATCH RACE →</a>
+          <a id="btn-result-race" href="" class="action-link spoiler">RACE RESULT →</a>
         </div>
       </div>
     </div>

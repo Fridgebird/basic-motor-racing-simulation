@@ -12,7 +12,7 @@
       --hi:#ffffff; --mid:#8ab4d4; --lo:#4a6a88; --dim:#2a4055; --accent:#cc2233;
     }
     * { box-sizing:border-box; margin:0; padding:0; }
-    body { background:var(--bg); color:var(--mid); font-family:'Square','Courier New',monospace; font-size:12px; min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+    body { background:var(--bg); color:var(--mid); font-family:'Square','Courier New',monospace; font-size:13px; min-height:100vh; display:flex; flex-direction:column; align-items:center; }
 
     #topbar { width:100%; height:44px; background:var(--bg-deep); border:1px solid var(--border); border-bottom:2px solid var(--accent); display:flex; align-items:center; padding:0 16px; }
     .b-flat { font-size:15px; color:var(--hi); letter-spacing:0.04em; flex-shrink:0; }
@@ -22,38 +22,37 @@
     .topbar-nav-link:hover { color:var(--mid); }
     .topbar-nav-link.current { color:var(--mid); }
 
-    #info-bar { width:100%; background:var(--bg-mid); border-bottom:1px solid var(--border); padding:6px 16px; font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
+    #info-bar { width:100%; background:var(--bg-mid); border-bottom:1px solid var(--border); padding:6px 16px; font-size:10px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
 
     #sticky-header { position:sticky; top:0; z-index:100; width:100%; background:var(--bg); display:flex; flex-direction:column; align-items:center; box-shadow:0 3px 12px rgba(0,0,0,0.6); }
 
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
-    #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--lo); text-align:center; width:100%; animation:pulse 1.6s ease-in-out infinite; }
+    #loading-state { padding:48px 16px; font-size:10px; letter-spacing:3px; color:var(--lo); text-align:center; width:100%; animation:pulse 1.6s ease-in-out infinite; }
 
     #page { width:100%; max-width:860px; padding:16px 16px 24px; }
-    #as-of-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-align:right; padding:0 0 8px; }
+    #as-of-label { font-size:9px; letter-spacing:2px; color:var(--lo); text-align:right; padding:0 0 8px; }
 
-    #controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; width:100%; max-width:860px; padding:8px 16px; }
-    #search { font-family:inherit; font-size:10px; letter-spacing:1px; background:var(--bg-mid); border:1px solid var(--border); color:var(--hi); padding:5px 12px; width:180px; outline:none; }
+    #controls { display:flex; gap:14px; align-items:center; flex-wrap:wrap; width:100%; max-width:860px; padding:10px 16px; }
+    #search { font-family:inherit; font-size:11px; letter-spacing:1px; background:var(--bg-mid); border:1px solid var(--border); color:var(--hi); padding:5px 12px; width:200px; outline:none; }
     #search:focus { border-color:var(--lo); }
     #search::placeholder { color:var(--dim); }
-    #result-count { font-size:9px; letter-spacing:2px; color:var(--dim); margin-left:auto; }
 
     #driver-table { width:100%; border-collapse:collapse; border:1px solid var(--border); }
-    #driver-table th { font-size:9px; letter-spacing:1px; color:var(--lo); text-align:left; padding:5px 12px; border-bottom:1px solid var(--border); background:var(--bg-deep); white-space:nowrap; }
-    #driver-table td { padding:4px 10px; font-size:11px; color:var(--mid); border-bottom:1px solid var(--dim); vertical-align:middle; }
+    #driver-table th { font-size:10px; letter-spacing:1px; color:var(--lo); text-align:left; padding:6px 12px; border-bottom:1px solid var(--border); background:var(--bg-deep); white-space:nowrap; }
+    #driver-table td { padding:6px 10px; font-size:13px; color:var(--mid); border-bottom:1px solid var(--dim); vertical-align:middle; }
     #driver-table tr:last-child td { border-bottom:none; }
     #driver-table tr:hover td { background:var(--bg-mid); }
     #driver-table a { color:inherit; text-decoration:none; }
     #driver-table a:hover { color:var(--hi); }
 
-    .portrait-cell { width:40px; padding:4px 6px 4px 10px !important; }
-    .portrait-thumb { width:32px; height:32px; flex-shrink:0; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:bold; overflow:hidden; }
+    .portrait-cell { width:44px; padding:4px 6px 4px 10px !important; }
+    .portrait-thumb { width:36px; height:36px; flex-shrink:0; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold; overflow:hidden; }
     .col-name { color:var(--hi); white-space:nowrap; }
-    .driver-flag { height:11px; vertical-align:middle; margin-right:6px; border-radius:1px; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.15); flex-shrink:0; }
+    .driver-flag { height:12px; vertical-align:middle; margin-right:7px; border-radius:1px; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.15); flex-shrink:0; }
     .col-num { text-align:right; color:var(--lo); }
     .col-num-hi { text-align:right; color:var(--mid); }
 
-    .status-badge { font-size:8px; letter-spacing:1px; padding:2px 6px; border:1px solid; display:inline-block; white-space:nowrap; }
+    .status-badge { font-size:9px; letter-spacing:1px; padding:2px 7px; border:1px solid; display:inline-block; white-space:nowrap; }
     .status-active   { color:#55aa88; border-color:#55aa88; }
     .status-retired  { color:var(--lo); border-color:var(--dim); }
     .status-released { color:#cc8833; border-color:#cc8833; }
@@ -62,7 +61,7 @@
     #driver-table th[data-col]:hover { color:var(--mid); }
     .sort-ind { color:var(--accent); margin-left:2px; }
 
-    .filter-btn { font-family:inherit; font-size:9px; letter-spacing:1px; color:var(--lo); background:none; border:none; padding:4px 0; cursor:pointer; text-transform:uppercase; text-decoration:underline; text-underline-offset:3px; }
+    .filter-btn { font-family:inherit; font-size:11px; letter-spacing:1px; color:var(--lo); background:none; border:none; padding:4px 0; cursor:pointer; text-transform:uppercase; text-decoration:underline; text-underline-offset:3px; }
     .filter-btn:hover { color:var(--mid); }
     .filter-btn.active { color:var(--hi); font-weight:bold; }
   </style>
@@ -90,7 +89,6 @@
       <button class="filter-btn" data-filter="active">ACTIVE</button>
       <button class="filter-btn" data-filter="retired">RETIRED</button>
       <button class="filter-btn" data-filter="released">RELEASED</button>
-      <span id="result-count"></span>
     </div>
   </div>
 
@@ -103,7 +101,6 @@
         <tr>
           <th class="portrait-cell"></th>
           <th data-col="name">DRIVER<span class="sort-ind"></span></th>
-          <th>TEAM</th>
           <th style="text-align:right" data-col="seasons">SEASONS<span class="sort-ind"></span></th>
           <th style="text-align:right" data-col="wins">WINS<span class="sort-ind"></span></th>
           <th style="text-align:right" data-col="poles">POLES<span class="sort-ind"></span></th>
@@ -186,8 +183,6 @@
       const tbody = document.getElementById('driver-tbody');
       tbody.innerHTML = '';
       filtered.forEach(r => tbody.appendChild(r.el));
-      document.getElementById('result-count').textContent =
-        `${filtered.length} DRIVER${filtered.length !== 1 ? 'S' : ''}`;
     }
 
     function applySortIndicators() {
@@ -268,9 +263,6 @@
         const teamColour = team?.colour ?? '#4a6a88';
         const flagCode   = NAT_CODE[pd.nationality.toLowerCase()] ?? '';
         const natLabel   = pd.nationality.charAt(0).toUpperCase() + pd.nationality.slice(1);
-        const teamLink   = team
-          ? `<a href="team.html?id=${team.id}&season=${currentSeason}">${team.shortName.toUpperCase()}</a>`
-          : '—';
         const flagHtml = flagCode
           ? `<img class="driver-flag" src="https://flagcdn.com/w40/${flagCode}.png" alt="${natLabel}" title="${natLabel}">`
           : '';
@@ -284,7 +276,6 @@
 
         tr.insertAdjacentHTML('beforeend', `
           <td class="col-name">${flagHtml}<a href="driver.html?id=${driverId}&season=${currentSeason}">${pd.lastName.toUpperCase()}, ${pd.firstName.toUpperCase()}</a></td>
-          <td>${teamLink}</td>
           <td class="col-num">${seasonCount}</td>
           <td class="col-num-hi">${totals.wins}</td>
           <td class="col-num">${totals.poles}</td>

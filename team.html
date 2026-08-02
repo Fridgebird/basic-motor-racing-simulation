@@ -22,8 +22,6 @@
     .topbar-nav-link:hover { color:var(--mid); }
     .topbar-nav-link.current { color:var(--mid); }
 
-    #info-bar { width:100%; background:var(--bg-mid); border-bottom:1px solid var(--border); padding:6px 16px; font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
-
     #sticky-header { position:sticky; top:0; z-index:100; width:100%; background:var(--bg); display:flex; flex-direction:column; align-items:center; box-shadow:0 3px 12px rgba(0,0,0,0.6); }
 
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
@@ -32,11 +30,11 @@
 
     #page { width:100%; max-width:760px; padding:16px 16px 24px; }
 
-    #team-nav { display:flex; justify-content:space-between; align-items:center; width:100%; max-width:760px; padding:10px 16px; }
-    .nav-btn { font-family:inherit; font-size:9px; letter-spacing:1px; color:var(--lo); background:none; border:1px solid var(--border); padding:5px 12px; cursor:pointer; text-transform:uppercase; }
-    .nav-btn:hover:not(:disabled) { color:var(--hi); border-color:var(--mid); }
-    .nav-btn:disabled { opacity:0.25; cursor:default; }
-    #team-counter { font-size:9px; letter-spacing:2px; color:var(--lo); }
+    #team-nav { display:flex; justify-content:space-between; align-items:center; width:100%; max-width:760px; padding:12px 16px; border-bottom:1px solid var(--border); }
+    .nav-btn { font-family:inherit; font-size:12px; letter-spacing:1px; color:var(--lo); background:none; border:none; padding:0; cursor:pointer; text-transform:uppercase; text-decoration:underline; text-underline-offset:3px; }
+    .nav-btn:hover:not(:disabled) { color:var(--hi); font-weight:bold; }
+    .nav-btn:disabled { opacity:0.25; cursor:default; text-decoration:none; }
+    #team-counter { font-size:12px; letter-spacing:2px; color:var(--lo); }
 
     #profile-card { border:1px solid var(--border); background:var(--bg-mid); margin-bottom:20px; overflow:hidden; }
 
@@ -58,11 +56,18 @@
     .stat-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
 
     #season-pane { padding:16px 20px; }
-    #season-pane-header { display:flex; align-items:center; justify-content:space-between; padding:10px 20px; border-bottom:1px solid var(--border); }
-    #season-label { font-size:11px; letter-spacing:2px; color:var(--hi); }
-    .season-btn { font-family:inherit; font-size:10px; color:var(--lo); background:none; border:1px solid var(--border); padding:3px 8px; cursor:pointer; }
-    .season-btn:hover:not(:disabled) { color:var(--hi); border-color:var(--mid); }
-    .season-btn:disabled { opacity:0.25; cursor:default; }
+
+    /* ── Year scroller ──────────────────────────────────────────────────────── */
+    #season-scroller-wrap { display:flex; align-items:stretch; border-bottom:1px solid var(--border); }
+    .scroll-arrow { flex-shrink:0; width:28px; background:var(--bg-deep); border:none; border-bottom:1px solid var(--border); color:var(--lo); font-size:16px; line-height:1; cursor:pointer; margin-bottom:-1px; }
+    .scroll-arrow:hover { color:var(--hi); background:var(--bg-mid); }
+    .scroll-arrow[aria-hidden="true"] { visibility:hidden; }
+    #season-scroller { flex:1; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; }
+    #season-scroller::-webkit-scrollbar { display:none; }
+    #season-scroll-inner { display:flex; flex-wrap:nowrap; }
+    .yr-btn { flex-shrink:0; font-family:inherit; font-size:13px; letter-spacing:1px; padding:8px 14px; border:none; border-bottom:2px solid transparent; background:none; color:var(--lo); cursor:pointer; margin-bottom:-1px; }
+    .yr-btn:hover { color:var(--mid); }
+    .yr-btn.active { color:var(--hi); border-bottom-color:var(--accent); }
 
     #season-row { display:flex; gap:20px; align-items:flex-start; margin-bottom:14px; }
     #season-tech { display:flex; flex-direction:column; gap:7px; flex-shrink:0; }
@@ -96,7 +101,7 @@
     #team-name { font-size:18px; letter-spacing:2px; color:var(--hi); margin-bottom:4px; font-weight:bold; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
     .flag-strip { width:48px; height:24px; border-radius:2px; object-fit:cover; display:block; flex-shrink:0; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.2); }
 
-    #season-history { border:1px solid var(--border); }
+    #season-history { border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
     .history-header { padding:6px 12px; font-size:9px; letter-spacing:2px; color:var(--lo); border-bottom:1px solid var(--border); background:var(--bg-deep); }
     .history-table { width:100%; border-collapse:collapse; }
     .history-table th { font-size:9px; letter-spacing:1px; color:var(--lo); text-align:left; padding:5px 12px; border-bottom:1px solid var(--border); }
@@ -131,7 +136,6 @@
         <a href="champions.html" class="topbar-nav-link">CHAMPIONS</a>
       </nav>
     </div>
-    <div id="info-bar">Constructor Profile</div>
     <div id="team-nav" style="display:none">
       <button class="nav-btn" id="btn-prev">◀ PREV</button>
       <span id="team-counter"></span>
@@ -157,10 +161,10 @@
         <div class="stat-block"><div class="stat-value" id="s-pts">—</div><div class="stat-label">Points</div></div>
         <div class="stat-block"><div class="stat-value" id="s-titles">—</div><div class="stat-label">Titles</div></div>
       </div>
-      <div id="season-pane-header">
-        <button class="season-btn" id="btn-season-prev">◀</button>
-        <span id="season-label">—</span>
-        <button class="season-btn" id="btn-season-next">▶</button>
+      <div id="season-scroller-wrap">
+        <button id="scroll-left"  class="scroll-arrow" aria-label="Scroll left"  aria-hidden="true">&#8249;</button>
+        <div id="season-scroller"><div id="season-scroll-inner"></div></div>
+        <button id="scroll-right" class="scroll-arrow" aria-label="Scroll right" aria-hidden="true">&#8250;</button>
       </div>
       <div id="car-wrap"><div id="car-sprite"></div><div id="team-logo"></div></div>
       <div id="season-pane">
@@ -325,7 +329,7 @@
 
       updateCarImage(team, season);
       updateTeamLogo(team);
-      document.getElementById('season-label').textContent = `${year}`;
+      setActiveYear(true);
 
       const formulaEra = getFormulaEra(season);
       const feEl = document.getElementById('formula-era');
@@ -401,8 +405,6 @@
         driverList.appendChild(chip);
       });
 
-      document.getElementById('btn-season-prev').disabled = season <= 1;
-      document.getElementById('btn-season-next').disabled = season >= currentSeason;
     }
 
     function renderTeam(idx) {
@@ -418,7 +420,6 @@
       if (csEntry) { totals.wins += csEntry.wins; totals.pts += csEntry.points; }
       const seasonCount = ctorHistory.length + (csEntry ? 1 : 0);
 
-      document.getElementById('info-bar').textContent        = `Constructor Profile · ${team.name}`;
       document.getElementById('livery-bar').style.background = team.colour;
 
       const nameEl = document.getElementById('team-name');
@@ -524,16 +525,58 @@
     document.getElementById('btn-prev').addEventListener('click', () => { teamIdx--; renderTeam(teamIdx); });
     document.getElementById('btn-next').addEventListener('click', () => { teamIdx++; renderTeam(teamIdx); });
 
-    document.getElementById('btn-season-prev').addEventListener('click', () => {
-      viewedSeason = Math.max(1, viewedSeason - 1);
-      renderSeasonPane(SORTED_TEAMS[teamIdx], viewedSeason);
-      window.history.replaceState(null, '', `team.html?id=${SORTED_TEAMS[teamIdx].id}&season=${viewedSeason}`);
-    });
-    document.getElementById('btn-season-next').addEventListener('click', () => {
-      viewedSeason = Math.min(currentSeason, viewedSeason + 1);
-      renderSeasonPane(SORTED_TEAMS[teamIdx], viewedSeason);
-      window.history.replaceState(null, '', `team.html?id=${SORTED_TEAMS[teamIdx].id}&season=${viewedSeason}`);
-    });
+    // ── Year scroller ──────────────────────────────────────────────────────────
+    const scroller   = document.getElementById('season-scroller');
+    const arrowLeft  = document.getElementById('scroll-left');
+    const arrowRight = document.getElementById('scroll-right');
+
+    function updateArrows() {
+      const atStart = scroller.scrollLeft <= 1;
+      const atEnd   = scroller.scrollLeft >= scroller.scrollWidth - scroller.clientWidth - 1;
+      arrowLeft.setAttribute('aria-hidden',  atStart ? 'true' : 'false');
+      arrowRight.setAttribute('aria-hidden', atEnd   ? 'true' : 'false');
+    }
+
+    arrowLeft.addEventListener('click',  () => scroller.scrollBy({ left: -scroller.clientWidth * 0.6, behavior: 'smooth' }));
+    arrowRight.addEventListener('click', () => scroller.scrollBy({ left:  scroller.clientWidth * 0.6, behavior: 'smooth' }));
+    scroller.addEventListener('scroll', updateArrows);
+
+    function setActiveYear(animate) {
+      let activeBtn = null;
+      scroller.querySelectorAll('.yr-btn').forEach(btn => {
+        const isActive = +btn.dataset.s === viewedSeason;
+        btn.classList.toggle('active', isActive);
+        if (isActive) activeBtn = btn;
+      });
+      if (!activeBtn) return;
+      if (animate) {
+        activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      } else {
+        scroller.scrollLeft = activeBtn.offsetLeft - scroller.clientWidth / 2 + activeBtn.offsetWidth / 2;
+      }
+      updateArrows();
+    }
+
+    function buildScroller() {
+      const inner = document.getElementById('season-scroll-inner');
+      inner.innerHTML = '';
+      for (let s = 1; s <= currentSeason; s++) {
+        const btn = document.createElement('button');
+        btn.className   = 'yr-btn' + (s === viewedSeason ? ' active' : '');
+        btn.textContent = getDisplayYear(s);
+        btn.dataset.s   = s;
+        btn.addEventListener('click', () => {
+          viewedSeason = +btn.dataset.s;
+          setActiveYear(true);
+          const team = SORTED_TEAMS[teamIdx];
+          renderSeasonPane(team, viewedSeason);
+          window.history.replaceState(null, '', `team.html?id=${team.id}&season=${viewedSeason}`);
+        });
+        inner.appendChild(btn);
+      }
+      setActiveYear(false);
+      updateArrows();
+    }
 
     (async () => {
       await new Promise(r => setTimeout(r, 0)); // yield to browser so loading state paints
@@ -553,6 +596,7 @@
       loadingEl.style.display = 'none';
       document.getElementById('team-nav').style.display = '';
       document.getElementById('page').style.display = '';
+      buildScroller();
       renderTeam(teamIdx);
     })();
   </script>

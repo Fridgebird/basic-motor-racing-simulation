@@ -1,3 +1,23 @@
+/* ── Desktop nav underlines ──────────────────────────────────────────────────
+   Overrides the per-page text-decoration:none so all links show a subtle
+   underline; the active page gets the red accent underline.
+*/
+@media (min-width: 641px) {
+  .topbar-nav-link {
+    text-decoration: underline;
+    text-decoration-color: var(--lo, #4a6a88);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+  }
+  .topbar-nav-link:hover {
+    text-decoration-color: var(--mid, #8ab4d4);
+  }
+  .topbar-nav-link.current {
+    text-decoration-color: var(--accent, #cc2233);
+    text-decoration-thickness: 2px;
+  }
+}
+
 /* ── Mobile top-nav burger ───────────────────────────────────────────────────
    Hides .topbar-nav links on narrow screens and replaces them with a
    hamburger button that reveals a full-width dropdown.

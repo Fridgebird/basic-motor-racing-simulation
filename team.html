@@ -55,7 +55,7 @@
     #career-stats { display:flex; gap:0 24px; flex-wrap:wrap; padding:16px 20px; border-bottom:1px solid var(--border); }
     .stat-block { display:flex; flex-direction:column; gap:3px; }
     .stat-value { font-size:18px; color:var(--hi); letter-spacing:1px; }
-    .stat-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
+    .stat-label { font-size:8px; letter-spacing:2px; color:#638aaa; text-transform:uppercase; }
 
     /* ── Year scroller ──────────────────────────────────────────────────────── */
     #season-scroller-wrap { display:flex; align-items:stretch; border-bottom:1px solid var(--border); }
@@ -95,8 +95,8 @@
 
     .driver-chip { display:flex; align-items:center; gap:10px; background:var(--bg-deep); border:1px solid var(--border); padding:12px 18px; text-decoration:none; color:inherit; }
     .driver-chip:hover { border-color:var(--mid); }
-    .driver-chip-portrait { width:36px; height:36px; flex-shrink:0; border:1px solid var(--border); overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; }
-    .driver-chip-portrait img { width:36px; height:36px; object-fit:cover; display:block; }
+    .driver-chip-portrait { width:48px; height:48px; flex-shrink:0; border:1px solid var(--border); overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:bold; }
+    .driver-chip-portrait img { width:48px; height:48px; object-fit:cover; display:block; }
     .driver-chip-num { width:36px; height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:bold; color:var(--hi); letter-spacing:0; }
     .driver-chip-name { font-size:12px; color:var(--hi); display:flex; align-items:center; gap:6px; }
     .driver-chip-nat { font-size:10px; letter-spacing:1px; color:var(--lo); }
@@ -315,7 +315,7 @@
       wrap.className = 'driver-chip-portrait';
       const pIdx = poolDriver.portraitIndex;
       if (pIdx != null && pIdx < 32) {
-        const COLS = 4, SRC = 32, DISP = 36;
+        const COLS = 4, SRC = 32, DISP = 48;
         const sheet = Math.floor(pIdx / 16) + 1;
         const pos   = pIdx % 16;
         const col   = pos % COLS;
@@ -380,7 +380,7 @@
           </div>
         </div>
         ${seasonSponsor ? `
-        <div class="tech-row">
+        <div class="tech-row" style="margin-top:auto;">
           <span class="tech-key">SPONSOR</span>
           <span class="tech-val">${seasonSponsor.url
             ? `<a href="${seasonSponsor.url}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">${seasonSponsor.sponsor}</a>`

@@ -26,7 +26,7 @@
 
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
     #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--lo); text-align:center; width:100%; animation:pulse 1.6s ease-in-out infinite; }
-    #as-of-label { font-size:11px; letter-spacing:2px; color:var(--lo); text-align:right; flex-basis:100%; padding-top:8px; }
+    #as-of-label { font-size:9px; letter-spacing:2px; color:var(--lo); text-align:right; flex-basis:100%; padding-top:6px; }
 
     #page { width:100%; max-width:760px; padding:16px 16px 24px; }
 
@@ -46,12 +46,11 @@
     .logo-img { max-width:100%; max-height:100%; object-fit:contain; display:block; }
     .logo-placeholder { font-size:8px; letter-spacing:2px; text-align:center; }
 
-    #team-header { display:flex; align-items:stretch; padding:16px 20px 12px; border-bottom:1px solid var(--border); gap:16px; }
-    #team-header-main { display:flex; align-items:stretch; flex:1; min-width:0; }
-    #livery-bar { width:4px; align-self:stretch; flex-shrink:0; margin-right:16px; border-radius:1px; }
-    #team-info { flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; }
+    #team-header { display:flex; align-items:stretch; border-bottom:1px solid var(--border); }
+    #team-badge { width:110px; flex-shrink:0; background:var(--bg-deep); border-right:1px solid var(--border); display:flex; align-items:center; justify-content:center; padding:12px; overflow:hidden; }
+    #livery-bar { width:4px; flex-shrink:0; border-radius:1px; }
+    #team-info { flex:1; min-width:0; padding:16px 20px 12px; display:flex; flex-direction:column; gap:6px; }
     #team-meta { font-size:9px; letter-spacing:2px; color:var(--lo); display:flex; align-items:center; gap:8px; }
-    #team-badge { width:80px; flex-shrink:0; background:var(--bg-deep); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; padding:8px; overflow:hidden; }
 
     #career-stats { display:flex; gap:24px; flex-wrap:wrap; padding:16px 20px; border-bottom:1px solid var(--border); }
     .stat-block { display:flex; flex-direction:column; gap:3px; }
@@ -91,13 +90,14 @@
     .section-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; margin-bottom:10px; }
     #driver-list { display:flex; gap:12px; flex-wrap:wrap; }
 
-    .driver-chip { display:flex; align-items:center; gap:8px; background:var(--bg-deep); border:1px solid var(--border); padding:6px 12px; text-decoration:none; color:inherit; }
+    .driver-chip { display:flex; align-items:center; gap:10px; background:var(--bg-deep); border:1px solid var(--border); padding:10px 16px; text-decoration:none; color:inherit; }
     .driver-chip:hover { border-color:var(--mid); }
-    .driver-chip-portrait { width:32px; height:32px; flex-shrink:0; border:1px solid var(--border); overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold; }
-    .driver-chip-portrait img { width:32px; height:32px; object-fit:cover; display:block; }
-    .driver-chip-num { width:32px; height:32px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:bold; color:var(--hi); letter-spacing:0; }
-    .driver-chip-name { font-size:11px; color:var(--hi); }
-    .driver-chip-nat { font-size:9px; letter-spacing:1px; color:var(--lo); }
+    .driver-chip-portrait { width:36px; height:36px; flex-shrink:0; border:1px solid var(--border); overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; }
+    .driver-chip-portrait img { width:36px; height:36px; object-fit:cover; display:block; }
+    .driver-chip-num { width:36px; height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:bold; color:var(--hi); letter-spacing:0; }
+    .driver-chip-name { font-size:12px; color:var(--hi); display:flex; align-items:center; gap:6px; }
+    .driver-chip-nat { font-size:10px; letter-spacing:1px; color:var(--lo); }
+    .chip-flag { width:24px; height:12px; object-fit:cover; border-radius:1px; opacity:0.85; flex-shrink:0; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.15); }
     #team-name { font-size:18px; letter-spacing:2px; color:var(--hi); font-weight:bold; display:flex; align-items:center; gap:8px; white-space:nowrap; overflow:hidden; height:24px; }
     .team-sponsor { color:var(--lo); font-weight:normal; flex-shrink:0; }
     .flag-strip { width:48px; height:24px; border-radius:2px; object-fit:cover; display:block; flex-shrink:0; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.2); }
@@ -117,8 +117,7 @@
 
     @media (max-width:520px) {
       #career-stats { gap:16px; }
-      #team-header { flex-wrap:wrap; gap:8px; }
-      #team-badge { flex-basis:100%; height:56px; }
+      #team-badge { width:80px; padding:8px; }
       #car-tech-row { flex-direction:column; height:auto; }
       #season-tech { width:100%; border-right:none; border-bottom:1px solid var(--border); }
       #car-wrap { height:160px; }
@@ -153,14 +152,12 @@
   <div id="page" style="display:none">
     <div id="profile-card">
       <div id="team-header">
-        <div id="team-header-main">
-          <div id="livery-bar"></div>
-          <div id="team-info">
-            <div id="team-name">—</div>
-            <div id="team-meta">—</div>
-          </div>
-        </div>
         <div id="team-badge"></div>
+        <div id="livery-bar"></div>
+        <div id="team-info">
+          <div id="team-name">—</div>
+          <div id="team-meta">—</div>
+        </div>
       </div>
       <div id="career-stats">
         <div class="stat-block"><div class="stat-value" id="s-seasons">—</div><div class="stat-label">Seasons</div></div>
@@ -307,12 +304,12 @@
       wrap.className = 'driver-chip-portrait';
       const pIdx = poolDriver.portraitIndex;
       if (pIdx != null && pIdx < 32) {
-        const COLS = 4, PX = 32;
+        const COLS = 4, SRC = 32, DISP = 36;
         const sheet = Math.floor(pIdx / 16) + 1;
         const pos   = pIdx % 16;
         const col   = pos % COLS;
         const row   = Math.floor(pos / COLS);
-        wrap.style.cssText = `background-image:url('driver_sprites_16x16_${sheet}.webp');background-size:${PX*COLS}px ${PX*COLS}px;background-position:${-(col*PX)}px ${-(row*PX)}px;background-color:${teamColour}22;`;
+        wrap.style.cssText = `background-image:url('driver_sprites_16x16_${sheet}.webp');background-size:${DISP*COLS}px ${DISP*COLS}px;background-position:${-(col*DISP)}px ${-(row*DISP)}px;background-color:${teamColour}22;`;
       } else {
         wrap.style.background = `${teamColour}22`;
         wrap.style.color      = teamColour;
@@ -407,8 +404,10 @@
         numEl.style.color = team.colour;
         numEl.textContent = num;
         chip.appendChild(numEl);
+        const chipNatCode = NAT_CODE[pd.nationality.toLowerCase()];
+        const chipFlag = chipNatCode ? `<img class="chip-flag" alt="" src="https://flagcdn.com/w40/${chipNatCode}.png">` : '';
         const info = document.createElement('div');
-        info.innerHTML = `<div class="driver-chip-name">${pd.firstName} ${pd.lastName}</div><div class="driver-chip-nat">${nat} - ${yrsStr} CONTRACT</div>`;
+        info.innerHTML = `<div class="driver-chip-name">${pd.firstName} ${pd.lastName}${chipFlag}</div><div class="driver-chip-nat">${nat} - ${yrsStr} CONTRACT</div>`;
         chip.appendChild(info);
         driverList.appendChild(chip);
       });

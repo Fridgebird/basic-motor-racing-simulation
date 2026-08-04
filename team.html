@@ -38,7 +38,7 @@
     #profile-card { background:var(--bg-mid); margin-bottom:20px; overflow:hidden; }
 
     #season-drivers { padding:16px 20px; }
-    #car-tech-row { display:flex; align-items:stretch; height:220px; }
+    #car-tech-row { display:flex; align-items:stretch; height:280px; }
     #car-wrap { flex:1; background:#111418; overflow:hidden; }
     #car-sprite { width:100%; height:100%; }
     .car-img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -93,8 +93,8 @@
     .section-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; margin-bottom:10px; }
     #driver-list { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 
-    .driver-chip { display:flex; align-items:center; gap:10px; background:var(--bg-deep); border:1px solid var(--border); padding:12px 18px; text-decoration:none; color:inherit; }
-    .driver-chip:hover { border-color:var(--mid); }
+    .driver-chip { display:flex; align-items:center; gap:10px; background:var(--bg-deep); padding:12px 18px; text-decoration:none; color:inherit; }
+    .driver-chip:hover { background:var(--bg-mid); }
     .driver-chip-portrait { width:48px; height:48px; flex-shrink:0; border:1px solid var(--border); overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:bold; }
     .driver-chip-portrait img { width:48px; height:48px; object-fit:cover; display:block; }
     .driver-chip-num { width:36px; height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:bold; color:var(--hi); letter-spacing:0; }
@@ -184,7 +184,6 @@
         <button id="scroll-right" class="scroll-arrow" aria-label="Scroll right" aria-hidden="true">&#8250;</button>
       </div>
       <div id="season-drivers">
-        <div class="section-label">Drivers</div>
         <div id="driver-list"></div>
       </div>
       <div id="car-tech-row">

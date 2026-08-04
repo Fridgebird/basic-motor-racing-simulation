@@ -26,7 +26,7 @@
 
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
     #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--lo); text-align:center; width:100%; animation:pulse 1.6s ease-in-out infinite; }
-    #as-of-label { font-size:9px; letter-spacing:2px; color:var(--lo); text-align:left; flex-basis:100%; padding-top:6px; }
+    #as-of-label { font-size:9px; letter-spacing:2px; color:var(--lo); text-align:left; flex-basis:100%; padding-top:2px; }
 
     #page { width:100%; max-width:760px; padding:16px 16px 24px; }
 
@@ -38,7 +38,7 @@
     #profile-card { border:1px solid var(--border); background:var(--bg-mid); margin-bottom:20px; overflow:hidden; }
 
     #season-drivers { padding:16px 20px; border-bottom:1px solid var(--border); }
-    #car-tech-row { display:flex; align-items:stretch; border-bottom:1px solid var(--border); height:160px; }
+    #car-tech-row { display:flex; align-items:stretch; border-bottom:1px solid var(--border); height:220px; }
     #car-wrap { flex:1; background:#111418; overflow:hidden; }
     #car-sprite { width:100%; height:100%; }
     .car-img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -69,8 +69,11 @@
     .yr-btn:hover { color:var(--mid); }
     .yr-btn.active { color:var(--hi); border-bottom-color:var(--accent); }
 
-    #season-tech { padding:16px 20px; display:flex; flex-direction:column; justify-content:center; gap:7px; flex-shrink:0; width:220px; border-right:1px solid var(--border); }
-    #formula-era { padding:16px 20px; font-family:'IBM Plex Sans','Segoe UI',system-ui,sans-serif; font-weight:300; }
+    #season-tech { padding:16px 20px; display:flex; flex-direction:column; justify-content:flex-start; gap:16px; flex-shrink:0; width:220px; border-right:1px solid var(--border); }
+    .era-tech-header { margin-bottom:-4px; padding-bottom:10px; border-bottom:1px solid var(--dim); }
+    .era-tech-link { font-family:inherit; font-size:9px; letter-spacing:1.5px; color:var(--mid); text-transform:uppercase; background:none; border:none; padding:0; cursor:pointer; text-decoration:underline; text-underline-offset:3px; display:block; margin-bottom:3px; text-align:left; }
+    .era-tech-link:hover { color:var(--hi); font-weight:bold; }
+    .era-tech-period { font-size:8px; letter-spacing:1px; color:var(--lo); }
     .era-name { font-size:12px; color:var(--hi); letter-spacing:0.5px; margin-bottom:2px; font-weight:400; }
     .era-years { font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; margin-bottom:10px; font-family:'Square','Courier New',monospace; }
     .era-summary { font-size:11px; color:var(--mid); line-height:1.5; margin-bottom:10px; }
@@ -114,6 +117,14 @@
     .history-table td.h-pts    { color:var(--hi); text-align:right; }
     .history-table td.h-wins   { color:var(--lo); text-align:right; }
     .champ-marker { color:var(--accent); font-size:10px; margin-left:4px; }
+
+    #formula-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:998; cursor:pointer; }
+    #formula-overlay.open { display:block; }
+    #formula-popup { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--bg-mid); border:1px solid var(--border); border-top:2px solid var(--accent); padding:28px 32px; max-width:500px; width:90%; z-index:999; max-height:80vh; overflow-y:auto; }
+    #formula-popup.open { display:block; }
+    #formula-popup-inner { font-family:'IBM Plex Sans','Segoe UI',system-ui,sans-serif; font-weight:300; }
+    #formula-popup-close { font-family:inherit; font-size:9px; letter-spacing:2px; color:var(--lo); background:none; border:none; padding:0; cursor:pointer; text-decoration:underline; text-underline-offset:3px; margin-top:20px; display:block; text-transform:uppercase; }
+    #formula-popup-close:hover { color:var(--hi); font-weight:bold; }
 
     @media (max-width:520px) {
       #career-stats { gap:16px; }
@@ -180,7 +191,6 @@
         <div id="season-tech"></div>
         <div id="car-wrap"><div id="car-sprite"></div></div>
       </div>
-      <div id="formula-era"></div>
     </div>
 
     <div id="season-history">
@@ -338,21 +348,14 @@
       setActiveYear(true);
 
       const formulaEra = getFormulaEra(season);
-      const feEl = document.getElementById('formula-era');
-      if (formulaEra) {
-        feEl.innerHTML = `
-          <div class="era-name">${formulaEra.name}</div>
-          <div class="era-years">${formulaEra.years}</div>
-          <div class="era-summary">${formulaEra.summary}</div>
-          <div class="era-section"><span class="era-label">Chassis</span><span class="era-text">${formulaEra.chassis}</span></div>
-          <div class="era-section"><span class="era-label">Engine</span><span class="era-text">${formulaEra.engine}</span></div>
-          <div class="era-section"><span class="era-label">Tyres</span><span class="era-text">${formulaEra.tyres}</span></div>
-        `;
-      } else {
-        feEl.innerHTML = '';
-      }
+      const formulaHeaderHtml = formulaEra ? `
+        <div class="era-tech-header">
+          <button class="era-tech-link" id="era-link-btn">${formulaEra.name.toUpperCase()}</button>
+          <div class="era-tech-period">${formulaEra.years}</div>
+        </div>
+      ` : '';
 
-      document.getElementById('season-tech').innerHTML = `
+      document.getElementById('season-tech').innerHTML = formulaHeaderHtml + `
         <div class="tech-row">
           <span class="tech-key">CHASSIS</span>
           <span class="tech-val">${chassis}</span>
@@ -384,6 +387,21 @@
             : seasonSponsor.sponsor}</span>
         </div>` : ''}
       `;
+
+      if (formulaEra) {
+        document.getElementById('era-link-btn').addEventListener('click', () => {
+          document.getElementById('formula-popup-inner').innerHTML = `
+            <div class="era-name">${formulaEra.name}</div>
+            <div class="era-years">${formulaEra.years}</div>
+            <div class="era-summary">${formulaEra.summary}</div>
+            <div class="era-section"><span class="era-label">Chassis</span><span class="era-text">${formulaEra.chassis}</span></div>
+            <div class="era-section"><span class="era-label">Engine</span><span class="era-text">${formulaEra.engine}</span></div>
+            <div class="era-section"><span class="era-label">Tyres</span><span class="era-text">${formulaEra.tyres}</span></div>
+          `;
+          document.getElementById('formula-overlay').classList.add('open');
+          document.getElementById('formula-popup').classList.add('open');
+        });
+      }
 
       const seasonRoster = getActiveRoster(season, worldSeed).filter(e => e.teamId === team.id);
       const carNumbers   = getCarNumbers(season, worldSeed);
@@ -644,6 +662,15 @@
       updateArrows();
     }
 
+    // ── Formula era popup ─────────────────────────────────────────────────────
+    function closeFormulaPopup() {
+      document.getElementById('formula-overlay').classList.remove('open');
+      document.getElementById('formula-popup').classList.remove('open');
+    }
+    document.getElementById('formula-overlay').addEventListener('click', closeFormulaPopup);
+    document.getElementById('formula-popup-close').addEventListener('click', closeFormulaPopup);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeFormulaPopup(); });
+
     (async () => {
       await new Promise(r => setTimeout(r, 0)); // yield to browser so loading state paints
       try {
@@ -667,6 +694,12 @@
       renderTeam(teamIdx);
     })();
   </script>
+
+  <div id="formula-overlay"></div>
+  <div id="formula-popup">
+    <div id="formula-popup-inner"></div>
+    <button id="formula-popup-close">CLOSE</button>
+  </div>
 
 </body>
 </html>

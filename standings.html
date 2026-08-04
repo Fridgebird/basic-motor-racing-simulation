@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -22,24 +22,29 @@
     .topbar-nav-link:hover { color:var(--mid); }
     .topbar-nav-link.current { color:var(--mid); }
 
-    #info-bar { width:100%; background:var(--bg-mid); border-bottom:1px solid var(--border); padding:6px 16px; font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
-
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
     #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--lo); text-align:center; width:100%; animation:pulse 1.6s ease-in-out infinite; }
 
-    #page { width:100%; max-width:860px; padding:24px 16px; }
+    /* ── Year scroller ─────────────────────────────────────────────────────── */
+    #season-scroller-wrap { display:flex; align-items:stretch; width:100%; max-width:860px; border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+    .scroll-arrow { flex-shrink:0; width:28px; background:var(--bg-deep); border:none; color:var(--lo); font-size:16px; line-height:1; cursor:pointer; }
+    .scroll-arrow:hover { color:var(--hi); background:var(--bg-mid); }
+    .scroll-arrow[aria-hidden="true"] { visibility:hidden; }
+    #season-scroller { flex:1; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; }
+    #season-scroller::-webkit-scrollbar { display:none; }
+    #season-scroll-inner { display:flex; flex-wrap:nowrap; }
+    .yr-btn { flex-shrink:0; font-family:inherit; font-size:13px; letter-spacing:1px; padding:8px 14px; border:none; border-bottom:2px solid transparent; background:none; color:var(--lo); cursor:pointer; margin-bottom:-1px; }
+    .yr-btn:hover { color:var(--mid); }
+    .yr-btn.active { color:var(--hi); border-bottom-color:var(--accent); }
 
-    #season-nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-    #as-of-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-align:center; padding:0 0 16px; }
-    .nav-btn { font-family:inherit; font-size:9px; letter-spacing:1px; color:var(--lo); background:none; border:1px solid var(--border); padding:5px 12px; cursor:pointer; text-transform:uppercase; }
-    .nav-btn:hover:not(:disabled) { color:var(--hi); border-color:var(--mid); }
-    .nav-btn:disabled { opacity:0.25; cursor:default; }
-    #season-label { font-size:11px; letter-spacing:2px; color:var(--hi); }
+    #as-of-label { font-size:8px; letter-spacing:2px; color:var(--lo); text-align:center; padding:10px 0 0; width:100%; max-width:860px; }
+
+    #page { width:100%; max-width:860px; padding:16px 16px 24px; }
 
     #standings-wrap { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
     @media (max-width:600px) { #standings-wrap { grid-template-columns:1fr; } }
 
-    .table-section { border:1px solid var(--border); }
+    .table-section { }
     .table-header { padding:6px 12px; font-size:9px; letter-spacing:2px; color:var(--lo); border-bottom:1px solid var(--border); background:var(--bg-deep); }
     .standings-table { width:100%; border-collapse:collapse; }
     .standings-table th { font-size:9px; letter-spacing:1px; color:var(--lo); text-align:left; padding:5px 10px; border-bottom:1px solid var(--border); white-space:nowrap; }
@@ -55,25 +60,28 @@
     .col-team { color:var(--lo); font-size:10px; }
     .team-dot { display:inline-block; width:3px; height:14px; vertical-align:middle; margin-right:6px; border-radius:1px; flex-shrink:0; }
     .no-data  { padding:20px; font-size:9px; letter-spacing:2px; color:var(--dim); text-align:center; }
+    .tbl-flag { width:20px; height:10px; object-fit:cover; border-radius:1px; opacity:0.85; margin-left:6px; vertical-align:middle; }
 
-    /* ── Driver hero card ── */
+    /* ── Driver/constructor hero cards ── */
     .hero-card { margin-bottom:16px; }
     .hc-label { font-size:8px; letter-spacing:3px; color:var(--lo); text-transform:uppercase; margin-bottom:6px; }
-    .hc-inner { display:flex; align-items:stretch; background:var(--bg-mid); border:1px solid var(--border); overflow:hidden; min-height:72px; }
+    .hc-inner { display:flex; align-items:stretch; background:var(--bg-mid); overflow:hidden; min-height:72px; }
     .hc-strip { width:4px; flex-shrink:0; }
-    .hc-portrait { width:72px; flex-shrink:0; background-color:var(--dim); display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--lo); }
+    .hc-portrait { width:72px; flex-shrink:0; background-color:var(--dim); display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--lo); background-size:400% 400%; }
+    .hc-badge { width:72px; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:10px; overflow:hidden; }
+    .hc-badge img { max-width:100%; max-height:100%; object-fit:contain; display:block; }
+    .hc-badge-init { font-size:11px; letter-spacing:1px; text-align:center; }
     .hc-info { flex:1; min-width:100px; padding:12px 14px; overflow:hidden; display:flex; flex-direction:column; justify-content:center; }
-    .hc-name { font-size:15px; color:var(--hi); letter-spacing:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .hc-name { font-size:15px; color:var(--hi); letter-spacing:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:8px; }
     .hc-team { font-size:9px; color:var(--lo); letter-spacing:1px; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .hc-car { flex:0 1 160px; min-width:0; overflow:hidden; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; }
-    .hc-car img { max-height:60px; max-width:100%; object-fit:contain; object-position:right center; }
+    .hc-flag { width:32px; height:16px; object-fit:cover; border-radius:1px; opacity:0.85; flex-shrink:0; }
     .hc-carimage { flex-shrink:0; overflow:hidden; display:flex; align-items:center; padding:6px 10px 6px 8px; }
     .hc-carimage img { height:54px; width:auto; max-width:150px; object-fit:contain; }
 
     /* ── Season results grid ── */
     .rg-section { margin-top:28px; }
     .rg-title { font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; border-bottom:1px solid var(--border); padding-bottom:4px; }
-    .rg-scroll { overflow-x:auto; border:1px solid var(--border); border-top:none; }
+    .rg-scroll { overflow-x:auto; }
     .rg-table { border-collapse:collapse; white-space:nowrap; }
     .rg-table th { font-size:8px; letter-spacing:0.5px; color:var(--lo); padding:4px 2px; text-align:center; border-bottom:1px solid var(--border); font-weight:normal; min-width:22px; width:22px; }
     .rg-driver-th { text-align:left !important; padding:4px 8px !important; min-width:48px !important; width:48px !important; position:sticky; left:0; background:var(--bg); z-index:2; border-right:1px solid var(--border); }
@@ -98,17 +106,17 @@
       <a href="champions.html" class="topbar-nav-link">CHAMPIONS</a>
     </nav>
   </div>
-  <div id="info-bar">Championship Standings</div>
 
   <div id="loading-state">COMPUTING HISTORY…</div>
 
+  <div id="season-scroller-wrap" style="display:none">
+    <button id="scroll-left"  class="scroll-arrow" aria-label="Scroll left"  aria-hidden="true">&#8249;</button>
+    <div id="season-scroller"><div id="season-scroll-inner"></div></div>
+    <button id="scroll-right" class="scroll-arrow" aria-label="Scroll right" aria-hidden="true">&#8250;</button>
+  </div>
+  <div id="as-of-label" style="display:none"></div>
+
   <div id="page" style="display:none">
-    <div id="season-nav">
-      <button class="nav-btn" id="btn-prev">◀ PREV</button>
-      <span id="season-label">—</span>
-      <button class="nav-btn" id="btn-next">NEXT ▶</button>
-    </div>
-    <div id="as-of-label"></div>
     <div id="leader-hero"></div>
     <div id="ctor-hero"></div>
     <div id="standings-wrap">
@@ -153,6 +161,18 @@
       runRace, initStrategies, initWeather, setCurrentCircuit, runQualifyingSession, setFastMode,
     }                          from './simulation.js';
 
+    const NAT_CODE = {
+      'american':'us',   'argentinian':'ar', 'australian':'au', 'austrian':'at',
+      'belgian':'be',    'brazilian':'br',   'british':'gb',    'canadian':'ca',
+      'chinese':'cn',    'colombian':'co',   'czech':'cz',      'danish':'dk',
+      'dutch':'nl',      'egyptian':'eg',    'finnish':'fi',    'french':'fr',
+      'german':'de',     'ghanaian':'gh',    'greek':'gr',      'hungarian':'hu',
+      'indian':'in',     'irish':'ie',       'italian':'it',    'japanese':'jp',
+      'mexican':'mx',    'moroccan':'ma',    'new zealander':'nz','nigerian':'ng',
+      'norwegian':'no',  'polish':'pl',      'portuguese':'pt', 'senegalese':'sn',
+      'south african':'za','spanish':'es',   'swedish':'se',    'swiss':'ch',
+    };
+
     const worldSeed     = getWorldSeed();
     const currentEvent  = getCurrentEvent();
     const currentSeason = currentEvent.season;
@@ -166,7 +186,7 @@
     let viewedSeason = parseInt(params.get('season') || currentSeason, 10);
     viewedSeason = Math.max(1, Math.min(viewedSeason, currentSeason));
 
-    let lastCompleted = null; // set after ensurePastResultsCached completes
+    let lastCompleted = null;
 
     function teamLabel(teamId, season) {
       const team = TEAMS.find(t => t.id === teamId);
@@ -177,28 +197,53 @@
       return (!engineName || shortUp === engineName) ? shortUp : `${shortUp}-${engineName}`;
     }
 
-    function buildConstructorHeroCard(teamId, teamSeason, colour, teamLabelStr) {
-      const team = TEAMS.find(t => t.id === teamId);
+    function buildConstructorHeroCard(teamId, teamSeason, colour, teamLabelStr, isChampion) {
+      const team    = TEAMS.find(t => t.id === teamId);
       const imageId = team ? (team.carImageId || team.id.toLowerCase()) : teamId.toLowerCase();
       const eraYear = 1930 + Math.floor((teamSeason - 1) / 5) * 5;
+      const label   = isChampion ? "CONSTRUCTORS' CHAMPION" : "CONSTRUCTORS' LEADER";
+
       const card = document.createElement('div');
       card.className = 'hero-card';
+
+      const badgeDiv = document.createElement('div');
+      badgeDiv.className = 'hc-badge';
+      badgeDiv.style.background = colour + '22';
+      const badgeImg = document.createElement('img');
+      badgeImg.alt = '';
+      badgeImg.src = `logos/${imageId}.webp`;
+      badgeImg.onerror = () => {
+        badgeImg.style.display = 'none';
+        const ph = document.createElement('span');
+        ph.className   = 'hc-badge-init';
+        ph.textContent = (team ? team.shortName : teamId).toUpperCase().slice(0, 3);
+        ph.style.color = colour;
+        badgeDiv.appendChild(ph);
+      };
+      badgeDiv.appendChild(badgeImg);
+
       card.innerHTML = `
-        <div class="hc-label">CONSTRUCTORS LEADER</div>
+        <div class="hc-label">${label}</div>
         <div class="hc-inner">
           <div class="hc-strip" style="background:${colour}"></div>
-          <div class="hc-carimage">
-            <img src="car_sprites_${eraYear}_${imageId}.webp" alt="" onerror="this.parentElement.style.display='none'">
-          </div>
           <div class="hc-info">
             <div class="hc-name">${teamLabelStr}</div>
           </div>
+          <div class="hc-carimage">
+            <img src="car_sprites_${eraYear}_${imageId}.webp" alt="" onerror="this.parentElement.style.display='none'">
+          </div>
         </div>`;
+      card.querySelector('.hc-inner').insertBefore(badgeDiv, card.querySelector('.hc-info'));
       return card;
     }
 
     function buildHeroCard(labelText, driverId, driverName, teamId, teamLabelStr, colour) {
-      const driver = getDriverProfile(driverId);
+      const driver  = getDriverProfile(driverId);
+      const natCode = driver ? NAT_CODE[(driver.nationality || '').toLowerCase()] : null;
+      const flagHtml = natCode
+        ? `<img class="hc-flag" src="https://flagcdn.com/w40/${natCode}.png" alt="">`
+        : '';
+
       let portraitStyle = `background:${colour}22;`;
       let initials = (driverName || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
       let showInitials = true;
@@ -219,10 +264,10 @@
           <div class="hc-strip" style="background:${colour}"></div>
           <div class="hc-portrait" style="${portraitStyle}">${showInitials ? initials : ''}</div>
           <div class="hc-info">
-            <div class="hc-name">${(driverName || '').toUpperCase()}</div>
+            <div class="hc-name">${(driverName || '').toUpperCase()}${flagHtml}</div>
             <div class="hc-team">${teamLabelStr}</div>
           </div>
-          <div class="hc-car">
+          <div class="hc-carimage">
             <img src="car_sprites_profile_1930_dbr_8_transparent.png" alt="" onerror="this.parentElement.style.display='none'">
           </div>
         </div>`;
@@ -230,11 +275,8 @@
     }
 
     function renderStandings(season) {
-      const year = getDisplayYear(season);
-      document.getElementById('season-label').textContent = `${year}`;
-      document.getElementById('info-bar').textContent = `Championship Standings · ${year}`;
-      document.getElementById('btn-prev').disabled = season <= 1;
-      document.getElementById('btn-next').disabled = season >= currentSeason;
+      const year        = getDisplayYear(season);
+      const isComplete  = season < currentSeason;
 
       const asOfEl = document.getElementById('as-of-label');
       let drivers, constructors, upToRound;
@@ -242,57 +284,65 @@
         const cutoffRound = lastCompleted.season === currentSeason ? lastCompleted.round : 0;
         ({ drivers, constructors } = getStandingsThroughRound(season, cutoffRound));
         asOfEl.textContent = formatAsOfLabel(lastCompleted);
+        asOfEl.style.display = '';
         upToRound = cutoffRound;
       } else {
         ({ drivers, constructors } = getStandings(season));
         asOfEl.textContent = '';
+        asOfEl.style.display = 'none';
         upToRound = Infinity;
       }
 
-      // Championship leader hero
+      // Driver hero
       const leaderHeroEl = document.getElementById('leader-hero');
       leaderHeroEl.innerHTML = '';
       if (drivers.length > 0) {
-        const leader = drivers[0];
+        const leader     = drivers[0];
         const leaderTeam = TEAMS.find(t => t.id === leader.teamId);
+        const heroLabel  = isComplete ? "DRIVERS' CHAMPION" : 'CHAMPIONSHIP LEADER';
         leaderHeroEl.appendChild(buildHeroCard(
-          'CHAMPIONSHIP LEADER',
+          heroLabel,
           leader.driverId, leader.name, leader.teamId,
           teamLabel(leader.teamId, season),
           leaderTeam ? leaderTeam.colour : '#888'
         ));
       }
 
-      // Constructors leader hero
+      // Constructor hero
       const ctorHeroEl = document.getElementById('ctor-hero');
       ctorHeroEl.innerHTML = '';
       if (constructors.length > 0) {
         const ctorLeader = constructors[0];
-        const ctorTeam = TEAMS.find(t => t.id === ctorLeader.id);
+        const ctorTeam   = TEAMS.find(t => t.id === ctorLeader.id);
         ctorHeroEl.appendChild(buildConstructorHeroCard(
           ctorLeader.id, season,
           ctorTeam ? ctorTeam.colour : '#888',
-          teamLabel(ctorLeader.id, season)
+          teamLabel(ctorLeader.id, season),
+          isComplete
         ));
       }
 
+      // Drivers table
       const driversTbody = document.getElementById('drivers-tbody');
       driversTbody.innerHTML = '';
       if (!drivers.length) {
         driversTbody.innerHTML = '<tr><td colspan="5" class="no-data">NO DATA YET</td></tr>';
       } else {
         drivers.forEach((d, i) => {
-          const pos   = i + 1;
-          const team  = TEAMS.find(t => t.id === d.teamId);
-          const dot   = team ? `<span class="team-dot" style="background:${team.colour}"></span>` : '';
-          const label = teamLabel(d.teamId, season);
+          const pos    = i + 1;
+          const team   = TEAMS.find(t => t.id === d.teamId);
+          const dot    = team ? `<span class="team-dot" style="background:${team.colour}"></span>` : '';
+          const label  = teamLabel(d.teamId, season);
+          const dp     = d.driverId != null ? getDriverProfile(d.driverId) : null;
+          const natCode = dp ? NAT_CODE[(dp.nationality || '').toLowerCase()] : null;
+          const flag   = natCode ? `<img class="tbl-flag" src="https://flagcdn.com/w40/${natCode}.png" alt="">` : '';
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td class="col-pos${pos === 1 ? ' p1' : ''}">${pos}</td>
             <td>${d.driverId != null
               ? `<a href="driver.html?id=${d.driverId}&season=${season}">${d.name.toUpperCase()}</a>`
               : d.name.toUpperCase()
-            }</td>
+            }${flag}</td>
             <td class="col-team">${dot}${team
               ? `<a href="team.html?id=${team.id}&season=${season}">${label}</a>`
               : label
@@ -304,6 +354,7 @@
         });
       }
 
+      // Constructors table
       const ctorTbody = document.getElementById('constructors-tbody');
       ctorTbody.innerHTML = '';
       if (!constructors.length) {
@@ -335,23 +386,68 @@
       window.history.replaceState(null, '', `standings.html?season=${season}`);
     }
 
-    document.getElementById('btn-prev').addEventListener('click', () => {
-      viewedSeason = Math.max(1, viewedSeason - 1);
-      renderStandings(viewedSeason);
-    });
-    document.getElementById('btn-next').addEventListener('click', () => {
-      viewedSeason = Math.min(currentSeason, viewedSeason + 1);
-      renderStandings(viewedSeason);
-    });
+    // ── Year scroller ───────────────────────────────────────────────────────────
+    const scroller   = document.getElementById('season-scroller');
+    const arrowLeft  = document.getElementById('scroll-left');
+    const arrowRight = document.getElementById('scroll-right');
+
+    function updateArrows() {
+      const atStart = scroller.scrollLeft <= 1;
+      const atEnd   = scroller.scrollLeft >= scroller.scrollWidth - scroller.clientWidth - 1;
+      arrowLeft.setAttribute('aria-hidden',  atStart ? 'true' : 'false');
+      arrowRight.setAttribute('aria-hidden', atEnd   ? 'true' : 'false');
+    }
+
+    arrowLeft.addEventListener('click',  () => scroller.scrollBy({ left: -scroller.clientWidth * 0.6, behavior: 'smooth' }));
+    arrowRight.addEventListener('click', () => scroller.scrollBy({ left:  scroller.clientWidth * 0.6, behavior: 'smooth' }));
+    scroller.addEventListener('scroll', updateArrows);
+
+    function setActiveYear(animate) {
+      let activeBtn = null;
+      scroller.querySelectorAll('.yr-btn').forEach(btn => {
+        const isActive = +btn.dataset.s === viewedSeason;
+        btn.classList.toggle('active', isActive);
+        if (isActive) activeBtn = btn;
+      });
+      if (!activeBtn) return;
+      if (animate) {
+        activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      } else {
+        scroller.scrollLeft = activeBtn.offsetLeft - scroller.clientWidth / 2 + activeBtn.offsetWidth / 2;
+      }
+      updateArrows();
+    }
+
+    function buildScroller() {
+      const inner = document.getElementById('season-scroll-inner');
+      inner.innerHTML = '';
+      for (let s = 1; s <= currentSeason; s++) {
+        const btn = document.createElement('button');
+        btn.className   = 'yr-btn' + (s === viewedSeason ? ' active' : '');
+        btn.textContent = getDisplayYear(s);
+        btn.dataset.s   = s;
+        btn.addEventListener('click', () => {
+          viewedSeason = +btn.dataset.s;
+          setActiveYear(true);
+          renderStandings(viewedSeason);
+        });
+        inner.appendChild(btn);
+      }
+      setActiveYear(false);
+      updateArrows();
+    }
 
     (async () => {
-      await new Promise(r => setTimeout(r, 0)); // yield to browser so loading state paints
+      await new Promise(r => setTimeout(r, 0));
       for (let s = 1; s <= currentSeason; s++) {
         await ensurePastResultsCached(s, simFns);
       }
       lastCompleted = getLastCompletedRace();
       document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('season-scroller-wrap').style.display = '';
+      document.getElementById('as-of-label').style.display = '';
       document.getElementById('page').style.display = '';
+      buildScroller();
       renderStandings(viewedSeason);
     })();
 
@@ -367,7 +463,6 @@
         .sort((a, b) => a.round - b.round);
       if (!rounds.length) return;
 
-      // driverName → round → { position, retired }
       const resultMap = {};
       for (const { round: r } of rounds) {
         for (const entry of races[r]) {

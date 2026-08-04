@@ -61,6 +61,13 @@
     .team-dot { display:inline-block; width:3px; height:14px; vertical-align:middle; margin-right:6px; border-radius:1px; flex-shrink:0; }
     .no-data  { padding:20px; font-size:9px; letter-spacing:2px; color:var(--dim); text-align:center; }
     .tbl-flag { width:20px; height:10px; object-fit:cover; border-radius:1px; opacity:0.85; margin-left:6px; vertical-align:middle; }
+    .team-short { display:none; }
+    @media (max-width:600px) and (orientation:portrait) {
+      .standings-table th, .standings-table td { padding:4px 6px; }
+      .col-driver { white-space:nowrap; }
+      .team-full  { display:none; }
+      .team-short { display:inline; }
+    }
 
     /* ── Driver/constructor hero cards ── */
     .hero-card { margin-bottom:16px; }
@@ -151,7 +158,7 @@
 
   <script type="module">
     import { TEAMS, ENGINES, CIRCUITS, SEASON_SCHEDULE } from './data.js';
-    import { getDisplayYear, getSeasonSnapshot, getTeamEngine, getDriverProfile } from './worldstate.js';
+    import { getDisplayYear, getSeasonSnapshot, getTeamEngine, getDriverProfile, getCarNumbers } from './worldstate.js';
     import {
       getCurrentEvent, getWorldSeed, getStandings, getStandingsThroughRound,
       ensurePastResultsCached, getLastCompletedRace, formatAsOfLabel,
@@ -197,11 +204,14 @@
       return (!engineName || shortUp === engineName) ? shortUp : `${shortUp}-${engineName}`;
     }
 
-    function buildConstructorHeroCard(teamId, teamSeason, colour, teamLabelStr, isChampion) {
+    function buildConstructorHeroCard(teamId, teamSeason, colour, teamLabelStr, isChampion, leadCarNumber) {
       const team    = TEAMS.find(t => t.id === teamId);
       const imageId = team ? (team.carImageId || team.id.toLowerCase()) : teamId.toLowerCase();
       const eraYear = 1930 + Math.floor((teamSeason - 1) / 5) * 5;
       const label   = isChampion ? "CONSTRUCTORS' CHAMPION" : "CONSTRUCTORS' LEADER";
+      const profileSrc = leadCarNumber != null
+        ? `car_sprites_profile_${eraYear}_${imageId}_${leadCarNumber}.jpg`
+        : `car_sprites_profile_${eraYear}_${imageId}.jpg`;
 
       const card = document.createElement('div');
       card.className = 'hero-card';
@@ -230,7 +240,7 @@
             <div class="hc-name">${teamLabelStr}</div>
           </div>
           <div class="hc-carimage">
-            <img src="car_sprites_${eraYear}_${imageId}.webp" alt="" onerror="this.parentElement.style.display='none'">
+            <img src="${profileSrc}" alt="" onerror="this.parentElement.style.display='none'">
           </div>
         </div>`;
       card.querySelector('.hc-inner').insertBefore(badgeDiv, card.querySelector('.hc-info'));
@@ -312,13 +322,17 @@
       const ctorHeroEl = document.getElementById('ctor-hero');
       ctorHeroEl.innerHTML = '';
       if (constructors.length > 0) {
-        const ctorLeader = constructors[0];
-        const ctorTeam   = TEAMS.find(t => t.id === ctorLeader.id);
+        const ctorLeader   = constructors[0];
+        const ctorTeam     = TEAMS.find(t => t.id === ctorLeader.id);
+        const carNumbers   = getCarNumbers(season, worldSeed);
+        const leadDriver   = drivers.find(d => d.teamId === ctorLeader.id);
+        const leadCarNum   = leadDriver ? (carNumbers.get(leadDriver.driverId) ?? null) : null;
         ctorHeroEl.appendChild(buildConstructorHeroCard(
           ctorLeader.id, season,
           ctorTeam ? ctorTeam.colour : '#888',
           teamLabel(ctorLeader.id, season),
-          isComplete
+          isComplete,
+          leadCarNum
         ));
       }
 
@@ -329,24 +343,26 @@
         driversTbody.innerHTML = '<tr><td colspan="5" class="no-data">NO DATA YET</td></tr>';
       } else {
         drivers.forEach((d, i) => {
-          const pos    = i + 1;
-          const team   = TEAMS.find(t => t.id === d.teamId);
-          const dot    = team ? `<span class="team-dot" style="background:${team.colour}"></span>` : '';
-          const label  = teamLabel(d.teamId, season);
-          const dp     = d.driverId != null ? getDriverProfile(d.driverId) : null;
-          const natCode = dp ? NAT_CODE[(dp.nationality || '').toLowerCase()] : null;
-          const flag   = natCode ? `<img class="tbl-flag" src="https://flagcdn.com/w40/${natCode}.png" alt="">` : '';
+          const pos      = i + 1;
+          const team     = TEAMS.find(t => t.id === d.teamId);
+          const dot      = team ? `<span class="team-dot" style="background:${team.colour}"></span>` : '';
+          const label    = teamLabel(d.teamId, season);
+          const shortLbl = team ? team.shortName.toUpperCase() : label;
+          const dp       = d.driverId != null ? getDriverProfile(d.driverId) : null;
+          const natCode  = dp ? NAT_CODE[(dp.nationality || '').toLowerCase()] : null;
+          const flag     = natCode ? `<img class="tbl-flag" src="https://flagcdn.com/w40/${natCode}.png" alt="">` : '';
+          const teamLink = team
+            ? `<a class="team-full" href="team.html?id=${team.id}&season=${season}">${label}</a>` +
+              `<a class="team-short" href="team.html?id=${team.id}&season=${season}">${shortLbl}</a>`
+            : `<span class="team-full">${label}</span><span class="team-short">${shortLbl}</span>`;
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td class="col-pos${pos === 1 ? ' p1' : ''}">${pos}</td>
-            <td>${d.driverId != null
+            <td class="col-driver">${d.driverId != null
               ? `<a href="driver.html?id=${d.driverId}&season=${season}">${d.name.toUpperCase()}</a>`
               : d.name.toUpperCase()
             }${flag}</td>
-            <td class="col-team">${dot}${team
-              ? `<a href="team.html?id=${team.id}&season=${season}">${label}</a>`
-              : label
-            }</td>
+            <td class="col-team">${dot}${teamLink}</td>
             <td class="col-w">${d.wins}</td>
             <td class="col-pts">${d.points}</td>
           `;

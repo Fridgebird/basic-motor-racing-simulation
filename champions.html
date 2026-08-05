@@ -46,7 +46,6 @@
     .col-team   { color:var(--lo); font-size:10px; white-space:nowrap; }
     .col-pts    { text-align:right; color:var(--hi); width:40px; }
     .team-dot   { display:inline-block; width:3px; height:12px; vertical-align:middle; margin-right:6px; border-radius:1px; }
-    .star       { color:var(--accent); margin-right:4px; }
   </style>
   <link rel="stylesheet" href="topnav.css">
   <script src="topnav.js" defer></script>
@@ -176,7 +175,7 @@
             : label;
           driverTr.innerHTML = `
             <td class="col-year">${year}</td>
-            <td class="col-driver"><span class="star">★</span>${driverLink}${flagHtml}</td>
+            <td class="col-driver">${driverLink}${flagHtml}</td>
             <td class="col-team">${teamLink}</td>
             <td class="col-pts">${ch.points}</td>`;
         } else {
@@ -195,7 +194,7 @@
             : label;
           ctorTr.innerHTML = `
             <td class="col-year">${year}</td>
-            <td class="col-team"><span class="star">★</span>${link}</td>
+            <td class="col-team">${link}</td>
             <td class="col-pts">${cc.points}</td>`;
         } else {
           ctorTr.innerHTML = `<td class="col-year">${year}</td><td>—</td><td class="col-pts">—</td>`;

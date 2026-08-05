@@ -41,7 +41,8 @@
 
     #page { width:100%; max-width:860px; padding:16px 16px 24px; }
 
-    #standings-wrap { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    #standings-wrap { display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+    .standings-col { display:flex; flex-direction:column; gap:0; }
     @media (max-width:600px) { #standings-wrap { grid-template-columns:1fr; } }
 
     .table-section { }
@@ -124,33 +125,37 @@
   <div id="as-of-label" style="display:none"></div>
 
   <div id="page" style="display:none">
-    <div id="leader-hero"></div>
-    <div id="ctor-hero"></div>
     <div id="standings-wrap">
-      <div class="table-section">
-        <div class="table-header">DRIVERS' CHAMPIONSHIP</div>
-        <table class="standings-table">
-          <thead><tr>
-            <th class="col-pos">POS</th>
-            <th>DRIVER</th>
-            <th>TEAM</th>
-            <th style="text-align:right">WINS</th>
-            <th style="text-align:right">PTS</th>
-          </tr></thead>
-          <tbody id="drivers-tbody"></tbody>
-        </table>
+      <div class="standings-col">
+        <div id="leader-hero"></div>
+        <div class="table-section">
+          <div class="table-header">DRIVERS' CHAMPIONSHIP</div>
+          <table class="standings-table">
+            <thead><tr>
+              <th class="col-pos">POS</th>
+              <th>DRIVER</th>
+              <th>TEAM</th>
+              <th style="text-align:right">WINS</th>
+              <th style="text-align:right">PTS</th>
+            </tr></thead>
+            <tbody id="drivers-tbody"></tbody>
+          </table>
+        </div>
       </div>
-      <div class="table-section">
-        <div class="table-header">CONSTRUCTORS' CHAMPIONSHIP</div>
-        <table class="standings-table">
-          <thead><tr>
-            <th class="col-pos">POS</th>
-            <th>TEAM</th>
-            <th style="text-align:right">WINS</th>
-            <th style="text-align:right">PTS</th>
-          </tr></thead>
-          <tbody id="constructors-tbody"></tbody>
-        </table>
+      <div class="standings-col">
+        <div id="ctor-hero"></div>
+        <div class="table-section">
+          <div class="table-header">CONSTRUCTORS' CHAMPIONSHIP</div>
+          <table class="standings-table">
+            <thead><tr>
+              <th class="col-pos">POS</th>
+              <th>TEAM</th>
+              <th style="text-align:right">WINS</th>
+              <th style="text-align:right">PTS</th>
+            </tr></thead>
+            <tbody id="constructors-tbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
     <div id="round-summary"></div>

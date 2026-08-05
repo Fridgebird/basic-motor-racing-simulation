@@ -22,30 +22,31 @@
     .topbar-nav-link:hover { color:var(--mid); }
     .topbar-nav-link.current { color:var(--mid); }
 
-    #info-bar { width:100%; background:var(--bg-mid); border-bottom:1px solid var(--border); padding:6px 16px; font-size:9px; letter-spacing:2px; color:var(--lo); text-transform:uppercase; }
-
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
     #loading-state { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--lo); text-align:center; width:100%; animation:pulse 1.6s ease-in-out infinite; }
 
     #page { width:100%; max-width:960px; padding:16px 16px 24px; }
 
-    #champ-table { width:100%; border-collapse:collapse; border:1px solid var(--border); }
-    #champ-table th { font-size:9px; letter-spacing:1px; color:var(--lo); text-align:left; padding:5px 12px; border-bottom:1px solid var(--border); background:var(--bg-deep); white-space:nowrap; }
-    #champ-table td { padding:5px 10px; font-size:11px; color:var(--mid); border-bottom:1px solid var(--dim); vertical-align:middle; }
-    #champ-table tr:last-child td { border-bottom:none; }
-    #champ-table tr:hover td { background:var(--bg-mid); }
-    #champ-table a { color:inherit; text-decoration:none; }
-    #champ-table a:hover { color:var(--hi); }
+    #champ-wrap { display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+    @media (max-width:600px) and (orientation:portrait) {
+      #champ-wrap { grid-template-columns:1fr; }
+    }
 
-    .col-year { color:var(--hi); font-size:12px; white-space:nowrap; width:52px; }
+    .champ-col-header { padding:6px 12px; font-size:9px; letter-spacing:2px; color:var(--lo); border-bottom:1px solid var(--border); background:var(--bg-deep); text-transform:uppercase; }
+    .champ-table { width:100%; border-collapse:collapse; }
+    .champ-table th { font-size:9px; letter-spacing:1px; color:var(--lo); text-align:left; padding:5px 12px; border-bottom:1px solid var(--border); background:var(--bg-deep); white-space:nowrap; }
+    .champ-table td { padding:5px 10px; font-size:11px; color:var(--mid); border-bottom:1px solid var(--dim); vertical-align:middle; }
+    .champ-table tr:last-child td { border-bottom:none; }
+    .champ-table tr:hover td { background:var(--bg-mid); }
+    .champ-table a { color:inherit; text-decoration:none; }
+    .champ-table a:hover { color:var(--hi); }
+
+    .col-year   { color:var(--hi); font-size:12px; white-space:nowrap; width:52px; }
     .col-driver { color:var(--hi); white-space:nowrap; }
-    .col-team { color:var(--lo); font-size:10px; white-space:nowrap; }
-    .col-pts { text-align:right; color:var(--hi); width:40px; }
-    .col-sep { width:1px; background:var(--border); padding:0 !important; }
-    .team-dot { display:inline-block; width:3px; height:12px; vertical-align:middle; margin-right:6px; border-radius:1px; flex-shrink:0; }
-    .star { color:#d4a800; margin-right:4px; }
-
-    .section-head { font-size:8px; letter-spacing:2px; color:var(--lo); padding:5px 12px; background:var(--bg-deep); border-bottom:1px solid var(--border); text-transform:uppercase; }
+    .col-team   { color:var(--lo); font-size:10px; white-space:nowrap; }
+    .col-pts    { text-align:right; color:var(--hi); width:40px; }
+    .team-dot   { display:inline-block; width:3px; height:12px; vertical-align:middle; margin-right:6px; border-radius:1px; }
+    .star       { color:var(--accent); margin-right:4px; }
   </style>
   <link rel="stylesheet" href="topnav.css">
   <script src="topnav.js" defer></script>
@@ -63,25 +64,35 @@
       <a href="champions.html" class="topbar-nav-link current">CHAMPIONS</a>
     </nav>
   </div>
-  <div id="info-bar">Roll of Honour</div>
 
   <div id="loading-state">COMPUTING HISTORY…</div>
 
   <div id="page" style="display:none">
-    <table id="champ-table">
-      <thead>
-        <tr>
-          <th class="col-year">YEAR</th>
-          <th>DRIVERS CHAMPION</th>
-          <th>TEAM</th>
-          <th class="col-pts">PTS</th>
-          <th class="col-sep"></th>
-          <th>CONSTRUCTORS CHAMPION</th>
-          <th class="col-pts">PTS</th>
-        </tr>
-      </thead>
-      <tbody id="champ-tbody"></tbody>
-    </table>
+    <div id="champ-wrap">
+      <div>
+        <div class="champ-col-header">Drivers' Champion</div>
+        <table class="champ-table">
+          <thead><tr>
+            <th class="col-year">YEAR</th>
+            <th>DRIVER</th>
+            <th>TEAM</th>
+            <th class="col-pts">PTS</th>
+          </tr></thead>
+          <tbody id="driver-champ-tbody"></tbody>
+        </table>
+      </div>
+      <div>
+        <div class="champ-col-header">Constructors' Champion</div>
+        <table class="champ-table">
+          <thead><tr>
+            <th class="col-year">YEAR</th>
+            <th>CONSTRUCTOR</th>
+            <th class="col-pts">PTS</th>
+          </tr></thead>
+          <tbody id="ctor-champ-tbody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <script type="module">
@@ -108,8 +119,8 @@
       'south african':'za','spanish':'es',   'swedish':'se',    'swiss':'ch',
     };
 
-    const worldSeed    = getWorldSeed();
-    const currentEvent = getCurrentEvent();
+    const worldSeed     = getWorldSeed();
+    const currentEvent  = getCurrentEvent();
     const currentSeason = currentEvent.season;
 
     const simFns = {
@@ -132,7 +143,8 @@
         await ensurePastResultsCached(s, simFns);
       }
 
-      const tbody = document.getElementById('champ-tbody');
+      const driverTbody = document.getElementById('driver-champ-tbody');
+      const ctorTbody   = document.getElementById('ctor-champ-tbody');
       let anyRow = false;
 
       for (let s = currentSeason - 1; s >= 1; s--) {
@@ -143,61 +155,59 @@
         const ch   = summary.champion;
         const cc   = summary.constructorChampion;
 
-        // Driver champion cells
-        let driverCell = '—';
-        let driverTeamCell = '—';
-        let driverPts = '—';
+        // Driver champion row
+        const driverTr = document.createElement('tr');
         if (ch) {
           const driverName = ch.driverName.toUpperCase();
           const driverLink = ch.driverId != null
             ? `<a href="driver.html?id=${ch.driverId}&season=${s}">${driverName}</a>`
             : driverName;
-          const pd        = getDriverProfile(ch.driverId);
-          const natKey    = (pd?.nationality ?? '').toLowerCase();
-          const flagCode  = NAT_CODE[natKey] ?? '';
-          const flagHtml  = flagCode
+          const pd       = getDriverProfile(ch.driverId);
+          const natKey   = (pd?.nationality ?? '').toLowerCase();
+          const flagCode = NAT_CODE[natKey] ?? '';
+          const flagHtml = flagCode
             ? `<img src="https://flagcdn.com/w40/${flagCode}.png" style="height:11px;vertical-align:middle;margin-left:6px;border-radius:1px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.15)">`
             : '';
-          driverCell = `<span class="star">★</span>${driverLink}${flagHtml}`;
-
-          const team      = TEAMS.find(t => t.id === ch.teamId);
-          const dot       = team ? `<span class="team-dot" style="background:${team.colour}"></span>` : '';
-          const label     = teamLabel(ch.teamId, s);
-          driverTeamCell  = team
+          const team     = TEAMS.find(t => t.id === ch.teamId);
+          const dot      = team ? `<span class="team-dot" style="background:${team.colour}"></span>` : '';
+          const label    = teamLabel(ch.teamId, s);
+          const teamLink = team
             ? `${dot}<a href="team.html?id=${team.id}&season=${s}">${label}</a>`
             : label;
-          driverPts = ch.points;
+          driverTr.innerHTML = `
+            <td class="col-year">${year}</td>
+            <td class="col-driver"><span class="star">★</span>${driverLink}${flagHtml}</td>
+            <td class="col-team">${teamLink}</td>
+            <td class="col-pts">${ch.points}</td>`;
+        } else {
+          driverTr.innerHTML = `<td class="col-year">${year}</td><td>—</td><td>—</td><td class="col-pts">—</td>`;
         }
+        driverTbody.appendChild(driverTr);
 
-        // Constructor champion cells
-        let ctorCell = '—';
-        let ctorPts  = '—';
+        // Constructor champion row
+        const ctorTr = document.createElement('tr');
         if (cc) {
           const team  = TEAMS.find(t => t.id === cc.teamId);
           const dot   = team ? `<span class="team-dot" style="background:${team.colour}"></span>` : '';
           const label = teamLabel(cc.teamId, s);
-          ctorCell    = team
+          const link  = team
             ? `${dot}<a href="team.html?id=${team.id}&season=${s}">${label}</a>`
             : label;
-          ctorPts = cc.points;
+          ctorTr.innerHTML = `
+            <td class="col-year">${year}</td>
+            <td class="col-team"><span class="star">★</span>${link}</td>
+            <td class="col-pts">${cc.points}</td>`;
+        } else {
+          ctorTr.innerHTML = `<td class="col-year">${year}</td><td>—</td><td class="col-pts">—</td>`;
         }
+        ctorTbody.appendChild(ctorTr);
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="col-year">${year}</td>
-          <td class="col-driver">${driverCell}</td>
-          <td class="col-team">${driverTeamCell}</td>
-          <td class="col-pts">${driverPts}</td>
-          <td class="col-sep"></td>
-          <td class="col-team">${ctorCell}</td>
-          <td class="col-pts">${ctorPts}</td>
-        `;
-        tbody.appendChild(tr);
         anyRow = true;
       }
 
       if (!anyRow) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;font-size:9px;letter-spacing:2px;color:var(--dim)">NO COMPLETED SEASONS YET</td></tr>';
+        driverTbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;font-size:9px;letter-spacing:2px;color:var(--dim)">NO COMPLETED SEASONS YET</td></tr>';
+        ctorTbody.innerHTML   = '<tr><td colspan="3" style="text-align:center;padding:20px;font-size:9px;letter-spacing:2px;color:var(--dim)">NO COMPLETED SEASONS YET</td></tr>';
       }
 
       document.getElementById('loading-state').style.display = 'none';

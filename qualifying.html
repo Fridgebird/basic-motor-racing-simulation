@@ -463,10 +463,25 @@
     .qc-crash    { color: #ff4444; }
     .qc-weather  { color: #88aacc; }
 
+    .drv-abbr        { display: none; }
+    .team-short-label { display: none; }
+
     /* ── Responsive: stack panels on narrow screens ─────────────────────────── */
     @media (max-width: 640px) {
       #main { flex-direction: column; }
       #on-track-panel { width: 100%; }
+    }
+
+    /* ── Mobile portrait: abbreviate driver/team in leaderboard ─────────────── */
+    @media (max-width: 640px) and (orientation: portrait) {
+      .drv-full         { display: none; }
+      .drv-abbr         { display: inline; }
+      .team-full-label  { display: none; }
+      .team-short-label { display: inline; }
+      #quali-table th:nth-child(2) { width: 22px; }
+      #quali-table th:nth-child(4) { width: 72px; }
+      #quali-table th:nth-child(5) { width: 66px; }
+      #quali-table th:nth-child(6) { width: 46px; }
     }
   </style>
   <link rel="stylesheet" href="topnav.css">
@@ -706,16 +721,18 @@
     const btnGotoQualiResult = document.getElementById('btn-goto-quali-result');
 
     // Team colours and labels — built synchronously from snapshot (snapshot already computed above).
-    const teamColours = {};
-    const teamLabels  = {};  // teamId → "SHORTNAME - ENGINE"
+    const teamColours      = {};
+    const teamLabels       = {};  // teamId → "SHORTNAME - ENGINE"
+    const teamShortLabels  = {};  // teamId → "SHORTNAME" only
     snapshot.teams.forEach(t => {
-      teamColours[t.id] = t.colour;
-      const engineName  = snapshot.engines[t.engine]?.name ?? '';
-      const teamUp      = t.shortName.toUpperCase();
-      const engineUp    = engineName.toUpperCase();
-      teamLabels[t.id]  = (!engineName || teamUp === engineUp)
+      teamColours[t.id]     = t.colour;
+      const engineName      = snapshot.engines[t.engine]?.name ?? '';
+      const teamUp          = t.shortName.toUpperCase();
+      const engineUp        = engineName.toUpperCase();
+      teamLabels[t.id]      = (!engineName || teamUp === engineUp)
         ? teamUp
         : `${teamUp} - ${engineUp}`;
+      teamShortLabels[t.id] = teamUp;
     });
 
     const activeSeed = seed;
@@ -1216,21 +1233,24 @@
           if (!isFinal && i === lastTimedIdx && !r.retired) tr.className = 'on-track';
           const colour     = teamColours[r.teamId] || '#888';
           const teamLabel  = teamLabels[r.teamId]  || '';
-          const driverHref = `driver.html?id=${r.driverId}&season=${event.season}`;
-          const teamHref   = `team.html?id=${r.teamId}&season=${event.season}`;
-          const dp         = getDriverProfile(r.driverId);
-          const natCode    = NAT_CODE[(dp?.nationality || '').toLowerCase()];
-          const flagHtml   = natCode
+          const driverHref     = `driver.html?id=${r.driverId}&season=${event.season}`;
+          const teamHref       = `team.html?id=${r.teamId}&season=${event.season}`;
+          const teamShortLabel = teamShortLabels[r.teamId] || teamLabel;
+          const dp             = getDriverProfile(r.driverId);
+          const natCode        = NAT_CODE[(dp?.nationality || '').toLowerCase()];
+          const flagHtml       = natCode
             ? `<img class="tbl-flag" src="https://flagcdn.com/w20/${natCode}.png" alt="">`
             : '';
+          const nameParts = r.driverName.split(' ');
+          const abbr      = nameParts[nameParts.length - 1].slice(0, 3).toUpperCase();
           tr.innerHTML = `
             <td class="col-pos${pos === 1 ? ' p1' : ''}">${isFinal ? `P${pos}` : pos}</td>
             <td class="col-num">${r.carNumber ?? ''}</td>
             <td class="col-driver">
               <span class="team-dot-inline" style="background:${colour}"></span>
-              <a href="${driverHref}" style="color:inherit;text-decoration:none">${r.driverName.toUpperCase()}</a>${flagHtml}
+              <a href="${driverHref}" style="color:inherit;text-decoration:none"><span class="drv-full">${r.driverName.toUpperCase()}</span><span class="drv-abbr">${abbr}</span></a>${flagHtml}
             </td>
-            <td class="col-team"><a href="${teamHref}" style="color:inherit;text-decoration:none">${teamLabel}</a></td>
+            <td class="col-team"><a href="${teamHref}" style="color:inherit;text-decoration:none"><span class="team-full-label">${teamLabel}</span><span class="team-short-label">${teamShortLabel}</span></a></td>
             <td class="${r.retired ? 'col-no-time' : 'col-time'}">${r.retired ? 'NO TIME' : formatTime(r.lapTime)}</td>
             <td class="col-gap">${i === 0 || r.retired ? '' : gapString(r.lapTime, bestTime)}</td>
           `;

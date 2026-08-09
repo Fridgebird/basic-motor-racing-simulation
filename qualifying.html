@@ -42,6 +42,9 @@
       font-family: 'Square', 'Courier New', monospace;
       font-size: 12px;
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     /* ── Sticky header ──────────────────────────────────────────────────────── */
@@ -92,35 +95,73 @@
     .topbar-nav-link.current { color: var(--mid); }
     .topbar-nav-link.active { color: var(--mid); }
 
-    .topbar-meta {
+    /* ── Session header ─────────────────────────────────────────────────────── */
+    #session-header {
+      width: 100%;
+      max-width: 900px;
+      padding: 14px 16px 10px;
+    }
+    #event-title {
+      font-size: 22px;
+      color: var(--lo);
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 11px;
-      letter-spacing: 0.06em;
-      color: var(--lo);
     }
-
-    /* ── Info bar ───────────────────────────────────────────────────────────── */
-    #race-info-bar {
+    .ev-flag {
+      height: 22px;
+      border-radius: 2px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
+    }
+    #session-label {
+      font-size: 18px;
+      color: var(--hi);
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+    }
+    #weather-forecast-bar {
+      font-size: 9px;
+      letter-spacing: 0.04em;
+      color: var(--lo);
+      margin-bottom: 10px;
+      min-height: 13px;
+    }
+    #controls-row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 6px 16px;
-      background: var(--bg-deep);
-      border-bottom: 1px solid var(--border);
-      font-size: 11px;
+      gap: 16px;
+      font-size: 10px;
       color: var(--lo);
-      letter-spacing: 0.06em;
+      flex-wrap: wrap;
     }
-    #circuit-name { color: var(--mid); }
+    #controls-row select {
+      background: var(--bg-mid);
+      color: var(--mid);
+      border: 1px solid var(--border);
+      font-family: 'Square', monospace;
+      font-size: 10px;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+    .action-link {
+      color: var(--lo);
+      text-decoration: underline;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+    }
+    .action-link:hover { color: var(--hi); }
+    .action-link.disabled { opacity: 0.4; pointer-events: none; cursor: default; }
 
     /* ── Main layout ────────────────────────────────────────────────────────── */
     #main {
+      width: 100%;
+      max-width: 900px;
       display: flex;
       gap: 16px;
       padding: 12px 16px;
-      max-width: 900px;
     }
 
     /* ── On-track panel ─────────────────────────────────────────────────────── */
@@ -130,6 +171,9 @@
     }
 
     .panel-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       font-size: 10px;
       color: var(--lo);
       letter-spacing: 0.10em;
@@ -138,14 +182,15 @@
       margin-bottom: 8px;
     }
 
-    #quali-forecast {
+    .run-order-label {
       font-size: 9px;
-      letter-spacing: 0.04em;
+      letter-spacing: 2px;
       color: var(--lo);
-      padding: 6px 0 2px;
+      margin-bottom: 6px;
     }
 
     #run-order-section {
+      width: 100%;
       padding: 8px 16px 6px;
       border-bottom: 1px solid var(--border);
       background: var(--bg-mid);
@@ -153,10 +198,21 @@
     }
     #run-order-strip {
       display: flex;
-      gap: 4px;
+      gap: 0;
       overflow-x: auto;
     }
     #run-order-strip::-webkit-scrollbar { display: none; }
+    #run-order-strip-wrap {
+      display: flex;
+      align-items: center;
+    }
+    #run-order-arrow {
+      font-size: 9px;
+      color: var(--hi);
+      margin-right: 8px;
+      flex-shrink: 0;
+      line-height: 1;
+    }
     .rq-pip {
       flex-shrink: 0;
       width: 26px;
@@ -167,13 +223,26 @@
       font-size: 9px;
       letter-spacing: 0;
       border-radius: 2px;
+      margin-right: 4px;
+      transition: width 0.25s ease, margin-right 0.25s ease, margin-left 0.25s ease,
+                  opacity 0.2s ease, padding 0.25s ease;
+    }
+    .rq-pip.removing {
+      width: 0;
+      min-width: 0;
+      padding: 0;
+      margin-right: 0;
+      opacity: 0;
     }
 
     #quali-weather-strip {
+      width: 100%;
+      max-width: 900px;
       font-size: 10px;
       letter-spacing: 0.04em;
-      padding: 4px 0 8px;
-      margin-bottom: 2px;
+      padding: 6px 16px 6px;
+      background: var(--bg-mid);
+      border-bottom: 1px solid var(--border);
     }
 
     #driver-info-row {
@@ -275,28 +344,9 @@
     #draw-progress {
       font-size: 10px;
       color: var(--lo);
-      text-align: center;
-      margin-bottom: 12px;
+      letter-spacing: 0.04em;
     }
 
-    #btn-start-quali, #btn-replay-quali, #btn-rerun-quali, #btn-goto-race, #btn-goto-quali-result, #btn-pause-quali {
-      width: 100%;
-      padding: 8px;
-      font-family: 'Square', monospace;
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      cursor: pointer;
-      border-radius: 3px;
-      border: 1px solid var(--border);
-      background: var(--bg-mid);
-      color: var(--mid);
-      margin-bottom: 6px;
-    }
-    #btn-start-quali:hover, #btn-replay-quali:hover, #btn-rerun-quali:hover, #btn-goto-race:hover, #btn-goto-quali-result:hover, #btn-pause-quali:hover { border-color: var(--lo); color: var(--hi); }
-    #btn-start-quali:disabled { opacity: 0.4; cursor: default; }
-    #btn-goto-race         { display: none; border-color: var(--lo); }
-    #btn-goto-quali-result { display: none; border-color: var(--lo); }
-    #btn-pause-quali       { display: none; }
 
     /* ── Leaderboard ────────────────────────────────────────────────────────── */
     #leaderboard-panel { flex: 1; min-width: 0; }
@@ -305,6 +355,7 @@
       width: 100%;
       border-collapse: collapse;
       font-size: 11px;
+      table-layout: fixed;
     }
     #quali-table th {
       text-align: left;
@@ -314,14 +365,23 @@
       padding: 3px 6px;
       border-bottom: 1px solid var(--border);
       font-weight: normal;
+      overflow: hidden;
     }
+    #quali-table th:nth-child(1) { width: 32px; }
+    #quali-table th:nth-child(2) { width: 28px; }
+    #quali-table th:nth-child(4) { width: 150px; }
+    #quali-table th:nth-child(5) { width: 80px; }
+    #quali-table th:nth-child(6) { width: 60px; }
     #quali-table td {
       padding: 4px 6px;
       border-bottom: 1px solid var(--dim);
       color: var(--mid);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
     #quali-table tr.on-track td { background: rgba(138,180,212,0.06); }
-    #quali-table td.col-pos    { color: var(--lo); width: 28px; }
+    #quali-table td.col-pos    { color: var(--lo); }
     #quali-table td.col-pos.p1 { color: var(--hi); }
     #quali-table td.col-driver { color: var(--hi); }
     #quali-table td.col-team   { color: var(--lo); font-size: 10px; }
@@ -336,24 +396,37 @@
       margin-right: 5px;
       vertical-align: middle;
     }
-
-    /* ── Speed control ──────────────────────────────────────────────────────── */
-    .control-row {
+    .tbl-flag {
+      height: 10px;
+      vertical-align: middle;
+      margin-left: 5px;
+      border-radius: 1px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
+    }
+    #current-driver-name {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
-      font-size: 10px;
-      color: var(--lo);
+      gap: 7px;
     }
-    .control-row select {
-      background: var(--bg-mid);
-      color: var(--mid);
-      border: 1px solid var(--border);
-      font-family: 'Square', monospace;
-      font-size: 10px;
-      padding: 2px 4px;
-      border-radius: 2px;
+    .dn-number {
+      font-size: 26px;
+      color: var(--hi);
+      letter-spacing: -0.02em;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .dn-names { min-width: 0; }
+    .dn-first {
+      font-size: 9px;
+      color: var(--lo);
+      letter-spacing: 0.06em;
+      line-height: 1.4;
+    }
+    .dn-last {
+      font-size: 15px;
+      color: var(--hi);
+      letter-spacing: 0.03em;
+      line-height: 1.2;
     }
 
     /* ── Qualifying commentary ───────────────────────────────────────────────── */
@@ -413,21 +486,43 @@
         <a href="standings.html" class="topbar-nav-link">STANDINGS</a>
         <a href="champions.html" class="topbar-nav-link">CHAMPIONS</a>
       </nav>
-      <div class="topbar-meta">
-        <div id="topbar-status">QUALIFYING</div>
-      </div>
-    </div>
-
-    <!-- ── Info bar ──────────────────────────────────────────────────────────── -->
-    <div id="race-info-bar">
-      <span id="circuit-name">–</span>
-      <span id="session-status">–</span>
     </div>
   </div>
 
+  <!-- Hidden spans for JS compatibility -->
+  <span id="circuit-name" style="display:none"></span>
+  <span id="session-status" style="display:none"></span>
+
+  <!-- ── Session header ──────────────────────────────────────────────────────── -->
+  <div id="session-header">
+    <div id="event-title"></div>
+    <div id="session-label">Qualifying</div>
+    <div id="weather-forecast-bar"></div>
+    <div id="controls-row">
+      <label>SPEED</label>
+      <select id="speed-select">
+        <option value="200">Fast</option>
+        <option value="2350">Normal</option>
+        <option value="4500" selected>Slow</option>
+        <option value="0">Instant</option>
+      </select>
+      <a id="btn-start-quali" class="action-link" href="javascript:void(0)">START QUALIFYING</a>
+      <a id="btn-pause-quali" class="action-link" href="javascript:void(0)" style="display:none">PAUSE</a>
+      <a id="btn-goto-quali-result" class="action-link" href="javascript:void(0)" style="display:none">QUALIFYING RESULT →</a>
+      <a id="btn-goto-race" class="action-link" href="javascript:void(0)" style="display:none">RACE →</a>
+    </div>
+  </div>
+
+  <!-- ── Live weather ───────────────────────────────────────────────────────── -->
+  <div id="quali-weather-strip" style="display:none"></div>
+
   <!-- ── Run order strip ─────────────────────────────────────────────────────── -->
   <div id="run-order-section" style="display:none">
-    <div id="run-order-strip"></div>
+    <div class="run-order-label">NEXT UP</div>
+    <div id="run-order-strip-wrap">
+      <span id="run-order-arrow">▶</span>
+      <div id="run-order-strip"></div>
+    </div>
   </div>
 
   <!-- ── Main ────────────────────────────────────────────────────────────────── -->
@@ -436,31 +531,13 @@
     <!-- On-track panel -->
     <div id="on-track-panel">
 
-      <div class="control-row">
-        <label>Speed</label>
-        <select id="speed-select">
-          <option value="200">Fast</option>
-          <option value="2350">Normal</option>
-          <option value="4500" selected>Slow</option>
-          <option value="0">Instant</option>
-        </select>
-      </div>
+      <div class="panel-title">ON TRACK <span id="draw-progress"></span></div>
 
-      <button id="btn-start-quali">START QUALIFYING</button>
-      <div id="quali-forecast"></div>
-      <button id="btn-pause-quali">PAUSE</button>
-      <button id="btn-goto-quali-result">QUALIFYING RESULT →</button>
-      <button id="btn-goto-race">GO TO RACE →</button>
-
-      <div class="panel-title" style="margin-top:12px">ON TRACK</div>
-
-      <div id="quali-weather-strip" style="display:none"></div>
-
-      <div id="driver-info-row">
+      <div id="driver-info-row" style="display:none">
         <div id="driver-colour-bar"></div>
         <div id="driver-portrait"></div>
         <div style="flex:1;min-width:0;overflow:hidden">
-          <div id="current-driver-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+          <div id="current-driver-name"></div>
           <div id="current-team-name"></div>
         </div>
         <div id="driver-car-image">
@@ -494,7 +571,6 @@
         </div>
       </div>
       <div id="quali-commentary"></div>
-      <div id="draw-progress"></div>
 
     </div>
 
@@ -528,7 +604,7 @@
       getWorldSeed, setWorldSeed, getTodayDayOffset, getEventDate, formatShortDate,
       ensurePastResultsCached,
     } from './championship.js';
-    import { getSeasonSnapshot, getDisplayYear } from './worldstate.js';
+    import { getSeasonSnapshot, getDisplayYear, getDriverProfile } from './worldstate.js';
 
     // ── Dev mode entry via ?dev=1 ──────────────────────────────────────────────
     const params  = new URLSearchParams(location.search);
@@ -557,9 +633,37 @@
     if (event.season > 1) await ensurePastResultsCached(event.season - 1, simFns);
     const snapshot  = getSeasonSnapshot(event.season, worldSeed);
 
-    // Info bar
+    // Info bar (hidden span — JS compatibility)
     document.getElementById('circuit-name').textContent =
       `${1929 + event.season} Round ${event.round} · ${circuit.eventName} — Qualifying · ${circuit.name}, ${circuit.country}`;
+
+    // Session header — event title with country flag
+    const COUNTRY_CODE = {
+      'australia': 'au', 'new zealand': 'nz', 'argentina': 'ar',
+      'mexico': 'mx', 'japan': 'jp', 'kenya': 'ke',
+      'belgium': 'be', 'france': 'fr', 'italy': 'it',
+      'germany': 'de', 'czechoslovakia': 'cz', 'england': 'gb',
+      'sweden': 'se', 'finland': 'fi', 'hong kong': 'hk',
+      'canada': 'ca', 'united states': 'us', 'pakistan': 'pk',
+      'brazil': 'br', 'south africa': 'za',
+    };
+    const NAT_CODE = {
+      'american':'us',    'argentinian':'ar',  'australian':'au',  'austrian':'at',
+      'belgian':'be',     'brazilian':'br',    'british':'gb',     'canadian':'ca',
+      'chinese':'cn',     'colombian':'co',    'czech':'cz',       'danish':'dk',
+      'dutch':'nl',       'egyptian':'eg',     'finnish':'fi',     'french':'fr',
+      'german':'de',      'ghanaian':'gh',     'greek':'gr',       'hungarian':'hu',
+      'indian':'in',      'irish':'ie',        'italian':'it',     'japanese':'jp',
+      'mexican':'mx',     'moroccan':'ma',     'new zealander':'nz','nigerian':'ng',
+      'norwegian':'no',   'polish':'pl',       'portuguese':'pt',  'senegalese':'sn',
+      'south african':'za','spanish':'es',     'swedish':'se',     'swiss':'ch',
+    };
+    const evFlagCode = COUNTRY_CODE[(circuit.country || '').toLowerCase()];
+    const evFlagHtml = evFlagCode
+      ? ` <img class="ev-flag" src="https://flagcdn.com/w40/${evFlagCode}.png" alt="">`
+      : '';
+    document.getElementById('event-title').innerHTML =
+      `${getDisplayYear(event.season)} ${circuit.eventName}${evFlagHtml}`;
 
     // ── Dev bar ────────────────────────────────────────────────────────────────
     if (isDevMode()) {
@@ -628,7 +732,7 @@
     function showForecast(s) {
       const previewRng = initRace(s, null, circuit, snapshot);
       initWeather(previewRng, cars.length);
-      document.getElementById('quali-forecast').textContent = getWeatherForecastLabel('qualifying');
+      document.getElementById('weather-forecast-bar').textContent = getWeatherForecastLabel('qualifying');
 
       // Reproduce the Fisher-Yates shuffle (same algorithm as runQualifyingSessionAnimated)
       const previewOrder = [...cars];
@@ -650,12 +754,13 @@
       document.getElementById('run-order-section').style.display = '';
     }
     showForecast(activeSeed);
+    renderLeaderboard([], false);  // pre-populate 24 empty rows
 
 
     // ── Day-gating ─────────────────────────────────────────────────────────────
     const isQualiAvailable = event.dayOffset <= getTodayDayOffset();
     if (!isQualiAvailable) {
-      btnStart.disabled = true;
+      btnStart.classList.add('disabled');
       btnStart.title    = 'Qualifying session not yet available';
     }
 
@@ -669,12 +774,12 @@
 
     // ── Start qualifying ───────────────────────────────────────────────────────
     btnStart.addEventListener('click', async () => {
-      btnStart.disabled        = true;
+      btnStart.classList.add('disabled');
       btnPause.style.display   = 'block';
       bestSectorTimes = [null, null, null];
       poleSectorTimes = null;
       document.getElementById('session-status').textContent = 'SESSION RUNNING';
-      document.getElementById('quali-forecast').style.display = 'none';
+      document.getElementById('weather-forecast-bar').style.display = 'none';
 
       // Init cars — rolls setups (qualifying seed)
       const rng = initRace(activeSeed, null, circuit, snapshot);
@@ -800,9 +905,15 @@
         const car            = drawOrder[drawIndex];
         const trackEvolution = drawOrder.length > 1 ? drawIndex / (drawOrder.length - 1) : 0;
 
-        // Pop this driver's pip — they're now on track, not upcoming
-        if (runOrderStrip.firstChild) runOrderStrip.removeChild(runOrderStrip.firstChild);
-        if (!runOrderStrip.hasChildNodes()) runOrderSection.style.display = 'none';
+        // Animate out and remove the current driver's pip
+        if (runOrderStrip.firstChild) {
+          const pip = runOrderStrip.firstChild;
+          pip.classList.add('removing');
+          setTimeout(() => {
+            if (pip.parentNode) runOrderStrip.removeChild(pip);
+            if (!runOrderStrip.hasChildNodes()) runOrderSection.style.display = 'none';
+          }, 270);
+        }
 
         // Show weather conditions before the driver goes out
         const prelapWeatherInfo = race.weatherScenario
@@ -903,8 +1014,17 @@
     }
 
     function showOnTrack(car, drawIndex, total) {
-      document.getElementById('current-driver-name').textContent =
-        `${car.driver.number}. ${car.driver.name.toUpperCase()}`;
+      document.getElementById('driver-info-row').style.display = 'flex';
+      const fullName  = car.driver.name;
+      const lastSp    = fullName.lastIndexOf(' ');
+      const firstName = (lastSp > 0 ? fullName.slice(0, lastSp) : '').toUpperCase();
+      const surname   = (lastSp > 0 ? fullName.slice(lastSp + 1) : fullName).toUpperCase();
+      document.getElementById('current-driver-name').innerHTML =
+        `<div class="dn-number">${car.driver.number}</div>` +
+        `<div class="dn-names">` +
+          `<div class="dn-first">${firstName}</div>` +
+          `<div class="dn-last">${surname}</div>` +
+        `</div>`;
       document.getElementById('current-team-name').textContent =
         teamLabels[car.team.id] || car.team.shortName?.toUpperCase() || '';
       const teamColour = teamColours[car.team.id] || '#2a4055';
@@ -1019,15 +1139,12 @@
     }
 
     function clearOnTrackPanel() {
-      document.getElementById('quali-commentary').innerHTML         = '';
-      document.getElementById('current-driver-name').textContent    = 'SESSION COMPLETE';
+      document.getElementById('quali-commentary').innerHTML    = '';
+      document.getElementById('current-driver-name').innerHTML =
+        '<div class="dn-names"><div class="dn-last" style="font-size:11px;color:var(--lo)">SESSION COMPLETE</div></div>';
       document.getElementById('current-team-name').textContent      = '';
       document.getElementById('driver-colour-bar').style.background = 'var(--dim)';
       document.getElementById('draw-progress').textContent          = '';
-      document.getElementById('lap-time-display').textContent       = '–';
-      const pv = document.getElementById('pos-value');
-      pv.textContent = '–';
-      pv.className   = 'pos-value';
       const portraitEl = document.getElementById('driver-portrait');
       portraitEl.textContent              = '🏁';
       portraitEl.style.backgroundImage    = '';
@@ -1038,6 +1155,9 @@
       portraitEl.style.fontSize           = '28px';
       portraitEl.style.lineHeight         = '46px';
       portraitEl.style.textAlign          = 'center';
+      document.getElementById('driver-car-image').style.display  = 'none';
+      document.querySelector('.sector-grid').style.display        = 'none';
+      document.getElementById('time-pos-row').style.display       = 'none';
       document.getElementById('quali-weather-strip').style.display = 'none';
       document.getElementById('run-order-section').style.display  = 'none';
     }
@@ -1071,37 +1191,52 @@
     }
 
     function renderLeaderboard(results, isFinal) {
-      const tbody   = document.getElementById('quali-tbody');
+      const tbody    = document.getElementById('quali-tbody');
       const bestTime = results.find(r => !r.retired)?.lapTime || null;
       tbody.innerHTML = '';
 
-      results.forEach((r, i) => {
-        const tr = document.createElement('tr');
-        if (!isFinal && i === results.filter(x => !x.retired).length - 1 && !r.retired) {
-          tr.className = 'on-track';
-        }
+      const totalRows = isFinal ? results.length : Math.max(results.length, cars.length);
+      const lastTimedIdx = results.filter(x => !x.retired).length - 1;
 
+      for (let i = 0; i < totalRows; i++) {
+        const tr  = document.createElement('tr');
         const pos = i + 1;
+        const r   = results[i];
 
-        // Resolve colour from TEAMS data — lazy import
-        const colour = teamColours[r.teamId] || '#888';
-
-        const teamLabel = teamLabels[r.teamId] || '';
-        const driverHref = `driver.html?id=${r.driverId}&season=${event.season}`;
-        const teamHref   = `team.html?id=${r.teamId}&season=${event.season}`;
-        tr.innerHTML = `
-          <td class="col-pos${pos === 1 ? ' p1' : ''}">${isFinal ? `P${pos}` : pos}</td>
-          <td class="col-num">${r.carNumber ?? ''}</td>
-          <td class="col-driver">
-            <span class="team-dot-inline" style="background:${colour}"></span>
-            <a href="${driverHref}" style="color:inherit;text-decoration:none">${r.driverName.toUpperCase()}</a>
-          </td>
-          <td class="col-team"><a href="${teamHref}" style="color:inherit;text-decoration:none">${teamLabel}</a></td>
-          <td class="${r.retired ? 'col-no-time' : 'col-time'}">${r.retired ? 'NO TIME' : formatTime(r.lapTime)}</td>
-          <td class="col-gap">${i === 0 || r.retired ? '' : gapString(r.lapTime, bestTime)}</td>
-        `;
+        if (!r) {
+          tr.innerHTML = `
+            <td class="col-pos" style="color:var(--dim)">${pos}</td>
+            <td class="col-num"></td>
+            <td class="col-driver"></td>
+            <td class="col-team"></td>
+            <td></td>
+            <td></td>
+          `;
+        } else {
+          if (!isFinal && i === lastTimedIdx && !r.retired) tr.className = 'on-track';
+          const colour     = teamColours[r.teamId] || '#888';
+          const teamLabel  = teamLabels[r.teamId]  || '';
+          const driverHref = `driver.html?id=${r.driverId}&season=${event.season}`;
+          const teamHref   = `team.html?id=${r.teamId}&season=${event.season}`;
+          const dp         = getDriverProfile(r.driverId);
+          const natCode    = NAT_CODE[(dp?.nationality || '').toLowerCase()];
+          const flagHtml   = natCode
+            ? `<img class="tbl-flag" src="https://flagcdn.com/w20/${natCode}.png" alt="">`
+            : '';
+          tr.innerHTML = `
+            <td class="col-pos${pos === 1 ? ' p1' : ''}">${isFinal ? `P${pos}` : pos}</td>
+            <td class="col-num">${r.carNumber ?? ''}</td>
+            <td class="col-driver">
+              <span class="team-dot-inline" style="background:${colour}"></span>
+              <a href="${driverHref}" style="color:inherit;text-decoration:none">${r.driverName.toUpperCase()}</a>${flagHtml}
+            </td>
+            <td class="col-team"><a href="${teamHref}" style="color:inherit;text-decoration:none">${teamLabel}</a></td>
+            <td class="${r.retired ? 'col-no-time' : 'col-time'}">${r.retired ? 'NO TIME' : formatTime(r.lapTime)}</td>
+            <td class="col-gap">${i === 0 || r.retired ? '' : gapString(r.lapTime, bestTime)}</td>
+          `;
+        }
         tbody.appendChild(tr);
-      });
+      }
     }
 
 

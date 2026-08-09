@@ -1210,9 +1210,16 @@
     function renderLeaderboard(results, isFinal) {
       const tbody    = document.getElementById('quali-tbody');
       const bestTime = results.find(r => !r.retired)?.lapTime || null;
+
+      // FLIP phase 1 — snapshot current Y positions of filled rows before wiping DOM
+      const prevTops = new Map();
+      tbody.querySelectorAll('tr[data-driver]').forEach(tr => {
+        prevTops.set(tr.dataset.driver, tr.getBoundingClientRect().top);
+      });
+
       tbody.innerHTML = '';
 
-      const totalRows = isFinal ? results.length : Math.max(results.length, cars.length);
+      const totalRows    = isFinal ? results.length : Math.max(results.length, cars.length);
       const lastTimedIdx = results.filter(x => !x.retired).length - 1;
 
       for (let i = 0; i < totalRows; i++) {
@@ -1230,9 +1237,10 @@
             <td></td>
           `;
         } else {
+          tr.dataset.driver = String(r.driverId);
           if (!isFinal && i === lastTimedIdx && !r.retired) tr.className = 'on-track';
-          const colour     = teamColours[r.teamId] || '#888';
-          const teamLabel  = teamLabels[r.teamId]  || '';
+          const colour         = teamColours[r.teamId] || '#888';
+          const teamLabel      = teamLabels[r.teamId]  || '';
           const driverHref     = `driver.html?id=${r.driverId}&season=${event.season}`;
           const teamHref       = `team.html?id=${r.teamId}&season=${event.season}`;
           const teamShortLabel = teamShortLabels[r.teamId] || teamLabel;
@@ -1256,6 +1264,24 @@
           `;
         }
         tbody.appendChild(tr);
+      }
+
+      // FLIP phase 2 — for each row that existed before, apply inverse transform then
+      // transition to natural position so it appears to slide rather than jump
+      if (prevTops.size > 0) {
+        tbody.querySelectorAll('tr[data-driver]').forEach(tr => {
+          const prevTop = prevTops.get(tr.dataset.driver);
+          if (prevTop == null) return;
+          const delta = tr.getBoundingClientRect().top - prevTop;
+          if (Math.abs(delta) < 0.5) return;
+          tr.style.transition = 'none';
+          tr.style.transform  = `translateY(${-delta}px)`;
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            tr.style.transition = 'transform 0.28s ease';
+            tr.style.transform  = '';
+            tr.addEventListener('transitionend', () => { tr.style.transition = ''; }, { once: true });
+          }));
+        });
       }
     }
 

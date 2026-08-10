@@ -250,10 +250,11 @@
       align-items: center;
       gap: 8px;
       margin-bottom: 10px;
+      min-height: 72px;
     }
     #driver-colour-bar {
       width: 4px;
-      height: 48px;
+      align-self: stretch;
       border-radius: 2px;
       background: var(--dim);
       flex-shrink: 0;
@@ -928,7 +929,6 @@
           pip.classList.add('removing');
           setTimeout(() => {
             if (pip.parentNode) runOrderStrip.removeChild(pip);
-            if (!runOrderStrip.hasChildNodes()) runOrderSection.style.display = 'none';
           }, 270);
         }
 
@@ -1036,11 +1036,16 @@
       const lastSp    = fullName.lastIndexOf(' ');
       const firstName = (lastSp > 0 ? fullName.slice(0, lastSp) : '').toUpperCase();
       const surname   = (lastSp > 0 ? fullName.slice(lastSp + 1) : fullName).toUpperCase();
+      const dp      = getDriverProfile(car.driver.id);
+      const natCode = NAT_CODE[(dp?.nationality || '').toLowerCase()];
+      const onTrackFlagHtml = natCode
+        ? `<img src="https://flagcdn.com/w20/${natCode}.png" style="height:12px;vertical-align:middle;margin-left:5px;border-radius:1px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12)">`
+        : '';
       document.getElementById('current-driver-name').innerHTML =
         `<div class="dn-number">${car.driver.number}</div>` +
         `<div class="dn-names">` +
           `<div class="dn-first">${firstName}</div>` +
-          `<div class="dn-last">${surname}</div>` +
+          `<div class="dn-last">${surname}${onTrackFlagHtml}</div>` +
         `</div>`;
       document.getElementById('current-team-name').textContent =
         teamLabels[car.team.id] || car.team.shortName?.toUpperCase() || '';
@@ -1176,7 +1181,6 @@
       document.querySelector('.sector-grid').style.display        = 'none';
       document.getElementById('time-pos-row').style.display       = 'none';
       document.getElementById('quali-weather-strip').style.display = 'none';
-      document.getElementById('run-order-section').style.display  = 'none';
     }
 
     function formatTime(seconds) {

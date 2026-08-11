@@ -72,17 +72,6 @@
     .topbar-nav-link:hover { color: var(--mid); }
     .topbar-nav-link.current { color: var(--mid); }
 
-    #info-bar {
-      display: flex;
-      align-items: center;
-      padding: 6px 16px;
-      background: var(--bg-deep);
-      border-bottom: 1px solid var(--border);
-      font-size: 11px;
-      color: var(--lo);
-      letter-spacing: 0.06em;
-    }
-    #event-label { color: var(--mid); }
 
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
     #loading-msg { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--lo); text-align:center; width:100%; animation:pulse 1.6s ease-in-out infinite; }
@@ -327,9 +316,6 @@
       </nav>
     </div>
 
-    <div id="info-bar">
-      <span id="event-label">–</span>
-    </div>
   </div>
 
   <div id="session-header">
@@ -375,8 +361,6 @@
       const circuit = getCircuit(event);
 
       const typeLabel = type === 'qualifying' ? 'Qualifying Result' : 'Race Result';
-      document.getElementById('event-label').textContent =
-        `${1929 + season} Round ${round} · ${circuit.eventName} — ${typeLabel}`;
       document.title = `${circuit.eventName} ${typeLabel} — Simple Motor Racing`;
 
       // Session header — event title with country flag
@@ -395,7 +379,7 @@
         : '';
       document.getElementById('event-title').innerHTML =
         `${1929 + season} ${circuit.eventName}${evFlagHtml}`;
-      document.getElementById('session-label').textContent = typeLabel;
+      document.getElementById('session-label').textContent = `Round ${round} · ${typeLabel}`;
 
       const simFns = { initRace, cars, runRace, initStrategies, initWeather, setCurrentCircuit, runQualifyingSession, getSeasonSnapshot };
       if (season > 1) await ensurePastResultsCached(season - 1, simFns);
@@ -453,6 +437,25 @@
 
       const teamColours  = Object.fromEntries(TEAMS.map(t => [t.id, t.colour]));
       const POINTS_TABLE = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
+
+      const NAT_CODE = {
+        'american':'us',    'argentinian':'ar',  'australian':'au',  'austrian':'at',
+        'belgian':'be',     'brazilian':'br',    'british':'gb',     'canadian':'ca',
+        'chinese':'cn',     'colombian':'co',    'czech':'cz',       'danish':'dk',
+        'dutch':'nl',       'egyptian':'eg',     'finnish':'fi',     'french':'fr',
+        'german':'de',      'ghanaian':'gh',     'greek':'gr',       'hungarian':'hu',
+        'indian':'in',      'irish':'ie',        'italian':'it',     'japanese':'jp',
+        'mexican':'mx',     'moroccan':'ma',     'new zealander':'nz','nigerian':'ng',
+        'norwegian':'no',   'polish':'pl',       'portuguese':'pt',  'senegalese':'sn',
+        'south african':'za','spanish':'es',     'swedish':'se',     'swiss':'ch',
+      };
+      function driverFlag(driverId) {
+        const dp   = getDriverProfile(driverId);
+        const code = NAT_CODE[(dp?.nationality || '').toLowerCase()];
+        return code
+          ? `<img src="https://flagcdn.com/w20/${code}.png" style="height:10px;vertical-align:middle;margin-left:5px;border-radius:1px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12)">`
+          : '';
+      }
 
       function teamLabel(teamId) {
         const team = TEAMS.find(t => t.id === teamId);
@@ -654,7 +657,7 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td class="col-pos ${pCls}">${pos}</td>
-            <td class="col-name"><span class="team-dot" style="background:${colour}"></span>${driverLink(e.driverId, e.driverName)}</td>
+            <td class="col-name"><span class="team-dot" style="background:${colour}"></span>${driverLink(e.driverId, e.driverName)}${driverFlag(e.driverId)}</td>
             <td class="col-team">${displayTeam(e.teamId)}</td>
             <td class="col-gap${e.position === 1 && !e.retired ? ' leader' : ''}">${gapStr}</td>
             <td class="col-stops">${grid}</td>
@@ -718,7 +721,7 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td class="col-pos ${pCls}">${pos}</td>
-            <td class="col-name"><span class="team-dot" style="background:${colour}"></span>${driverLink(r.driverId, r.driverName)}</td>
+            <td class="col-name"><span class="team-dot" style="background:${colour}"></span>${driverLink(r.driverId, r.driverName)}${driverFlag(r.driverId)}</td>
             <td class="col-team">${displayTeam(r.teamId)}</td>
             <td class="col-time${r.gridPosition === 1 && !r.retired ? ' pole' : ''}">${timeHtml}</td>
             ${sectorCells}

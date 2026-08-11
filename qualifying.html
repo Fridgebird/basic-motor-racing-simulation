@@ -512,7 +512,7 @@
   <!-- ── Session header ──────────────────────────────────────────────────────── -->
   <div id="session-header">
     <div id="event-title"></div>
-    <div id="session-label">Qualifying</div>
+    <div id="session-label"></div>
     <div id="weather-forecast-bar"></div>
     <div id="controls-row">
       <label>SPEED</label>
@@ -680,6 +680,7 @@
       : '';
     document.getElementById('event-title').innerHTML =
       `${getDisplayYear(event.season)} ${circuit.eventName}${evFlagHtml}`;
+    document.getElementById('session-label').textContent = `Round ${event.round} · Qualifying`;
 
     // ── Dev bar ────────────────────────────────────────────────────────────────
     if (isDevMode()) {

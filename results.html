@@ -40,6 +40,9 @@
       font-family: 'Square', 'Courier New', monospace;
       font-size: 12px;
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     #sticky-header {
@@ -84,7 +87,34 @@
     @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
     #loading-msg { padding:48px 16px; font-size:9px; letter-spacing:3px; color:var(--lo); text-align:center; width:100%; animation:pulse 1.6s ease-in-out infinite; }
 
+    /* ── Session header ── */
+    #session-header {
+      width: 100%;
+      max-width: 900px;
+      padding: 14px 16px 10px;
+    }
+    #event-title {
+      font-size: 22px;
+      color: var(--lo);
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ev-flag {
+      height: 22px;
+      border-radius: 2px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
+    }
+    #session-label {
+      font-size: 18px;
+      color: var(--hi);
+      letter-spacing: 0.04em;
+    }
+
     #main {
+      width: 100%;
       padding: 16px 16px;
       max-width: 900px;
       display: flex;
@@ -302,6 +332,11 @@
     </div>
   </div>
 
+  <div id="session-header">
+    <div id="event-title"></div>
+    <div id="session-label"></div>
+  </div>
+
   <div id="loading-msg">COMPUTING RESULTS…</div>
   <div id="main" style="display:none">
     <div id="result-col">
@@ -343,6 +378,24 @@
       document.getElementById('event-label').textContent =
         `${1929 + season} Round ${round} · ${circuit.eventName} — ${typeLabel}`;
       document.title = `${circuit.eventName} ${typeLabel} — Simple Motor Racing`;
+
+      // Session header — event title with country flag
+      const COUNTRY_CODE = {
+        'australia': 'au', 'new zealand': 'nz', 'argentina': 'ar',
+        'mexico': 'mx', 'japan': 'jp', 'kenya': 'ke',
+        'belgium': 'be', 'france': 'fr', 'italy': 'it',
+        'germany': 'de', 'czechoslovakia': 'cz', 'england': 'gb',
+        'sweden': 'se', 'finland': 'fi', 'hong kong': 'hk',
+        'canada': 'ca', 'united states': 'us', 'pakistan': 'pk',
+        'brazil': 'br', 'south africa': 'za',
+      };
+      const evFlagCode = COUNTRY_CODE[(circuit.country || '').toLowerCase()];
+      const evFlagHtml = evFlagCode
+        ? ` <img class="ev-flag" src="https://flagcdn.com/w40/${evFlagCode}.png" alt="">`
+        : '';
+      document.getElementById('event-title').innerHTML =
+        `${1929 + season} ${circuit.eventName}${evFlagHtml}`;
+      document.getElementById('session-label').textContent = typeLabel;
 
       const simFns = { initRace, cars, runRace, initStrategies, initWeather, setCurrentCircuit, runQualifyingSession, getSeasonSnapshot };
       if (season > 1) await ensurePastResultsCached(season - 1, simFns);

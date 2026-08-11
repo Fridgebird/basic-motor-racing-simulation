@@ -278,25 +278,26 @@
     /* ── Footer ── */
     .results-footer {
       display: flex;
-      gap: 12px;
+      gap: 16px;
       align-items: center;
       padding: 4px 0 12px;
     }
     .footer-btn {
-      background: var(--bg-deep);
-      border: 1px solid var(--border);
       color: var(--lo);
+      text-decoration: underline;
       font-family: inherit;
-      font-size: 9px;
+      font-size: 10px;
       letter-spacing: 0.08em;
-      padding: 4px 12px;
       cursor: pointer;
-      text-decoration: none;
+      background: none;
+      border: none;
+      padding: 0;
       display: inline-block;
     }
-    .footer-btn:hover   { color: var(--mid); border-color: var(--mid); }
-    .footer-btn.primary { color: var(--mid); border-color: var(--lo); }
-    .footer-btn.primary:hover { color: var(--hi); border-color: var(--mid); }
+    .footer-btn:hover          { color: var(--hi); }
+    .footer-btn.primary        { color: var(--mid); }
+    .footer-btn.primary:hover  { color: var(--hi); }
+    .footer-btn.locked         { opacity: 0.4; pointer-events: none; }
   </style>
   <link rel="stylesheet" href="topnav.css">
   <script src="topnav.js" defer></script>

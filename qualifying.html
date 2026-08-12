@@ -927,10 +927,14 @@
         // Animate out and remove the current driver's pip
         if (runOrderStrip.firstChild) {
           const pip = runOrderStrip.firstChild;
-          pip.classList.add('removing');
-          setTimeout(() => {
-            if (pip.parentNode) runOrderStrip.removeChild(pip);
-          }, 270);
+          if (sectorPause() <= 0) {
+            runOrderStrip.removeChild(pip);
+          } else {
+            pip.classList.add('removing');
+            setTimeout(() => {
+              if (pip.parentNode) runOrderStrip.removeChild(pip);
+            }, 270);
+          }
         }
 
         // Show weather conditions before the driver goes out

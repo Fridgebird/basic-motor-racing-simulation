@@ -113,6 +113,12 @@
 
     @media (max-width: 600px) {
       #main { padding: 0 8px 20px; }
+      /* Drivers standings: hide team column, show sub-row */
+      .col-standings-team { display: none; }
+      .s-team { display: block; }
+      /* Race table: hide team column, show compact sub-row */
+      .col-race-team { display: none; }
+      .col-team-sub { display: block; }
     }
 
     .panel-title {
@@ -202,7 +208,14 @@
     .standings-table td.s-name   { color: var(--hi); }
     .standings-table td.s-pts    { color: var(--hi); text-align: right; }
     .standings-table td.s-w      { color: var(--lo); text-align: right; width: 24px; }
-    .s-team { font-size: 9px; color: var(--lo); letter-spacing: 0.04em; margin-top: 1px; }
+    .standings-table th.col-right { text-align: right; }
+    /* Team sub-row — hidden on desktop, shown on mobile */
+    .s-team { font-size: 9px; color: var(--lo); letter-spacing: 0.04em; margin-top: 1px; display: none; }
+    /* Desktop team column in drivers standings — hidden on mobile */
+    .col-standings-team { color: var(--lo); font-size: 10px; }
+    /* Race table team column — hidden on mobile; compact sub-row shown instead */
+    .col-race-team { }
+    .col-team-sub { display: none; font-size: 9px; color: var(--lo); margin-top: 1px; }
 
     /* ── Champion banner ── */
     .champion-banner {
@@ -227,8 +240,8 @@
     /* ── Season results grid ── */
     .rg-section { }
     .rg-title {
-      font-size: 9px; letter-spacing: 2px; color: var(--lo);
-      text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 4px;
+      font-size: 15px; letter-spacing: 0.08em; color: var(--lo);
+      text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 6px;
     }
     .rg-scroll { overflow-x: auto; border: 1px solid var(--border); border-top: none; }
     .rg-table { border-collapse: collapse; white-space: nowrap; }
@@ -259,7 +272,7 @@
 
     /* ── Driver hero card (race winner / championship leader) ── */
     .hero-card { margin-bottom: 16px; }
-    .hc-label { font-size: 8px; letter-spacing: 3px; color: var(--lo); text-transform: uppercase; margin-bottom: 6px; }
+    .hc-label { font-size: 15px; letter-spacing: 0.08em; color: var(--lo); text-transform: uppercase; margin-bottom: 6px; }
     .hc-inner { display: flex; align-items: stretch; background: var(--bg-mid); border: 1px solid var(--border); overflow: hidden; min-height: 72px; }
     .hc-strip { width: 4px; flex-shrink: 0; }
     .hc-portrait { width: 72px; flex-shrink: 0; background-color: var(--dim); display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--lo); }
@@ -556,7 +569,7 @@
           <div class="hc-inner">
             <div class="hc-strip" style="background:${colour}"></div>
             <div class="hc-carimage">
-              <img src="car_sprites_${eraYear}_${imageId}.webp" alt="" onerror="this.parentElement.style.display='none'">
+              <img src="logo_sprites_${eraYear}_${imageId}.webp" alt="" onerror="this.parentElement.style.display='none'">
             </div>
             <div class="hc-info">
               <div class="hc-name">${teamLabelStr}</div>
@@ -621,6 +634,7 @@
         }
 
         const table = buildTable(['POS', 'DRIVER', 'TEAM', 'GAP', 'GRID', 'STATUS', 'PTS']);
+        table.querySelectorAll('th')[2].classList.add('col-race-team');
         const tbody = table.querySelector('tbody');
 
         entries.forEach((e, i) => {
@@ -651,8 +665,8 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td class="col-pos ${pCls}">${pos}</td>
-            <td class="col-name"><span class="team-dot" style="background:${colour}"></span>${driverLink(e.driverId, e.driverName)}${driverFlag(e.driverId)}</td>
-            <td class="col-team">${displayTeam(e.teamId)}</td>
+            <td class="col-name"><span class="team-dot" style="background:${colour}"></span>${driverLink(e.driverId, e.driverName)}${driverFlag(e.driverId)}<div class="col-team-sub">${displayTeam(e.teamId)}</div></td>
+            <td class="col-team col-race-team">${displayTeam(e.teamId)}</td>
             <td class="col-gap${e.position === 1 && !e.retired ? ' leader' : ''}">${gapStr}</td>
             <td class="col-stops">${grid}</td>
             <td class="col-status">${statusHtml}</td>
@@ -745,11 +759,17 @@
         // Drivers
         const dTitle = document.createElement('div');
         dTitle.className = 'panel-title';
-        dTitle.textContent = `Drivers · After R${round}`;
+        dTitle.textContent = "Drivers' Championship";
         panel.appendChild(dTitle);
 
-        const dTable = buildStandingsTable(['POS', 'DRIVER', 'PTS', 'W']);
-        const dTbody = dTable.querySelector('tbody');
+        const dTable = document.createElement('table');
+        dTable.className = 'standings-table';
+        dTable.innerHTML = `<thead><tr>
+          <th>POS</th><th>DRIVER</th>
+          <th class="col-standings-team">TEAM</th>
+          <th class="col-right">PTS</th><th class="col-right">W</th>
+        </tr></thead>`;
+        const dTbody = document.createElement('tbody');
         drivers.forEach((d, i) => {
           const colour = colours[d.teamId] || '#888';
           const tr = document.createElement('tr');
@@ -759,11 +779,13 @@
               <span class="team-dot" style="background:${colour}"></span>${driverLink(d.driverId, d.name)}${driverFlag(d.driverId)}
               <div class="s-team">${displayTeam(d.teamId)}</div>
             </td>
+            <td class="col-standings-team">${displayTeam(d.teamId)}</td>
             <td class="s-pts">${d.points}</td>
             <td class="s-w">${d.wins}</td>
           `;
           dTbody.appendChild(tr);
         });
+        dTable.appendChild(dTbody);
         panel.appendChild(dTable);
 
         // Constructors
@@ -777,10 +799,11 @@
 
           const cTitle = document.createElement('div');
           cTitle.className = 'panel-title';
-          cTitle.textContent = 'Constructors';
+          cTitle.textContent = "Constructors' Championship";
           panel.appendChild(cTitle);
 
           const cTable = buildStandingsTable(['POS', 'TEAM', 'PTS', 'W']);
+          cTable.querySelectorAll('th:nth-child(n+3)').forEach(th => th.classList.add('col-right'));
           const cTbody = cTable.querySelector('tbody');
           constructors.forEach((c, i) => {
             const colour = colours[c.id] || '#888';

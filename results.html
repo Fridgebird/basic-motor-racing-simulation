@@ -104,28 +104,24 @@
 
     #main {
       width: 100%;
-      padding: 16px 16px;
+      padding: 0 16px 24px;
       max-width: 900px;
       display: flex;
-      gap: 32px;
-      align-items: flex-start;
+      flex-direction: column;
+      gap: 28px;
     }
 
-    #result-col  { flex: 1; min-width: 0; }
-    #champ-col   { width: 260px; flex-shrink: 0; }
-
     @media (max-width: 600px) {
-      #main      { flex-direction: column; gap: 20px; padding: 12px 8px; }
-      #champ-col { width: 100%; }
+      #main { padding: 0 8px 20px; }
     }
 
     .panel-title {
-      font-size: 9px;
+      font-size: 12px;
       color: var(--lo);
-      letter-spacing: 0.10em;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 4px;
+      padding-bottom: 6px;
       margin-bottom: 10px;
     }
 
@@ -229,7 +225,7 @@
     }
 
     /* ── Season results grid ── */
-    .rg-section { margin-top: 28px; }
+    .rg-section { }
     .rg-title {
       font-size: 9px; letter-spacing: 2px; color: var(--lo);
       text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 4px;
@@ -326,13 +322,10 @@
 
   <div id="loading-msg">COMPUTING RESULTS…</div>
   <div id="main" style="display:none">
-    <div id="result-col">
-      <div id="results-container"></div>
-      <div class="results-footer" id="results-footer"></div>
-    </div>
-    <div id="champ-col" style="display:none">
-      <div id="champ-panel"></div>
-    </div>
+    <div id="results-container"></div>
+    <div id="champ-panel"></div>
+    <div id="season-results"></div>
+    <div class="results-footer" id="results-footer"></div>
   </div>
 
   <script type="module">
@@ -492,7 +485,7 @@
       } else {
         renderRace(container, teamColours, displayTeam);
         renderChampionship(season, round, teamColours);
-        renderRoundSummary(document.getElementById('result-col'), season, round, round,
+        renderRoundSummary(document.getElementById('season-results'), season, round, round,
           getStandingsThroughRound(season, round).drivers);
       }
 
@@ -701,8 +694,8 @@
 
         sorted.forEach(r => {
           const colour   = colours[r.teamId] || '#888';
-          const pos      = r.retired ? '—' : r.gridPosition;
-          const pCls     = r.retired ? 'dnf' : (r.gridPosition === 1 ? 'p1' : '');
+          const pos      = r.gridPosition;
+          const pCls     = r.gridPosition === 1 ? 'p1' : '';
           let timeHtml   = '<span class="no-time">NO TIME</span>';
           let gapStr     = '';
           if (!r.retired && r.lapTime) {
@@ -740,7 +733,6 @@
         if (!drivers.length) return;
 
         const panel = document.getElementById('champ-panel');
-        document.getElementById('champ-col').style.display = 'block';
 
         // Championship leader hero
         const leader = drivers[0];
@@ -764,7 +756,7 @@
           tr.innerHTML = `
             <td class="s-pos${i === 0 ? ' p1' : ''}">${i + 1}</td>
             <td class="s-name">
-              <span class="team-dot" style="background:${colour}"></span>${driverLink(d.driverId, d.name)}
+              <span class="team-dot" style="background:${colour}"></span>${driverLink(d.driverId, d.name)}${driverFlag(d.driverId)}
               <div class="s-team">${displayTeam(d.teamId)}</div>
             </td>
             <td class="s-pts">${d.points}</td>
